@@ -6,6 +6,7 @@ import { connect } from "@/db/connection";
 import { runMigrations } from "@/db/migrate";
 import { assertLocalDatabase } from "@/db/reset";
 import { seedCatalog } from "@/db/seed";
+import { seedContent } from "@/db/seed-content";
 import { createUser } from "@/lib/server/auth/service";
 
 export const E2E_MEDIA_ROOT = "storage/e2e-media";
@@ -49,6 +50,7 @@ async function prepare(): Promise<void> {
   const { db, close } = connect(url, { max: 1 });
   try {
     await seedCatalog(db, { mediaRoot: E2E_MEDIA_ROOT });
+    await seedContent(db, { mediaRoot: E2E_MEDIA_ROOT });
     const accounts = {
       owner: {
         email: "owner@e2e.example",

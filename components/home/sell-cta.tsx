@@ -1,9 +1,9 @@
 import Image from "next/image";
 import { ButtonLink } from "@/components/ui/button-link";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import type { HomeContent } from "@/lib/content/home";
 
 interface SellCtaProps {
-  dict: Dictionary["sellCta"];
+  dict: HomeContent["sellCta"];
   sellHref: string;
 }
 
@@ -13,13 +13,15 @@ export function SellCta({ dict, sellHref }: SellCtaProps) {
       aria-labelledby="sell-cta-title"
       className="relative isolate overflow-hidden"
     >
-      <Image
-        src="/images/watch-trio.jpg"
-        alt=""
-        fill
-        sizes="100vw"
-        className="-z-20 object-cover"
-      />
+      {dict.image && (
+        <Image
+          src={dict.image.src}
+          alt=""
+          fill
+          sizes="100vw"
+          className="-z-20 object-cover"
+        />
+      )}
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-ink/80" />
       <div className="reveal mx-auto flex max-w-3xl flex-col items-center gap-6 px-4 py-28 text-center sm:py-36">
         <p className="text-xs font-medium uppercase tracking-luxe text-gold">

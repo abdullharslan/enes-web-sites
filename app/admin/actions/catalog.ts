@@ -19,13 +19,11 @@ import {
   VersionConflictError,
   addProductImage,
   removeProductImage,
-  restoreRevision,
   saveBrand,
   saveCategory,
   saveProduct,
   setBrandHero,
   setCategoryTile,
-  type CatalogEntity,
   type SaveResult,
 } from "@/lib/server/catalog/admin";
 import { ForbiddenError, requirePermission } from "@/lib/server/auth/current";
@@ -254,28 +252,4 @@ export async function removeProductImageAction(fd: FormData): Promise<void> {
   );
   if ("result" in outcome)
     redirect(`/admin/products/${productId}?saved=${outcome.result.version}`);
-}
-
-// ── History ──────────────────────────────────────────────────────────────────
-
-const restoreTarget = z.object({
-  entityType: z.enum(["brand", "category", "product"]),
-  entityId: z.uuid(),
-  version: z.coerce.number().int().positive(),
-});
-
-export async function restoreRevisionAction(fd: FormData): Promise<void> {
-  const parsed = restoreTarget.parse({
-    entityType: text(fd, "entityType"),
-    entityId: text(fd, "entityId"),
-    version: text(fd, "version"),
-  });
-  const entityType: CatalogEntity = parsed.entityType;
-  const outcome = await execute(fd, (tx, actorId) =>
-    restoreRevision(tx, actorId, entityType, parsed.entityId, parsed.version),
-  );
-  if ("result" in outcome)
-    redirect(
-      `/admin/history/${entityType}/${parsed.entityId}?restored=${parsed.version}`,
-    );
 }

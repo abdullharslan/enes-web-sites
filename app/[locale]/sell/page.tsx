@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 import { SellForm } from "@/components/forms/sell-form";
 import { PageHeader } from "@/components/ui/page-header";
-import { SITE } from "@/config/site";
+import { getSiteContact } from "@/lib/server/content";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getCatalog } from "@/lib/server/catalog";
 
@@ -15,7 +15,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SellPage() {
-  const [{ locale, dict }, catalog] = await Promise.all([getDictionary(), getCatalog()]);
+  const [{ locale, dict }, catalog, contact] = await Promise.all([
+    getDictionary(),
+    getCatalog(),
+    getSiteContact(),
+  ]);
   return (
     <>
       <PageHeader
@@ -56,7 +60,7 @@ export default async function SellPage() {
             {dict.sell.formTitle}
           </h2>
           <SellForm
-            recipient={SITE.email}
+            recipient={contact.email}
             brands={catalog.brands}
             categories={catalog.categories}
             locale={locale}

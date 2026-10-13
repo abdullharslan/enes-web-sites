@@ -1,8 +1,9 @@
 import type { LocalizedText } from "@/lib/catalog/schema";
 
-export interface JournalEntry {
+export interface SeedJournalEntry {
   slug: string;
   publishedAt: string;
+  /** Bundled demo image under public/. */
   image: string;
   title: LocalizedText;
   excerpt: LocalizedText;
@@ -16,7 +17,7 @@ const t = (de: string, en: string, tr: string, fr: string): LocalizedText => ({
 });
 
 /* DEMO DATA — replace with real articles. */
-export const JOURNAL: readonly JournalEntry[] = [
+export const JOURNAL: readonly SeedJournalEntry[] = [
   {
     slug: "leather-care",
     publishedAt: "2026-09-18",

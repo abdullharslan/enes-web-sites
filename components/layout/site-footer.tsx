@@ -4,9 +4,11 @@ import { SITE } from "@/config/site";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { localePath, type Locale } from "@/lib/i18n/locales";
 import { LEGAL_PAGES } from "@/lib/legal";
+import type { SiteContact } from "@/lib/content/resolve";
 import type { NavLink } from "./site-header";
 
 interface SiteFooterProps {
+  contact: SiteContact;
   locale: Locale;
   links: readonly NavLink[];
   dict: Pick<Dictionary, "footer" | "legal" | "nav">;
@@ -16,7 +18,7 @@ const HEADING = "mb-5 text-xs font-semibold uppercase tracking-luxe text-gold";
 const LINK =
   "inline-flex min-h-11 min-w-11 items-center text-sm text-mist transition-colors hover:text-cream";
 
-export function SiteFooter({ locale, links, dict }: SiteFooterProps) {
+export function SiteFooter({ contact, locale, links, dict }: SiteFooterProps) {
   return (
     <footer className="border-t border-line bg-coal">
       <div className="mx-auto grid max-w-screen-2xl gap-12 px-4 py-16 sm:grid-cols-2 sm:px-8 lg:grid-cols-4">
@@ -30,7 +32,7 @@ export function SiteFooter({ locale, links, dict }: SiteFooterProps) {
           </p>
           <p className="mt-3 text-sm text-mist">{dict.footer.tagline}</p>
           <a
-            href={SITE.social.instagram}
+            href={contact.instagram}
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`Instagram ${dict.nav.opensInNewTab}`}
@@ -56,16 +58,16 @@ export function SiteFooter({ locale, links, dict }: SiteFooterProps) {
         <div>
           <h2 className={HEADING}>{dict.footer.contact}</h2>
           <address className="text-sm leading-relaxed text-mist not-italic">
-            <p>{SITE.address.street}</p>
-            <p>{SITE.address.city}</p>
+            <p>{contact.street}</p>
+            <p>{contact.city}</p>
             <p>
-              <a href={SITE.phoneHref} className={LINK}>
-                {SITE.phoneDisplay}
+              <a href={contact.phoneHref} className={LINK}>
+                {contact.phoneDisplay}
               </a>
             </p>
             <p>
-              <a href={`mailto:${SITE.email}`} className={LINK}>
-                {SITE.email}
+              <a href={`mailto:${contact.email}`} className={LINK}>
+                {contact.email}
               </a>
             </p>
           </address>

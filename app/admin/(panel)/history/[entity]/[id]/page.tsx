@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { restoreRevisionAction } from "@/app/admin/actions/catalog";
+import { restoreAction } from "@/app/admin/actions/content";
 import { AccessDenied, AdminPageTitle } from "@/components/admin/admin-shell";
 import { TextLink } from "@/components/admin/table";
 import { describeChange, diffSnapshots } from "@/lib/admin/diff";
 import { T } from "@/lib/admin/text";
+import { isContentKey } from "@/lib/content/blocks";
 import { requireUser } from "@/lib/server/auth/current";
 import { can } from "@/lib/server/auth/permissions";
 import {
@@ -19,9 +20,19 @@ const EDIT_PATH = {
   brand: "/admin/brands",
   category: "/admin/categories",
   product: "/admin/products",
+  content: "/admin/home",
+  journal: "/admin/journal",
 } as const;
 type Entity = keyof typeof EDIT_PATH;
-const isEntity = (value: string): value is Entity => value in EDIT_PATH;
+const isEntity = (value: string): value is Entity => Object.hasOwn(EDIT_PATH, value);
+
+const WRITE_PERMISSION = {
+  brand: "catalog:write",
+  category: "catalog:write",
+  product: "catalog:write",
+  content: "content:write",
+  journal: "content:write",
+} as const;
 
 const dateTime = new Intl.DateTimeFormat("tr-TR", {
   dateStyle: "medium",
@@ -35,10 +46,14 @@ export default async function HistoryPage({
   const user = await requireUser();
   if (!can(user.role, "history:read")) return <AccessDenied />;
   const [{ entity, id }, query] = await Promise.all([params, searchParams]);
-  if (!isEntity(entity) || !/^[0-9a-f-]{36}$/.test(id)) notFound();
+  if (!isEntity(entity)) notFound();
+  const entityId = decodeURIComponent(id);
+  const validId =
+    entity === "content" ? isContentKey(entityId) : /^[0-9a-f-]{36}$/.test(entityId);
+  if (!validId) notFound();
 
   const [rows, brandRows, categoryRows] = await Promise.all([
-    listHistory(entity, id),
+    listHistory(entity, entityId),
     listBrands(),
     listCategories(),
   ]);
@@ -51,14 +66,14 @@ export default async function HistoryPage({
     ]),
     imagesLabel: T.history.images,
   };
-  const canRestore = can(user.role, "catalog:write");
+  const canRestore = can(user.role, WRITE_PERMISSION[entity]);
   const restored = typeof query.restored === "string" ? query.restored : undefined;
 
   return (
     <>
       <AdminPageTitle
         actions={
-          <TextLink href={`${EDIT_PATH[entity]}/${id}`}>{T.history.back}</TextLink>
+          <TextLink href={`${EDIT_PATH[entity]}/${entityId}`}>{T.history.back}</TextLink>
         }
       >
         {T.history.title}
@@ -120,9 +135,9 @@ export default async function HistoryPage({
                 </table>
               )}
               {!isCurrent && canRestore && (
-                <form action={restoreRevisionAction} className="mt-4">
+                <form action={restoreAction} className="mt-4">
                   <input type="hidden" name="entityType" value={entity} />
-                  <input type="hidden" name="entityId" value={id} />
+                  <input type="hidden" name="entityId" value={entityId} />
                   <input type="hidden" name="version" value={revision.version} />
                   <button
                     type="submit"

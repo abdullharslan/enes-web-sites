@@ -8,6 +8,7 @@ import { SITE } from "@/config/site";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { INTL_LOCALE, LOCALES, localePath } from "@/lib/i18n/locales";
 import { buildNavLinks } from "@/lib/navigation";
+import { getSiteContact } from "@/lib/server/content";
 import "../globals.css";
 
 const display = Cormorant_Garamond({
@@ -37,7 +38,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function LocaleLayout({ children }: LayoutProps<"/[locale]">) {
-  const { locale, dict } = await getDictionary();
+  const [{ locale, dict }, contact] = await Promise.all([
+    getDictionary(),
+    getSiteContact(),
+  ]);
   const links = buildNavLinks(locale, dict.nav);
 
   return (
@@ -62,8 +66,9 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
           }}
         />
         <main id="content">{children}</main>
-        <SiteFooter locale={locale} links={links} dict={dict} />
+        <SiteFooter contact={contact} locale={locale} links={links} dict={dict} />
         <FloatingContact
+          contact={contact}
           label={dict.nav.contact}
           labels={{ ...dict.contactBar, opensInNewTab: dict.nav.opensInNewTab }}
         />

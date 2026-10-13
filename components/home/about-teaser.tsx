@@ -2,10 +2,10 @@ import Image from "next/image";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Section } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import type { HomeContent } from "@/lib/content/home";
 
 interface AboutTeaserProps {
-  dict: Dictionary["about"];
+  dict: HomeContent["about"];
   aboutHref: string;
 }
 
@@ -25,13 +25,15 @@ export function AboutTeaser({ dict, aboutHref }: AboutTeaserProps) {
           </div>
         </div>
         <div className="reveal relative aspect-[4/5] overflow-hidden bg-graphite lg:aspect-square">
-          <Image
-            src="/images/jewel-portrait.jpg"
-            alt=""
-            fill
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            className="object-cover"
-          />
+          {dict.image && (
+            <Image
+              src={dict.image.src}
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
+            />
+          )}
         </div>
       </div>
     </Section>

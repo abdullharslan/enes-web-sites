@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
+import { getContent } from "@/lib/server/content";
 import { JournalList } from "@/components/home/journal-list";
 import { PageHeader } from "@/components/ui/page-header";
-import { JOURNAL } from "@/db/seed-data/journal";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -14,7 +14,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function JournalPage() {
-  const { locale, dict } = await getDictionary();
+  const [{ locale, dict }, { journal }] = await Promise.all([
+    getDictionary(),
+    getContent(),
+  ]);
   return (
     <>
       <PageHeader
@@ -23,7 +26,7 @@ export default async function JournalPage() {
         intro={dict.journal.intro}
       />
       <div className="mx-auto max-w-screen-2xl px-4 py-20 sm:px-8">
-        <JournalList entries={JOURNAL} locale={locale} headingLevel="h2" />
+        <JournalList entries={journal} locale={locale} headingLevel="h2" />
       </div>
     </>
   );

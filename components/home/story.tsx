@@ -2,10 +2,10 @@ import Image from "next/image";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Section } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import type { HomeContent } from "@/lib/content/home";
 
 interface StoryProps {
-  dict: Dictionary["story"];
+  dict: HomeContent["story"];
   contactHref: string;
 }
 
@@ -14,13 +14,15 @@ export function Story({ dict, contactHref }: StoryProps) {
     <Section labelledBy="story-title">
       <div className="grid items-center gap-12 lg:grid-cols-[5fr_6fr] lg:gap-20">
         <div className="reveal relative order-last aspect-[3/4] overflow-hidden bg-graphite lg:order-first">
-          <Image
-            src="/images/jewel-earrings-sapphire.jpg"
-            alt=""
-            fill
-            sizes="(min-width: 1024px) 45vw, 100vw"
-            className="object-cover"
-          />
+          {dict.image && (
+            <Image
+              src={dict.image.src}
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 45vw, 100vw"
+              className="object-cover"
+            />
+          )}
         </div>
         <div className="reveal flex flex-col gap-8">
           <SectionHeading id="story-title" eyebrow={dict.eyebrow} title={dict.title} />

@@ -7,10 +7,10 @@ import { ProductGrid } from "@/components/catalog/product-grid";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { ButtonLink } from "@/components/ui/button-link";
 import { ArrowLeftIcon, ChatIcon } from "@/components/ui/icons";
-import { SITE } from "@/config/site";
 import { findProduct, getRelatedProducts } from "@/lib/catalog/queries";
 import { buildWhatsAppUrl } from "@/lib/contact-links";
 import { formatPrice } from "@/lib/format";
+import { getSiteContact } from "@/lib/server/content";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { interpolate } from "@/lib/i18n/interpolate";
 import { localePath } from "@/lib/i18n/locales";
@@ -55,9 +55,10 @@ export async function generateMetadata({
 export default async function ProductPage({
   params,
 }: PageProps<"/[locale]/collection/[slug]">) {
-  const [{ locale, dict }, { product, catalog }] = await Promise.all([
+  const [{ locale, dict }, { product, catalog }, contact] = await Promise.all([
     getDictionary(),
     loadProduct(params),
+    getSiteContact(),
   ]);
   const p = dict.product;
   const { brandName } = product;
@@ -153,7 +154,7 @@ export default async function ProductPage({
               <ButtonLink
                 newTabHint={dict.nav.opensInNewTab}
                 href={buildWhatsAppUrl(
-                  SITE.whatsappNumber,
+                  contact.whatsappNumber,
                   interpolate(p.whatsappMessage, { item }),
                 )}
               >
@@ -202,7 +203,7 @@ export default async function ProductPage({
             {p.inquireForm}
           </h2>
           <InquiryForm
-            recipient={SITE.email}
+            recipient={contact.email}
             subject={interpolate(p.inquirySubject, { item })}
             context={[[p.item, item]]}
             labels={dict.forms}

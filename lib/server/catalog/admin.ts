@@ -9,54 +9,34 @@ import {
   type CategoryInput,
   type ProductInput,
 } from "@/lib/admin/schemas";
-import { recordAudit } from "@/lib/server/audit";
-import { recordRevision } from "@/lib/server/revisions";
-import { toSnapshot } from "@/lib/server/snapshot";
+import {
+  DuplicateSlugError,
+  RecordNotFoundError,
+  VersionConflictError,
+  finishChange,
+  replayedResult,
+  restoreComment,
+  type SaveOptions,
+  type SaveResult,
+} from "@/lib/server/versioning";
 
 /*
  * Write side of the catalog. Every change runs inside the caller's transaction
  * and, together with it, appends exactly one revision and one audit event.
  */
 
-export class VersionConflictError extends Error {
-  constructor() {
-    super("The record was changed by someone else. Reload and try again.");
-  }
-}
-export class RecordNotFoundError extends Error {}
-export class DuplicateSlugError extends Error {
-  constructor(slug: string) {
-    super(`The slug "${slug}" is already in use`);
-  }
-}
+export {
+  DuplicateSlugError,
+  RecordNotFoundError,
+  VersionConflictError,
+  type SaveOptions,
+  type SaveResult,
+} from "@/lib/server/versioning";
 
 export type CatalogEntity = "brand" | "category" | "product";
 
-export interface SaveOptions {
-  idempotencyKey?: string;
-  comment?: string;
-}
-
-export interface SaveResult {
-  id: string;
-  version: number;
-}
-
-const RESTORE_COMMENT = (version: number) => `Wiederhergestellt aus v${version}`;
-
-async function replayedResult(
-  tx: Executor,
-  key: string | undefined,
-): Promise<SaveResult | null> {
-  if (!key) return null;
-  const [previous] = await tx
-    .select({ id: revisions.entityId, version: revisions.version })
-    .from(revisions)
-    .where(eq(revisions.idempotencyKey, key));
-  return previous ?? null;
-}
-
-async function finish(
+/** Catalog rows carry their own id; delegate to the shared versioning rules. */
+const finish = (
   tx: Executor,
   args: {
     entityType: CatalogEntity;
@@ -66,30 +46,7 @@ async function finish(
     extra?: Record<string, unknown>;
     options?: SaveOptions;
   },
-): Promise<SaveResult> {
-  const { version } = await recordRevision(tx, {
-    entityType: args.entityType,
-    entityId: args.row.id,
-    data: toSnapshot(args.row, args.extra),
-    authorId: args.actorId,
-    comment: args.options?.comment ?? null,
-    idempotencyKey: args.options?.idempotencyKey ?? null,
-  });
-  // Entity version and revision number must move together; drift means a write bypassed this module.
-  if (version !== args.row.currentVersion) {
-    throw new Error(
-      `Revision drift on ${args.entityType} ${args.row.id}: ${version} ≠ ${args.row.currentVersion}`,
-    );
-  }
-  await recordAudit(tx, {
-    actorId: args.actorId,
-    action: `${args.entityType}.${args.action}`,
-    entityType: args.entityType,
-    entityId: args.row.id,
-    details: { version },
-  });
-  return { id: args.row.id, version };
-}
+) => finishChange(tx, { ...args, entityId: args.row.id });
 
 const nextVersion = (
   column:
@@ -415,7 +372,7 @@ export async function restoreRevision(
       `Revision ${entityType}/${entityId}@v${version} not found`,
     );
   const data = revision.data;
-  const options = { comment: RESTORE_COMMENT(version) };
+  const options = { comment: restoreComment(version) };
 
   switch (entityType) {
     case "brand": {

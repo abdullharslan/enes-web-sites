@@ -26,7 +26,7 @@ _Last updated: 2026-10-14 by Claude Opus 5.5_
 - [x] Step 2: brand pages with A–Z / Z–A / price sorting, French, Miu Miu + Shoes
 - [x] Step 3: auth (argon2id, hashed sessions, lockout), roles owner/editor, admin shell, user management, `admin:create`
 - [x] Step 4: catalog CRUD, versioned image uploads, history + restore, optimistic concurrency
-- [ ] Step 5: home-page content editor (hero image etc.) with versions, journal, media library, audit view
+- [x] Step 5: home-page content editor (hero image etc.) with versions, journal, media library, audit view
 - [ ] Step 6: full verify, independent security review, fixes, re-review
 - [ ] Push to GitHub — **only after explicit user approval**
 

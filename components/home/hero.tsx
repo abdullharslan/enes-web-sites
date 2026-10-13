@@ -1,9 +1,9 @@
 import Image from "next/image";
 import { ButtonLink } from "@/components/ui/button-link";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import type { HomeContent } from "@/lib/content/home";
 
 interface HeroProps {
-  dict: Dictionary["hero"];
+  dict: HomeContent["hero"];
   collectionHref: string;
   sellHref: string;
 }
@@ -14,14 +14,16 @@ export function Hero({ dict, collectionHref, sellHref }: HeroProps) {
       aria-labelledby="hero-title"
       className="relative isolate flex min-h-svh items-end overflow-hidden"
     >
-      <Image
-        src="/images/watch-black-dial.jpg"
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="-z-20 object-cover object-center"
-      />
+      {dict.image && (
+        <Image
+          src={dict.image.src}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="-z-20 object-cover object-center"
+        />
+      )}
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/70 to-ink/30"

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { JournalEntry } from "@/db/seed-data/journal";
+import type { JournalEntry } from "@/lib/content/journal";
 import { INTL_LOCALE, type Locale } from "@/lib/i18n/locales";
 
 interface JournalListProps {
@@ -23,13 +23,15 @@ export function JournalList({
         <li key={entry.slug} className="reveal">
           <article>
             <div className="relative aspect-[4/3] overflow-hidden bg-graphite">
-              <Image
-                src={entry.image}
-                alt=""
-                fill
-                sizes="(min-width: 768px) 33vw, 100vw"
-                className="object-cover"
-              />
+              {entry.image && (
+                <Image
+                  src={entry.image}
+                  alt=""
+                  fill
+                  sizes="(min-width: 768px) 33vw, 100vw"
+                  className="object-cover"
+                />
+              )}
             </div>
             <time
               dateTime={entry.publishedAt}

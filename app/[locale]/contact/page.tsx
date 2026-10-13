@@ -6,6 +6,7 @@ import { ChatIcon, MailIcon, PhoneIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { SITE } from "@/config/site";
 import { buildWhatsAppUrl } from "@/lib/contact-links";
+import { getSiteContact } from "@/lib/server/content";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -17,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ContactPage() {
-  const { dict } = await getDictionary();
+  const [{ dict }, contact] = await Promise.all([getDictionary(), getSiteContact()]);
   const c = dict.contactPage;
   return (
     <>
@@ -31,28 +32,28 @@ export default async function ContactPage() {
             <address className="leading-relaxed text-mist not-italic">
               {SITE.name}
               <br />
-              {SITE.address.street}
+              {contact.street}
               <br />
-              {SITE.address.city}
+              {contact.city}
               <br />
-              {SITE.address.country}
+              {contact.country}
             </address>
           </div>
           <div className="flex flex-col gap-3">
             <ButtonLink
-              href={buildWhatsAppUrl(SITE.whatsappNumber, "")}
+              href={buildWhatsAppUrl(contact.whatsappNumber, "")}
               newTabHint={dict.nav.opensInNewTab}
             >
               <ChatIcon width={18} height={18} />
               {dict.contactBar.whatsapp}
             </ButtonLink>
-            <ButtonLink href={SITE.phoneHref} variant="outline">
+            <ButtonLink href={contact.phoneHref} variant="outline">
               <PhoneIcon width={18} height={18} />
-              {SITE.phoneDisplay}
+              {contact.phoneDisplay}
             </ButtonLink>
-            <ButtonLink href={`mailto:${SITE.email}`} variant="outline">
+            <ButtonLink href={`mailto:${contact.email}`} variant="outline">
               <MailIcon width={18} height={18} />
-              {SITE.email}
+              {contact.email}
             </ButtonLink>
           </div>
         </aside>
@@ -64,7 +65,7 @@ export default async function ContactPage() {
             {c.formTitle}
           </h2>
           <InquiryForm
-            recipient={SITE.email}
+            recipient={contact.email}
             subject={`${SITE.name} – ${c.formTitle}`}
             labels={dict.forms}
           />

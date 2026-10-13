@@ -4,6 +4,7 @@ import { connect } from "./connection";
 import { isMain } from "./is-main";
 import { runMigrations } from "./migrate";
 import { seedCatalog } from "./seed";
+import { seedContent } from "./seed-content";
 
 const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
 
@@ -36,7 +37,11 @@ async function reset(): Promise<void> {
   await runMigrations(url);
   const seeded = connect(url, { max: 1 });
   try {
-    console.log("seeded", await seedCatalog(seeded.db, { mediaRoot }));
+    const catalog = await seedCatalog(seeded.db, { mediaRoot });
+    console.log("seeded", {
+      ...catalog,
+      ...(await seedContent(seeded.db, { mediaRoot })),
+    });
   } finally {
     await seeded.close();
   }

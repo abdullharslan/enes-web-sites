@@ -60,7 +60,9 @@
     "entities": {
       "brand": "Marka",
       "category": "Kategori",
-      "product": "Ürün"
+      "product": "Ürün",
+      "content": "Ana sayfa içeriği",
+      "journal": "Journal"
     }
   },
   "users": {
@@ -202,5 +204,30 @@
       "addedAt": "Eklenme tarihi",
       "mediaIds": "Görseller"
     }
+  },
+  "home": {
+    "title": "Ana sayfa içeriği",
+    "intro": "Ana sayfada görünen her bölümü buradan düzenleyebilirsiniz. Her kayıt yeni bir sürüm oluşturur; eski sürümlere geçmişten dönebilirsiniz.",
+    "section": "Bölüm",
+    "viewPage": "Ana sayfayı görüntüle"
+  },
+  "journal": {
+    "title": "Journal",
+    "new": "Yeni yazı",
+    "edit": "Yazıyı düzenle",
+    "titleField": "Başlık",
+    "excerpt": "Özet",
+    "publishedAt": "Yayın tarihi",
+    "image": "Yazı görseli"
+  },
+  "media": {
+    "title": "Medya kütüphanesi",
+    "intro": "Yüklenen her görsel değiştirilmeden saklanır; dosya adı tür, kayıt, tarih, sürüm ve içerik özetini içerir.",
+    "file": "Dosya",
+    "kind": "Tür",
+    "entity": "Kayıt",
+    "version": "Sürüm",
+    "size": "Boyut",
+    "created": "Yüklenme"
   }
 }

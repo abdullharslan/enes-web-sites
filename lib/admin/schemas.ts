@@ -93,3 +93,14 @@ export function translationsFromForm(
   }
   return result;
 }
+
+export const journalInput = z.object({
+  slug,
+  publishedAt: z.iso.date(),
+  title: requiredTranslations(200),
+  excerpt: requiredTranslations(1000),
+  isVisible: z.boolean(),
+  expectedVersion,
+});
+
+export type JournalInput = z.infer<typeof journalInput>;

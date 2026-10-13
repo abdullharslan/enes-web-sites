@@ -6,6 +6,7 @@ import { storeImage } from "@/lib/server/media/store";
 import { toSnapshot } from "@/lib/server/snapshot";
 import { connect, type Database, type Executor } from "./connection";
 import { isMain } from "./is-main";
+import { seedContent } from "./seed-content";
 import { brands, categories, productMedia, products } from "./schema";
 import { SEED_BRANDS } from "./seed-data/brands";
 import { SEED_CATEGORIES } from "./seed-data/categories";
@@ -160,8 +161,11 @@ export async function seedCatalog(
 
 if (isMain(import.meta.url)) {
   const { db, close } = connect(process.env.DATABASE_URL, { max: 1 });
-  seedCatalog(db, { mediaRoot: process.env.MEDIA_ROOT ?? "storage/media" })
-    .then((report) => console.log("seeded", report))
+  const mediaRoot = process.env.MEDIA_ROOT ?? "storage/media";
+  seedCatalog(db, { mediaRoot })
+    .then(async (catalog) =>
+      console.log("seeded", { ...catalog, ...(await seedContent(db, { mediaRoot })) }),
+    )
     .catch((error: unknown) => {
       console.error(error);
       process.exitCode = 1;
