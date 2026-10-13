@@ -52,3 +52,6 @@ next-env.d.ts
 
 # uploaded media (served by app/media route, backed up separately)
 /storage/
+
+# E2E throw-away credentials
+/e2e/.auth/

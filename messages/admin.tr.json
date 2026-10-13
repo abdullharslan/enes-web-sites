@@ -1,0 +1,78 @@
+{
+  "meta": { "title": "Yönetim Paneli" },
+  "login": {
+    "title": "Yönetim paneline giriş",
+    "email": "E-posta",
+    "password": "Parola",
+    "submit": "Giriş yap",
+    "pending": "Kontrol ediliyor…",
+    "invalid": "E-posta veya parola hatalı.",
+    "locked": "Çok fazla hatalı deneme. Lütfen 15 dakika sonra tekrar deneyin."
+  },
+  "nav": {
+    "label": "Yönetim menüsü",
+    "dashboard": "Özet",
+    "products": "Ürünler",
+    "brands": "Markalar",
+    "categories": "Kategoriler",
+    "home": "Ana sayfa içeriği",
+    "journal": "Journal",
+    "media": "Medya",
+    "audit": "Denetim kaydı",
+    "users": "Kullanıcılar",
+    "viewSite": "Siteyi görüntüle",
+    "logout": "Çıkış yap"
+  },
+  "roles": { "owner": "Sahip", "editor": "Editör" },
+  "common": {
+    "loading": "Yükleniyor…",
+    "save": "Kaydet",
+    "saving": "Kaydediliyor…",
+    "saved": "Kaydedildi.",
+    "cancel": "Vazgeç",
+    "edit": "Düzenle",
+    "create": "Yeni ekle",
+    "history": "Sürüm geçmişi",
+    "visible": "Sitede görünür",
+    "hidden": "Gizli",
+    "actions": "İşlemler",
+    "forbidden": "Bu işlem için yetkiniz yok.",
+    "error": "Kaydedilemedi. Lütfen alanları kontrol edin.",
+    "required": "Zorunlu alan",
+    "missingTranslations": "Eksik çeviri: {locales} (Almanca gösterilir)"
+  },
+  "dashboard": {
+    "title": "Özet",
+    "welcome": "Hoş geldiniz, {name}",
+    "products": "Ürün",
+    "brands": "Marka",
+    "categories": "Kategori",
+    "recentChanges": "Son değişiklikler",
+    "noChanges": "Henüz değişiklik yok."
+  },
+  "users": {
+    "title": "Kullanıcılar",
+    "name": "Ad",
+    "email": "E-posta",
+    "role": "Rol",
+    "status": "Durum",
+    "active": "Aktif",
+    "inactive": "Pasif",
+    "createTitle": "Yeni kullanıcı",
+    "password": "İlk parola (en az 12 karakter)",
+    "created": "Kullanıcı oluşturuldu.",
+    "deactivate": "Pasifleştir",
+    "activate": "Aktifleştir",
+    "self": "Kendi hesabınızı pasifleştiremezsiniz.",
+    "weakPassword": "Parola en az 12 karakter olmalı.",
+    "duplicate": "Bu e-posta zaten kayıtlı."
+  },
+  "audit": {
+    "title": "Denetim kaydı",
+    "when": "Zaman",
+    "who": "Kim",
+    "action": "İşlem",
+    "entity": "Kayıt",
+    "system": "Sistem"
+  }
+}

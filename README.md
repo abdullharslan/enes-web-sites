@@ -118,3 +118,22 @@ tests/, e2e/             Contract + bileşen testleri, Playwright testleri
 
 - [`ACTIONS-TAKEN.md`](ACTIONS-TAKEN.md) — yapılan her adımın komut ve kanıtlarıyla denetim kaydı
 - [`CURRENT-CONTEXT.md`](CURRENT-CONTEXT.md) — güncel durum, kararlar, açık riskler
+
+## Yönetim paneli
+
+İlk yönetici hesabını terminalden oluşturun (parola gizli sorulur, hiçbir dosyaya yazılmaz):
+
+```bash
+npm run admin:create -- --email siz@ornek.com --name "Ad Soyad" --role owner
+```
+
+Panel: <http://localhost:1111/admin>. Roller:
+
+| Rol      | Yetkiler                                                                  |
+| -------- | ------------------------------------------------------------------------- |
+| `owner`  | Her şey + kullanıcı yönetimi + denetim kaydı                              |
+| `editor` | Ürün, marka, kategori, ana sayfa içeriği, journal, medya ve sürüm geçmişi |
+
+Güvenlik: parolalar argon2id ile saklanır, oturum çerezi `httpOnly` + `SameSite=Strict`, veritabanında yalnızca token'ın SHA-256 özeti tutulur, 15 dakikada 5 hatalı denemede hesap geçici olarak kilitlenir, her yönetim işlemi denetim kaydına yazılır.
+
+E2E testleri kendi izole veritabanını (`maison_vault_e2e`) her çalıştırmada sıfırdan kurar ve rastgele parolalı geçici test hesapları oluşturur; geliştirme verinize dokunmaz.

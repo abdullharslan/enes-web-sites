@@ -15,7 +15,8 @@ const loaders: Record<Locale, () => Promise<Dictionary>> = {
 /** Resolves the current request locale from the `[locale]` root segment (404 if unsupported). */
 export async function getLocale(): Promise<Locale> {
   const value = await rootLocale();
-  if (!isLocale(value)) notFound();
+  // Undefined outside the [locale] tree (e.g. the admin root layout): fail closed.
+  if (value === undefined || !isLocale(value)) notFound();
   return value;
 }
 

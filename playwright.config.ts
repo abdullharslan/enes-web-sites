@@ -1,4 +1,8 @@
+import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
+
+// Local credentials live in .env.local (never committed).
+if (existsSync(".env.local")) process.loadEnvFile(".env.local");
 
 // E2E runs a production server on its own port so the dev server on 1111 stays usable.
 const PORT = Number(process.env.E2E_PORT ?? 1112);
@@ -25,9 +29,16 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `npx next start -p ${PORT}`,
+    // Fresh isolated database (+ test accounts), then a production build against it.
+    command: `npx tsx e2e/prepare.ts && npx next build && npx next start -p ${PORT}`,
+    env: {
+      DATABASE_URL: process.env.DATABASE_URL_E2E ?? "",
+      DATABASE_URL_E2E: process.env.DATABASE_URL_E2E ?? "",
+      DATABASE_URL_ADMIN: process.env.DATABASE_URL ?? "",
+      MEDIA_ROOT: "storage/e2e-media",
+    },
     url: `${baseURL}/de`,
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 300_000,
   },
 });

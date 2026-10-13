@@ -14,7 +14,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Skip Next internals, static assets and any path with a file extension.
-  // (Routes outside the locale tree are added here only once they exist.)
-  matcher: ["/((?!_next/|images/|favicon.ico|.*\\..*).*)"],
+  // Skip Next internals, static assets, the admin area, media and any path with a file extension.
+  matcher: ["/((?!_next/|images/|admin(?:/|$)|media/|favicon.ico|.*\\..*).*)"],
 };
