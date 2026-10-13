@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Cormorant_Garamond, Montserrat } from "next/font/google";
 import { FloatingContact } from "@/components/layout/floating-contact";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -30,13 +31,8 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(SITE.url),
     title: { default: dict.meta.title, template: `%s | ${SITE.name}` },
     description: dict.meta.description,
-    alternates: {
-      canonical: localePath(locale, "/"),
-      languages: Object.fromEntries(
-        LOCALES.map((l) => [INTL_LOCALE[l], localePath(l, "/")]),
-      ),
-    },
-    openGraph: { siteName: SITE.name, locale: INTL_LOCALE[locale], type: "website" },
+    // Canonical/hreflang are page-specific (see pageMetadata); only site defaults here.
+    openGraph: pageMetadata(locale, "/").openGraph,
   };
 }
 
@@ -55,7 +51,6 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
         </a>
         <SiteHeader
           locale={locale}
-          siteName={SITE.name}
           homeHref={localePath(locale, "/")}
           links={links}
           labels={{
@@ -68,7 +63,10 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
         />
         <main id="content">{children}</main>
         <SiteFooter locale={locale} links={links} dict={dict} />
-        <FloatingContact label={dict.nav.contact} labels={dict.contactBar} />
+        <FloatingContact
+          label={dict.nav.contact}
+          labels={{ ...dict.contactBar, opensInNewTab: dict.nav.opensInNewTab }}
+        />
       </body>
     </html>
   );

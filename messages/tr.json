@@ -15,7 +15,8 @@
     "closeMenu": "Menüyü kapat",
     "language": "Dil",
     "skipToContent": "İçeriğe geç",
-    "primary": "Ana menü"
+    "primary": "Ana menü",
+    "opensInNewTab": "(yeni sekmede açılır)"
   },
   "hero": {
     "eyebrow": "Lüks & Ayrıcalıklı",
@@ -130,7 +131,10 @@
     "eyebrow": "Koleksiyon",
     "title": "Koleksiyonumuz",
     "intro": "Seçkin çanta, saat ve mücevherler – her ürün incelenmiş ve ayrıntılı olarak belgelenmiştir.",
-    "results": "{count} ürün",
+    "results": {
+      "one": "{count} ürün",
+      "other": "{count} ürün"
+    },
     "empty": "Bu seçim için şu anda ürünümüz yok. Sizin için özel arama yapmaktan memnuniyet duyarız.",
     "priceOnRequest": "Fiyat için sorunuz",
     "filters": {

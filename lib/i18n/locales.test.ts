@@ -91,3 +91,15 @@ describe("localePath", () => {
     expect(() => localePath("de", "//evil.example")).toThrow(TypeError);
   });
 });
+
+describe("switchLocalePath with query", () => {
+  it("keeps the query string", () => {
+    expect(switchLocalePath("/de/collection", "en", "brand=rolex&sort=price-asc")).toBe(
+      "/en/collection?brand=rolex&sort=price-asc",
+    );
+  });
+
+  it("omits an empty query", () => {
+    expect(switchLocalePath("/de/collection", "en", "")).toBe("/en/collection");
+  });
+});

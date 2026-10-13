@@ -9,7 +9,7 @@ import type { NavLink } from "./site-header";
 interface SiteFooterProps {
   locale: Locale;
   links: readonly NavLink[];
-  dict: Pick<Dictionary, "footer" | "legal">;
+  dict: Pick<Dictionary, "footer" | "legal" | "nav">;
 }
 
 const HEADING = "mb-5 text-xs font-semibold uppercase tracking-luxe text-gold";
@@ -33,7 +33,7 @@ export function SiteFooter({ locale, links, dict }: SiteFooterProps) {
             href={SITE.social.instagram}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Instagram"
+            aria-label={`Instagram ${dict.nav.opensInNewTab}`}
             className="mt-6 inline-flex size-11 items-center justify-center border border-line text-gold transition-colors hover:border-gold"
           >
             <InstagramIcon />

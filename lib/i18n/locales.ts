@@ -43,12 +43,13 @@ export function resolveLocale(acceptLanguage: string | null): Locale {
   return best && isLocale(best.language) ? best.language : DEFAULT_LOCALE;
 }
 
-/** Returns `pathname` under `locale`, replacing an existing locale segment. */
-export function switchLocalePath(pathname: string, locale: Locale): string {
+/** Returns `pathname` (plus optional query) under `locale`, replacing an existing locale segment. */
+export function switchLocalePath(pathname: string, locale: Locale, query = ""): string {
   const segments = pathname.split("/").filter(Boolean);
   const rest =
     segments[0] !== undefined && isLocale(segments[0]) ? segments.slice(1) : segments;
-  return `/${[locale, ...rest].join("/")}`;
+  const path = `/${[locale, ...rest].join("/")}`;
+  return query ? `${path}?${query}` : path;
 }
 
 /** Builds an in-app href under `locale`; `path` must be an absolute app path. */

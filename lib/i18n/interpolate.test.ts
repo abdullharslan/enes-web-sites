@@ -20,3 +20,12 @@ describe("interpolate", () => {
     expect(interpolate("{v}", { v: "$& $1" })).toBe("$& $1");
   });
 });
+
+describe("interpolate (inherited properties)", () => {
+  it.each(["{constructor}", "{toString}", "{__proto__}"])(
+    "fails fast for %s",
+    (template) => {
+      expect(() => interpolate(template, {})).toThrow(/Missing value/);
+    },
+  );
+});

@@ -4,8 +4,8 @@ export function interpolate(
   values: Readonly<Record<string, string | number>>,
 ): string {
   return template.replace(/\{(\w+)\}/g, (_, key: string) => {
-    const value = values[key];
-    if (value === undefined) throw new Error(`Missing value for placeholder "${key}"`);
-    return String(value);
+    if (!Object.hasOwn(values, key))
+      throw new Error(`Missing value for placeholder "${key}"`);
+    return String(values[key]);
   });
 }

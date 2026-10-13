@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -41,12 +42,11 @@ export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/collection/[slug]">): Promise<Metadata> {
   const [{ locale }, product] = await Promise.all([getDictionary(), loadProduct(params)]);
-  const title = `${getBrandName(product.brand)} ${product.model}`;
-  return {
-    title,
+  return pageMetadata(locale, `/collection/${product.slug}`, {
+    title: `${getBrandName(product.brand)} ${product.model}`,
     description: product.description[locale],
-    openGraph: { title, images: product.images.map((i) => i.src) },
-  };
+    images: product.images.map((i) => i.src),
+  });
 }
 
 export default async function ProductPage({
@@ -145,6 +145,7 @@ export default async function ProductPage({
           ) : (
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-col 2xl:flex-row">
               <ButtonLink
+                newTabHint={dict.nav.opensInNewTab}
                 href={buildWhatsAppUrl(
                   SITE.whatsappNumber,
                   interpolate(p.whatsappMessage, { item }),

@@ -51,22 +51,23 @@ describe("dictionaries contract", () => {
     );
   });
 
-  it("keeps placeholders identical across locales", () => {
-    const placeholders = (s: string) => (s.match(/\{\w+\}/g) ?? []).sort().join();
-    const deStrings = shape(de);
-    expect(deStrings.length).toBeGreaterThan(0);
-    for (const key of [
-      "catalog.results",
-      "product.whatsappMessage",
-      "product.inquirySubject",
-      "sell.subject",
-    ]) {
-      const get = (d: unknown) =>
-        key
-          .split(".")
-          .reduce<unknown>((o, k) => (o as Record<string, unknown>)[k], d) as string;
-      expect(placeholders(get(en))).toBe(placeholders(get(de)));
-      expect(placeholders(get(tr))).toBe(placeholders(get(de)));
+  it("keeps placeholders identical across locales for every string", () => {
+    const placeholders = (value: unknown) =>
+      typeof value === "string" ? (value.match(/\{\w+\}/g) ?? []).sort().join() : "";
+    const entries = (dict: unknown) => {
+      const out = new Map<string, string>();
+      const walk = (value: unknown, path: string) => {
+        if (value !== null && typeof value === "object") {
+          for (const [k, v] of Object.entries(value)) walk(v, `${path}.${k}`);
+        } else out.set(path, placeholders(value));
+      };
+      walk(dict, "");
+      return out;
+    };
+    const reference = entries(de);
+    expect([...reference.values()].some((p) => p !== "")).toBe(true);
+    for (const dict of [en, tr]) {
+      expect(Object.fromEntries(entries(dict))).toEqual(Object.fromEntries(reference));
     }
   });
 });

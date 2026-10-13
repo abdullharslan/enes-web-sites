@@ -12,6 +12,8 @@ interface ProductCardProps {
   labels: Pick<Dictionary["catalog"], "statuses" | "priceOnRequest">;
   /** The first visible images are prioritised for LCP. */
   priority?: boolean;
+  /** Heading level for the model name; follows the surrounding outline. */
+  headingLevel?: "h2" | "h3";
 }
 
 export function ProductCard({
@@ -19,6 +21,7 @@ export function ProductCard({
   locale,
   labels,
   priority = false,
+  headingLevel: Heading = "h3",
 }: ProductCardProps) {
   const [image] = product.images;
   const brandName = getBrandName(product.brand);
@@ -54,9 +57,9 @@ export function ProductCard({
           >
             {brandName}
           </p>
-          <h3 className="font-display text-2xl leading-tight text-cream transition-colors group-hover:text-gold-soft">
+          <Heading className="font-display text-2xl leading-tight text-cream transition-colors group-hover:text-gold-soft">
             {product.model}
-          </h3>
+          </Heading>
           <p className="text-xs text-mist">
             {[product.reference, product.year].filter(Boolean).join(" · ")}
           </p>

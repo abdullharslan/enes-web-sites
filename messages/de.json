@@ -15,7 +15,8 @@
     "closeMenu": "Menü schließen",
     "language": "Sprache",
     "skipToContent": "Zum Inhalt springen",
-    "primary": "Hauptnavigation"
+    "primary": "Hauptnavigation",
+    "opensInNewTab": "(öffnet in neuem Tab)"
   },
   "hero": {
     "eyebrow": "Luxury & Exclusive",
@@ -130,7 +131,10 @@
     "eyebrow": "Kollektion",
     "title": "Unsere Kollektion",
     "intro": "Ausgewählte Taschen, Uhren und Schmuckstücke – jedes Objekt geprüft und ausführlich dokumentiert.",
-    "results": "{count} Objekte",
+    "results": {
+      "one": "{count} Objekt",
+      "other": "{count} Objekte"
+    },
     "empty": "Für diese Auswahl haben wir aktuell keine Objekte. Gerne suchen wir gezielt für Sie.",
     "priceOnRequest": "Preis auf Anfrage",
     "filters": {

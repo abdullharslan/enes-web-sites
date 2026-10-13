@@ -4,7 +4,7 @@ import { buildWhatsAppUrl } from "@/lib/contact-links";
 
 interface FloatingContactProps {
   label: string;
-  labels: { call: string; whatsapp: string; email: string };
+  labels: { call: string; whatsapp: string; email: string; opensInNewTab: string };
 }
 
 const BUTTON =
@@ -28,7 +28,7 @@ export function FloatingContact({ label, labels }: FloatingContactProps) {
             href={buildWhatsAppUrl(SITE.whatsappNumber, "")}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={labels.whatsapp}
+            aria-label={`${labels.whatsapp} ${labels.opensInNewTab}`}
             className={BUTTON}
           >
             <ChatIcon />

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { AboutTeaser } from "@/components/home/about-teaser";
 import { BrandSelector } from "@/components/home/brand-selector";
 import { CategoryTiles } from "@/components/home/category-tiles";
@@ -18,8 +19,14 @@ import { DEFAULT_FILTER, serializeCatalogFilter } from "@/lib/catalog/filter";
 import { getNewArrivals, getSoldHighlights } from "@/lib/catalog/queries";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { localePath } from "@/lib/i18n/locales";
+import { pageMetadata } from "@/lib/seo";
 
 const NEW_ARRIVALS_LIMIT = 8;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale } = await getDictionary();
+  return pageMetadata(locale, "/");
+}
 const SOLD_HIGHLIGHTS_LIMIT = 4;
 
 export default async function HomePage() {

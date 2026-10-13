@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { SellForm } from "@/components/forms/sell-form";
 import { PageHeader } from "@/components/ui/page-header";
 import { SITE } from "@/config/site";
@@ -6,8 +7,11 @@ import { BRANDS } from "@/data/brands";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { dict } = await getDictionary();
-  return { title: dict.sell.title, description: dict.sell.intro };
+  const { locale, dict } = await getDictionary();
+  return pageMetadata(locale, "/sell", {
+    title: dict.sell.title,
+    description: dict.sell.intro,
+  });
 }
 
 export default async function SellPage() {

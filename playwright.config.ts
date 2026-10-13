@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 1111;
+// E2E runs a production server on its own port so the dev server on 1111 stays usable.
+const PORT = Number(process.env.E2E_PORT ?? 1112);
 const baseURL = `http://localhost:${PORT}`;
 
 export default defineConfig({
@@ -19,9 +20,9 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "npm run start",
+    command: `npx next start -p ${PORT}`,
     url: `${baseURL}/de`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

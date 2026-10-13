@@ -13,7 +13,7 @@ test.describe("enquiry form", () => {
 
     await page.getByLabel("Name", { exact: true }).fill("Ada");
     await page.getByLabel("E-mail", { exact: true }).fill("not-an-email");
-    await page.getByLabel("Message", { exact: true }).fill("x".repeat(2001));
+    await page.getByLabel("Message", { exact: true }).fill("x".repeat(1001));
     await page.getByRole("button", { name: "Send" }).click();
     await expect(page.getByLabel("E-mail", { exact: true })).toHaveAccessibleDescription(
       "Please enter a valid e-mail address.",

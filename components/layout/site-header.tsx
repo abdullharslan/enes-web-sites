@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CloseIcon, MenuIcon } from "@/components/ui/icons";
+import { SITE } from "@/config/site";
 import type { Locale } from "@/lib/i18n/locales";
 import { LanguageSwitcher } from "./language-switcher";
 
@@ -13,7 +14,6 @@ export interface NavLink {
 
 interface SiteHeaderProps {
   locale: Locale;
-  siteName: string;
   homeHref: string;
   links: readonly NavLink[];
   labels: {
@@ -27,14 +27,9 @@ interface SiteHeaderProps {
 
 const SCROLL_THRESHOLD = 24;
 
-export function SiteHeader({
-  locale,
-  siteName,
-  homeHref,
-  links,
-  labels,
-}: SiteHeaderProps) {
+export function SiteHeader({ locale, homeHref, links, labels }: SiteHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -44,7 +39,11 @@ export function SiteHeader({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const openMenu = () => dialogRef.current?.showModal();
+  const openMenu = () => {
+    dialogRef.current?.showModal();
+    setMenuOpen(true);
+  };
+  // Escape and link clicks both end in the dialog's native "close" event.
   const closeMenu = () => dialogRef.current?.close();
 
   const switcher = <LanguageSwitcher current={locale} label={labels.language} />;
@@ -62,6 +61,7 @@ export function SiteHeader({
           type="button"
           onClick={openMenu}
           aria-haspopup="dialog"
+          aria-expanded={menuOpen}
           aria-label={labels.openMenu}
           className="inline-flex min-h-11 min-w-11 items-center gap-3 justify-self-start text-cream transition-colors hover:text-gold"
         >
@@ -83,7 +83,7 @@ export function SiteHeader({
             translate="no"
             className="font-display text-lg whitespace-nowrap tracking-label text-cream uppercase sm:text-3xl"
           >
-            {siteName}
+            {SITE.name}
           </span>
         </Link>
 
@@ -92,6 +92,7 @@ export function SiteHeader({
 
       <dialog
         ref={dialogRef}
+        onClose={() => setMenuOpen(false)}
         aria-label={labels.primary}
         className="m-0 h-dvh max-h-none w-screen max-w-none bg-ink text-cream backdrop:bg-ink/80"
       >

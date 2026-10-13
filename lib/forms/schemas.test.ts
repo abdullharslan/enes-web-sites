@@ -114,3 +114,46 @@ describe("validateForm with sellSchema", () => {
     });
   });
 });
+
+describe("numeric fields accept plain decimal digits only", () => {
+  const base = {
+    brand: "rolex",
+    category: "watches",
+    model: "M",
+    condition: "good",
+    setItems: [],
+    name: "Ada",
+    email: "ada@example.com",
+    phone: "",
+    message: "",
+    askingPrice: "",
+    year: "",
+  };
+
+  it.each(["0x7E4", "2.02e3", "2020.0", " 20 20", "+2020"])("rejects year %j", (year) => {
+    expect(validateForm(sellSchema, { ...base, year })).toEqual({
+      ok: false,
+      errors: { year: "invalidYear" },
+    });
+  });
+
+  it.each(["1e8", "0x10", "12.5", "-1"])("rejects asking price %j", (askingPrice) => {
+    expect(validateForm(sellSchema, { ...base, askingPrice })).toEqual({
+      ok: false,
+      errors: { askingPrice: "invalidNumber" },
+    });
+  });
+
+  it("accepts surrounding whitespace (trimmed) and leading digits", () => {
+    expect(validateForm(sellSchema, { ...base, year: " 2020 " })).toMatchObject({
+      ok: true,
+      data: { year: 2020 },
+    });
+  });
+});
+
+describe("message length limit for mailto hand-off", () => {
+  it("is 1000 characters", () => {
+    expect(FIELD_LIMITS.message).toBe(1000);
+  });
+});

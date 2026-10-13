@@ -12,9 +12,13 @@ export const ERROR_CODES = [
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
-export const FIELD_LIMITS = { short: 120, email: 254, message: 2000 } as const;
+// Shorter messages keep encoded mailto URLs smaller. This reduces, but does not
+// guarantee against, truncation in clients with URL limits (non-ASCII letters
+// encode to 6 characters each); a server-side form backend removes the limit.
+export const FIELD_LIMITS = { short: 120, email: 254, message: 1000 } as const;
 
 const PHONE = /^\+?[0-9][0-9 ()/-]{5,24}$/;
+const DIGITS = /^\d+$/;
 
 const requiredText = (max: number) =>
   z
@@ -42,7 +46,8 @@ const optionalInt = (min: number, max: number, code: ErrorCode) =>
     .default("")
     .transform((value, ctx) => {
       if (value === "") return undefined;
-      const n = Number(value);
+      // Plain decimal digits only: Number() would also accept "0x7E4" or "2.02e3".
+      const n = DIGITS.test(value) ? Number(value) : Number.NaN;
       if (!Number.isInteger(n) || n < min || n > max) {
         ctx.addIssue({ code: "custom", message: code });
         return z.NEVER;

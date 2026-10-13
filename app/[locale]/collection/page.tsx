@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import { CatalogFilters } from "@/components/catalog/catalog-filters";
 import { ProductGrid } from "@/components/catalog/product-grid";
@@ -12,12 +13,15 @@ import {
   serializeCatalogFilter,
 } from "@/lib/catalog/filter";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
-import { interpolate } from "@/lib/i18n/interpolate";
+import { pluralize } from "@/lib/i18n/plural";
 import { localePath, type Locale } from "@/lib/i18n/locales";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { dict } = await getDictionary();
-  return { title: dict.catalog.title, description: dict.catalog.intro };
+  const { locale, dict } = await getDictionary();
+  return pageMetadata(locale, "/collection", {
+    title: dict.catalog.title,
+    description: dict.catalog.intro,
+  });
 }
 
 type SearchParams = PageProps<"/[locale]/collection">["searchParams"];
@@ -60,10 +64,11 @@ async function FilteredCatalog({
         role="status"
         className="mt-12 mb-8 border-t border-line pt-8 text-xs uppercase tracking-label text-mist"
       >
-        {interpolate(dict.catalog.results, { count: products.length })}
+        {pluralize(locale, products.length, dict.catalog.results)}
       </p>
       {products.length > 0 ? (
         <ProductGrid
+          headingLevel="h2"
           products={products}
           locale={locale}
           labels={dict.catalog}

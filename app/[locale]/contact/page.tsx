@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { ButtonLink } from "@/components/ui/button-link";
 import { ChatIcon, MailIcon, PhoneIcon } from "@/components/ui/icons";
@@ -8,8 +9,11 @@ import { buildWhatsAppUrl } from "@/lib/contact-links";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { dict } = await getDictionary();
-  return { title: dict.contactPage.eyebrow, description: dict.contactPage.text };
+  const { locale, dict } = await getDictionary();
+  return pageMetadata(locale, "/contact", {
+    title: dict.contactPage.eyebrow,
+    description: dict.contactPage.text,
+  });
 }
 
 export default async function ContactPage() {
@@ -35,7 +39,10 @@ export default async function ContactPage() {
             </address>
           </div>
           <div className="flex flex-col gap-3">
-            <ButtonLink href={buildWhatsAppUrl(SITE.whatsappNumber, "")}>
+            <ButtonLink
+              href={buildWhatsAppUrl(SITE.whatsappNumber, "")}
+              newTabHint={dict.nav.opensInNewTab}
+            >
               <ChatIcon width={18} height={18} />
               {dict.contactBar.whatsapp}
             </ButtonLink>

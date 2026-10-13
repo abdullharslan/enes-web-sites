@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 
 export const CONTROL =
   "w-full min-h-12 border border-line bg-ink px-4 py-3 text-cream placeholder:text-mist transition-colors focus:border-gold aria-[invalid=true]:border-danger";
@@ -169,12 +169,29 @@ export function CheckboxGroup({ name, legend, options, error }: CheckboxGroupPro
   );
 }
 
+const subscribeNothing = () => () => {};
+
+/** False during SSR and before hydration, true once client JavaScript runs. */
+export function useHydrated(): boolean {
+  return useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
+}
+
+/**
+ * Disabled until hydrated: without JavaScript the browser would submit the
+ * form natively, and personal data must never leave via a native submission.
+ */
 export function SubmitButton({ children }: { children: ReactNode }) {
+  const hydrated = useHydrated();
   return (
     <div>
       <button
         type="submit"
-        className="inline-flex min-h-11 items-center justify-center bg-gold px-8 py-3 text-xs font-semibold uppercase tracking-label text-ink transition-colors hover:bg-gold-soft"
+        disabled={!hydrated}
+        className="inline-flex min-h-11 items-center justify-center bg-gold px-8 py-3 text-xs font-semibold uppercase tracking-label text-ink transition-colors hover:bg-gold-soft disabled:cursor-wait disabled:opacity-60"
       >
         {children}
       </button>

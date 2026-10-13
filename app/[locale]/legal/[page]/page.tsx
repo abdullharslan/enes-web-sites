@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -21,8 +22,11 @@ async function loadPage(params: PageProps<"/[locale]/legal/[page]">["params"]) {
 export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/legal/[page]">): Promise<Metadata> {
-  const [{ dict }, page] = await Promise.all([getDictionary(), loadPage(params)]);
-  return { title: dict.legal.titles[page], robots: { index: false } };
+  const [{ locale, dict }, page] = await Promise.all([getDictionary(), loadPage(params)]);
+  return pageMetadata(locale, `/legal/${page}`, {
+    title: dict.legal.titles[page],
+    noIndex: true,
+  });
 }
 
 export default async function LegalPage({ params }: PageProps<"/[locale]/legal/[page]">) {

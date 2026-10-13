@@ -41,6 +41,9 @@
 @layer base {
   html {
     color-scheme: dark;
+    /* Keep focused/anchored elements clear of the fixed header and mobile contact bar (WCAG 2.4.11). */
+    scroll-padding-top: 6rem;
+    scroll-padding-bottom: 3.5rem;
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
   }

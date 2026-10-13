@@ -58,7 +58,12 @@ export function SellForm({ recipient, brands, labels }: SellFormProps) {
     errors[field] ? forms.errors[errors[field]] : undefined;
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <form
+      method="post"
+      noValidate
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-6"
+    >
       <div className="grid gap-6 sm:grid-cols-2">
         <SelectField
           id={`${uid}-brand`}

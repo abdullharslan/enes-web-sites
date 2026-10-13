@@ -15,6 +15,8 @@ export function buildMailtoUrl(recipient: string, subject: string, body: string)
   if (!EMAIL.test(recipient)) {
     throw new TypeError(`Invalid e-mail recipient: ${recipient}`);
   }
-  const query = `subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  // RFC 6068: line breaks in mailto bodies are CRLF.
+  const crlfBody = body.replace(/\r?\n/g, "\r\n");
+  const query = `subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(crlfBody)}`;
   return `mailto:${recipient}?${query}`;
 }

@@ -9,6 +9,7 @@ interface ProductGridProps {
   labels: Dictionary["catalog"];
   /** Number of leading cards whose images load with priority. */
   priorityCount?: number;
+  headingLevel?: "h2" | "h3";
 }
 
 export function ProductGrid({
@@ -16,6 +17,7 @@ export function ProductGrid({
   locale,
   labels,
   priorityCount = 0,
+  headingLevel,
 }: ProductGridProps) {
   return (
     <ul className="grid grid-cols-1 gap-x-6 gap-y-14 sm:grid-cols-2 xl:grid-cols-4">
@@ -26,6 +28,7 @@ export function ProductGrid({
             locale={locale}
             labels={labels}
             priority={index < priorityCount}
+            headingLevel={headingLevel}
           />
         </li>
       ))}

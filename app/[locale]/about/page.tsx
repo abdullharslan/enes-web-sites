@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
 import { ButtonLink } from "@/components/ui/button-link";
 import { PageHeader } from "@/components/ui/page-header";
@@ -6,8 +7,11 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { localePath } from "@/lib/i18n/locales";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { dict } = await getDictionary();
-  return { title: dict.about.eyebrow, description: dict.about.teaser };
+  const { locale, dict } = await getDictionary();
+  return pageMetadata(locale, "/about", {
+    title: dict.about.eyebrow,
+    description: dict.about.teaser,
+  });
 }
 
 export default async function AboutPage() {

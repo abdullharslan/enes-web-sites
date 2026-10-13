@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useId } from "react";
 import type { Brand, Category } from "@/lib/catalog/schema";
 import {
   AVAILABILITY,
@@ -27,9 +28,17 @@ interface ChipOption {
 }
 
 function ChipGroup({ legend, options }: { legend: string; options: ChipOption[] }) {
+  const legendId = useId();
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
-      <p className="w-36 shrink-0 text-2xs font-semibold uppercase tracking-luxe text-gold">
+    <div
+      role="group"
+      aria-labelledby={legendId}
+      className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6"
+    >
+      <p
+        id={legendId}
+        className="w-36 shrink-0 text-2xs font-semibold uppercase tracking-luxe text-gold"
+      >
         {legend}
       </p>
       <ul className="flex flex-wrap gap-2">

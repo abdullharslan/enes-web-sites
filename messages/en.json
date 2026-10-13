@@ -15,7 +15,8 @@
     "closeMenu": "Close menu",
     "language": "Language",
     "skipToContent": "Skip to content",
-    "primary": "Main navigation"
+    "primary": "Main navigation",
+    "opensInNewTab": "(opens in a new tab)"
   },
   "hero": {
     "eyebrow": "Luxury & Exclusive",
@@ -130,7 +131,10 @@
     "eyebrow": "Collection",
     "title": "Our collection",
     "intro": "Selected bags, watches and jewellery – every object inspected and documented in detail.",
-    "results": "{count} items",
+    "results": {
+      "one": "{count} item",
+      "other": "{count} items"
+    },
     "empty": "We currently have no items for this selection. We are happy to search for you.",
     "priceOnRequest": "Price on request",
     "filters": {

@@ -20,17 +20,19 @@ Arayüz: <http://localhost:1111> (tarayıcı diline göre `/de`, `/en` veya `/tr
 
 ## Komutlar
 
-| Komut                     | Ne yapar                                                                                                         |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`             | Geliştirme sunucusu, port 1111                                                                                   |
-| `npm run build` / `start` | Üretim derlemesi / üretim sunucusu (port 1111)                                                                   |
-| `npm run typecheck`       | Route tiplerini üretir + `tsc --noEmit`                                                                          |
-| `npm run lint`            | ESLint                                                                                                           |
-| `npm run format:check`    | Prettier kontrolü (`npm run format` düzeltir)                                                                    |
-| `npm test`                | Vitest: unit, property-based, contract ve bileşen testleri                                                       |
+| Komut                     | Ne yapar                                                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`             | Geliştirme sunucusu, port 1111                                                                                    |
+| `npm run build` / `start` | Üretim derlemesi / üretim sunucusu (port 1111)                                                                    |
+| `npm run typecheck`       | Route tiplerini üretir + `tsc --noEmit`                                                                           |
+| `npm run lint`            | ESLint                                                                                                            |
+| `npm run format:check`    | Prettier kontrolü (`npm run format` düzeltir)                                                                     |
+| `npm test`                | Vitest: unit, property-based, contract ve bileşen testleri                                                        |
 | `npm run test:e2e`        | Playwright: akışlar, 404'ler, güvenlik başlıkları, axe (WCAG 2.2 AA), responsive (375/768/1280), görsel regresyon |
-| `npm run audit`           | Üretim bağımlılıkları için `npm audit`                                                                           |
-| `npm run verify`          | Hepsi sırayla; E2E'yi 3 kez tekrarlayarak flaky testleri yakalar                                                 |
+| `npm run audit`           | Üretim bağımlılıkları için `npm audit`                                                                            |
+| `npm run verify`          | Hepsi sırayla; E2E'yi 3 kez tekrarlayarak flaky testleri yakalar                                                  |
+
+E2E testleri kendi üretim sunucusunu **port 1112**'de başlatır (dev sunucusu 1111'de açık kalabilir). 1112 doluysa Playwright hata verir; farklı port için `E2E_PORT=1113 npm run test:e2e`.
 
 E2E testleri önce `npm run build` gerektirir (`verify` bunu sırayla yapar). İlk seferde: `npx playwright install chromium`.
 Görsel referans ekran görüntüleri (`e2e/quality.spec.ts-snapshots/`) macOS'ta üretildi; farklı işletim sisteminde/CI'da `npx playwright test --update-snapshots` ile o platform için yeniden üretilmeli ve gözle kontrol edilmelidir.
