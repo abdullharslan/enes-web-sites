@@ -1,5 +1,7 @@
 {
-  "meta": { "title": "Yönetim Paneli" },
+  "meta": {
+    "title": "Yönetim Paneli"
+  },
   "login": {
     "title": "Yönetim paneline giriş",
     "email": "E-posta",
@@ -23,7 +25,10 @@
     "viewSite": "Siteyi görüntüle",
     "logout": "Çıkış yap"
   },
-  "roles": { "owner": "Sahip", "editor": "Editör" },
+  "roles": {
+    "owner": "Sahip",
+    "editor": "Editör"
+  },
   "common": {
     "loading": "Yükleniyor…",
     "save": "Kaydet",
@@ -39,7 +44,10 @@
     "forbidden": "Bu işlem için yetkiniz yok.",
     "error": "Kaydedilemedi. Lütfen alanları kontrol edin.",
     "required": "Zorunlu alan",
-    "missingTranslations": "Eksik çeviri: {locales} (Almanca gösterilir)"
+    "missingTranslations": "Eksik çeviri: {locales} (Almanca gösterilir)",
+    "version": "Sürüm",
+    "updated": "Güncellendi",
+    "visibility": "Görünürlük"
   },
   "dashboard": {
     "title": "Özet",
@@ -48,7 +56,12 @@
     "brands": "Marka",
     "categories": "Kategori",
     "recentChanges": "Son değişiklikler",
-    "noChanges": "Henüz değişiklik yok."
+    "noChanges": "Henüz değişiklik yok.",
+    "entities": {
+      "brand": "Marka",
+      "category": "Kategori",
+      "product": "Ürün"
+    }
   },
   "users": {
     "title": "Kullanıcılar",
@@ -74,5 +87,120 @@
     "action": "İşlem",
     "entity": "Kayıt",
     "system": "Sistem"
+  },
+  "fields": {
+    "invalid": "Geçersiz değer.",
+    "duplicateSlug": "Bu adres (slug) zaten kullanılıyor.",
+    "choose": "Seçiniz",
+    "conflict": "Bu kayıt siz düzenlerken başka biri tarafından değiştirildi. Sayfayı yenileyip tekrar deneyin.",
+    "notFound": "Kayıt bulunamadı.",
+    "uploadFailed": "Görsel yüklenemedi. JPG, PNG veya WebP, en fazla 10 MB olmalı.",
+    "savedVersion": "Kaydedildi (sürüm {version}).",
+    "slug": "Adres (slug)",
+    "slugHint": "Küçük harf, rakam ve tire; ör. miu-miu. URL'de görünür.",
+    "sortOrder": "Sıra",
+    "visible": "Sitede göster",
+    "image": "Görsel",
+    "imageHint": "JPG, PNG veya WebP, en fazla 10 MB. Konum bilgisi (EXIF) silinir; eski görsel arşivde kalır.",
+    "imageAlt": "Görsel açıklaması (erişilebilirlik)",
+    "upload": "Yükle",
+    "currentImage": "Mevcut görsel",
+    "noImage": "Henüz görsel yok."
+  },
+  "brands": {
+    "title": "Markalar",
+    "new": "Yeni marka",
+    "edit": "Markayı düzenle",
+    "name": "Marka adı",
+    "description": "Açıklama",
+    "hero": "Marka görseli"
+  },
+  "categories": {
+    "title": "Kategoriler",
+    "new": "Yeni kategori",
+    "edit": "Kategoriyi düzenle",
+    "name": "Kategori adı",
+    "tile": "Kategori görseli"
+  },
+  "products": {
+    "title": "Ürünler",
+    "new": "Yeni ürün",
+    "edit": "Ürünü düzenle",
+    "brand": "Marka",
+    "category": "Kategori",
+    "model": "Model",
+    "reference": "Referans",
+    "year": "Yıl",
+    "condition": "Kondisyon",
+    "setItems": "Set içeriği",
+    "material": "Malzeme",
+    "dimensions": "Ölçüler",
+    "description": "Açıklama",
+    "price": "Fiyat (EUR, boş = fiyat sorunuz)",
+    "status": "Durum",
+    "addedAt": "Eklenme tarihi",
+    "images": "Görseller",
+    "removeImage": "Kaldır",
+    "saveFirst": "Görsel eklemek için önce ürünü kaydedin.",
+    "conditions": {
+      "new": "Yeni",
+      "unworn": "Hiç kullanılmamış",
+      "excellent": "Mükemmel",
+      "very-good": "Çok iyi",
+      "good": "İyi"
+    },
+    "statuses": {
+      "available": "Satışta",
+      "reserved": "Rezerve",
+      "sold": "Satıldı"
+    },
+    "setItemLabels": {
+      "box": "Kutu",
+      "papers": "Belgeler",
+      "invoice": "Fatura",
+      "dust-bag": "Toz torbası",
+      "certificate": "Sertifika",
+      "warranty-card": "Garanti kartı"
+    },
+    "onRequest": "Fiyat sorunuz"
+  },
+  "history": {
+    "title": "Sürüm geçmişi",
+    "version": "Sürüm",
+    "when": "Zaman",
+    "who": "Kim",
+    "comment": "Not",
+    "changes": "Değişiklikler",
+    "field": "Alan",
+    "before": "Önce",
+    "after": "Sonra",
+    "restore": "Bu sürüme dön",
+    "current": "Güncel sürüm",
+    "restored": "v{version} geri yüklendi (yeni sürüm olarak).",
+    "back": "Kayda dön",
+    "noChanges": "Alan değişikliği yok.",
+    "images": "{count} görsel",
+    "fieldLabels": {
+      "slug": "Adres (slug)",
+      "name": "Ad",
+      "description": "Açıklama",
+      "sortOrder": "Sıra",
+      "isVisible": "Sitede görünür",
+      "heroMediaId": "Marka görseli",
+      "tileMediaId": "Kategori görseli",
+      "brandId": "Marka",
+      "categoryId": "Kategori",
+      "model": "Model",
+      "reference": "Referans",
+      "year": "Yıl",
+      "condition": "Kondisyon",
+      "setItems": "Set içeriği",
+      "material": "Malzeme",
+      "dimensions": "Ölçüler",
+      "priceEur": "Fiyat (EUR)",
+      "status": "Durum",
+      "addedAt": "Eklenme tarihi",
+      "mediaIds": "Görseller"
+    }
   }
 }

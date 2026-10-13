@@ -1,4 +1,5 @@
 import { count, desc, eq } from "drizzle-orm";
+import Link from "next/link";
 import { AdminPageTitle } from "@/components/admin/admin-shell";
 import { db } from "@/db/client";
 import { brands, categories, products, revisions, users } from "@/db/schema";
@@ -53,10 +54,16 @@ export default async function DashboardPage() {
         <ul className="divide-y divide-line border-y border-line text-sm">
           {recent.map(({ revision, author }) => (
             <li key={revision.id} className="flex flex-wrap justify-between gap-2 py-3">
-              <span>
-                {revision.entityType} · v{revision.version}
+              <Link
+                href={`/admin/history/${revision.entityType}/${revision.entityId}`}
+                className="inline-flex min-h-11 items-center text-gold underline-offset-4 hover:underline"
+              >
+                {T.dashboard.entities[
+                  revision.entityType as keyof typeof T.dashboard.entities
+                ] ?? revision.entityType}{" "}
+                · v{revision.version}
                 {revision.comment ? ` · ${revision.comment}` : ""}
-              </span>
+              </Link>
               <span className="text-mist">
                 {author ?? T.audit.system} · {dateTime.format(revision.createdAt)}
               </span>

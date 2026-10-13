@@ -3,7 +3,8 @@ import { seedCatalog } from "@/db/seed";
 import { SEED_BRANDS } from "@/db/seed-data/brands";
 import { SEED_CATEGORIES } from "@/db/seed-data/categories";
 import { SEED_PRODUCTS } from "@/db/seed-data/products";
-import { products } from "@/db/schema";
+import { productMedia, products } from "@/db/schema";
+import { PLACEHOLDER_IMAGE } from "@/lib/catalog/placeholder";
 import { eq } from "drizzle-orm";
 import { loadCatalog } from "@/lib/server/catalog/load";
 import { listRevisions } from "@/lib/server/revisions";
@@ -86,5 +87,38 @@ describe("seedCatalog + loadCatalog", () => {
       expect(catalog.products.some((p) => p.slug === "rolex-explorer-224270")).toBe(
         false,
       );
+    }));
+});
+
+describe("loadCatalog resilience", () => {
+  it("shows a product without images with the monogram placeholder", () =>
+    withRollback(async (tx) => {
+      await seedCatalog(tx, { mediaRoot: media.root, now });
+      const [row] = await tx
+        .select()
+        .from(products)
+        .where(eq(products.slug, "rolex-explorer-224270"));
+      await tx.delete(productMedia).where(eq(productMedia.productId, row!.id));
+      const catalog = await loadCatalog(tx);
+      const product = catalog.products.find((p) => p.slug === "rolex-explorer-224270");
+      expect(product?.images).toEqual([PLACEHOLDER_IMAGE]);
+    }));
+
+  it("drops a corrupt record instead of taking the whole catalog down", () =>
+    withRollback(async (tx) => {
+      await seedCatalog(tx, { mediaRoot: media.root, now });
+      // German description blanked directly in the database (bypassing admin validation).
+      await tx
+        .update(products)
+        .set({ description: { en: "only english" } })
+        .where(eq(products.slug, "rolex-explorer-224270"));
+      const errors: unknown[] = [];
+      const catalog = await loadCatalog(tx, (issue) => errors.push(issue));
+      expect(catalog.products.some((p) => p.slug === "rolex-explorer-224270")).toBe(
+        false,
+      );
+      expect(catalog.products.length).toBe(SEED_PRODUCTS.length - 1);
+      expect(errors).toHaveLength(1);
+      expect(JSON.stringify(errors[0])).toContain("rolex-explorer-224270");
     }));
 });

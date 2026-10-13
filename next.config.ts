@@ -29,9 +29,15 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Admin image uploads (≤ 10 MB, enforced again in lib/server/media/store.ts) plus form fields.
+    serverActions: { bodySizeLimit: "11mb" },
+  },
   cacheComponents: true,
   // Partial Prefetching stays off: without it, routes that await params outside
   // <Suspense> block until rendered, so unknown slugs return a real HTTP 404.
+  // NOTE: Next.js announces it will be always-on in the next major; revisit 404 handling then.
+  partialPrefetching: false,
   poweredByHeader: false,
   turbopack: {
     rules: {

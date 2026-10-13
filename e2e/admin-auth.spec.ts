@@ -66,8 +66,9 @@ test.describe("admin authentication", () => {
   test("owner can create a user; weak passwords are refused", async ({ page }) => {
     await signIn(page, accounts().owner);
     await page.goto("/admin/users");
+    const name = `Yeni Editör ${Date.now().toString(36)}`;
     const form = page.locator("form").filter({ hasText: "Yeni kullanıcı" });
-    await form.getByLabel("Ad").fill("Yeni Editör");
+    await form.getByLabel("Ad").fill(name);
     await form.getByLabel("E-posta").fill(`new-${Date.now()}@e2e.example`);
     await form.getByLabel("İlk parola (en az 12 karakter)").fill("short");
     await form.evaluate((f) =>
@@ -76,7 +77,7 @@ test.describe("admin authentication", () => {
     await form.getByRole("button", { name: "Yeni ekle" }).click();
     await expect(page.getByText("Parola en az 12 karakter olmalı.")).toBeVisible();
     // What was typed survives the failed submission (the password is never echoed back).
-    await expect(form.getByLabel("Ad")).toHaveValue("Yeni Editör");
+    await expect(form.getByLabel("Ad")).toHaveValue(name);
     await expect(form.getByLabel("İlk parola (en az 12 karakter)")).toHaveValue("");
 
     await form
@@ -84,7 +85,7 @@ test.describe("admin authentication", () => {
       .fill("a long enough passphrase");
     await form.getByRole("button", { name: "Yeni ekle" }).click();
     await expect(page.getByText("Kullanıcı oluşturuldu.")).toBeVisible();
-    await expect(page.getByRole("cell", { name: "Yeni Editör" })).toBeVisible();
+    await expect(page.getByRole("cell", { name })).toBeVisible();
   });
 
   test("admin pages have no accessibility violations", async ({ page }) => {

@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:repeat": "playwright test --repeat-each=3",
+    "test:e2e:repeat": "playwright test --project=site --repeat-each=3 && playwright test --project=admin --repeat-each=3",
     "audit": "npm audit --omit=dev",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run test:int && npm run build && npm run test:e2e:repeat && npm run audit",
     "db:up": "docker-compose --env-file .env.local up -d --wait",

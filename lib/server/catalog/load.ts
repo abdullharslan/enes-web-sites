@@ -15,6 +15,7 @@ import {
   type Catalog,
   type CatalogImage,
 } from "@/lib/catalog/schema";
+import { PLACEHOLDER_IMAGE } from "@/lib/catalog/placeholder";
 import { resolveTranslations } from "@/lib/i18n/translations";
 import { mediaUrl } from "@/lib/server/media/store";
 
@@ -27,11 +28,42 @@ function toImage(row: MediaRow | undefined): CatalogImage | undefined {
   return row ? { src: mediaUrl(row.key), alt: resolveTranslations(row.alt) } : undefined;
 }
 
+export interface CatalogIssue {
+  entity: "brand" | "category" | "product";
+  slug: string;
+  error: unknown;
+}
+
+const logIssue = (issue: CatalogIssue) =>
+  console.error(`[catalog] hidden invalid ${issue.entity} "${issue.slug}"`, issue.error);
+
+/** Maps each row; a row that fails validation is reported and left out (fail-closed per record). */
+function mapValid<Row, Out>(
+  rows: readonly Row[],
+  entity: CatalogIssue["entity"],
+  slugOf: (row: Row) => string,
+  map: (row: Row) => Out,
+  onIssue: (issue: CatalogIssue) => void,
+): Out[] {
+  return rows.flatMap((row) => {
+    try {
+      return [map(row)];
+    } catch (error) {
+      onIssue({ entity, slug: slugOf(row), error });
+      return [];
+    }
+  });
+}
+
 /**
- * Loads the visible public catalog and maps it to the read model. Output is
- * validated (fail-fast): corrupt rows surface as errors, never as broken pages.
+ * Loads the visible public catalog and maps it to the read model. Every record
+ * is validated; one corrupt record is hidden and reported instead of taking
+ * the whole site down.
  */
-export async function loadCatalog(db: Executor): Promise<Catalog> {
+export async function loadCatalog(
+  db: Executor,
+  onIssue: (issue: CatalogIssue) => void = logIssue,
+): Promise<Catalog> {
   const brandRows = await db
     .select()
     .from(brands)
@@ -91,8 +123,11 @@ export async function loadCatalog(db: Executor): Promise<Catalog> {
       ]);
   }
 
-  return {
-    brands: brandRows.map((b) =>
+  const brandsOut = mapValid(
+    brandRows,
+    "brand",
+    (b) => b.slug,
+    (b) =>
       brandSchema.parse({
         slug: b.slug,
         name: b.name,
@@ -101,16 +136,27 @@ export async function loadCatalog(db: Executor): Promise<Catalog> {
           : undefined,
         heroImage: toImage(b.heroMediaId ? mediaById.get(b.heroMediaId) : undefined),
       }),
-    ),
-    categories: categoryRows.map((c) =>
+    onIssue,
+  );
+  const categoriesOut = mapValid(
+    categoryRows,
+    "category",
+    (c) => c.slug,
+    (c) =>
       categorySchema.parse({
         slug: c.slug,
         name: resolveTranslations(c.name),
         tileImage: toImage(c.tileMediaId ? mediaById.get(c.tileMediaId) : undefined),
       }),
-    ),
-    products: productRows.map(({ product: p, brandSlug, brandName, categorySlug }) =>
-      productSchema.parse({
+    onIssue,
+  );
+  const productsOut = mapValid(
+    productRows,
+    "product",
+    (r) => r.product.slug,
+    ({ product: p, brandSlug, brandName, categorySlug }) => {
+      const images = imagesByProduct.get(p.id) ?? [];
+      return productSchema.parse({
         slug: p.slug,
         brand: brandSlug,
         brandName,
@@ -128,9 +174,12 @@ export async function loadCatalog(db: Executor): Promise<Catalog> {
             ? { kind: "on-request" }
             : { kind: "fixed", amountEur: p.priceEur },
         status: p.status,
-        images: imagesByProduct.get(p.id) ?? [],
+        images: images.length ? images : [PLACEHOLDER_IMAGE],
         addedAt: p.addedAt,
-      }),
-    ),
-  };
+      });
+    },
+    onIssue,
+  );
+
+  return { brands: brandsOut, categories: categoriesOut, products: productsOut };
 }

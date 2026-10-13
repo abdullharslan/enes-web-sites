@@ -15,10 +15,11 @@ export default defineConfig({
   retries: 0,
   reporter: [["list"], ["html", { open: "never" }]],
   expect: {
-    // Strict per-pixel threshold: low-contrast text on the dark theme slips through the 0.2 default.
+    // Strict per-pixel threshold (low-contrast text on the dark theme slips through the 0.2
+    // default) and an absolute pixel budget: a ratio of even 0.1 % let a new "FR" link through.
     toHaveScreenshot: {
       threshold: 0.05,
-      maxDiffPixelRatio: 0.001,
+      maxDiffPixels: 50,
       animations: "disabled",
     },
   },
@@ -27,7 +28,21 @@ export default defineConfig({
     trace: "retain-on-failure",
     reducedMotion: "reduce",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    // Read-only checks of the public site (golden master, visuals) run first…
+    {
+      name: "site",
+      testIgnore: /admin-.*\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    // …then admin tests, which mutate data, so they can never disturb the baselines.
+    {
+      name: "admin",
+      testMatch: /admin-.*\.spec\.ts/,
+      dependencies: ["site"],
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
   webServer: {
     // Fresh isolated database (+ test accounts), then a production build against it.
     command: `npx tsx e2e/prepare.ts && npx next build && npx next start -p ${PORT}`,

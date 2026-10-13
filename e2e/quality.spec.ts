@@ -109,6 +109,8 @@ test.describe("visual regression", () => {
       test(`${viewport.name} ${path}`, async ({ page }) => {
         await page.setViewportSize(viewport);
         await page.goto(path);
+        // Streamed <Suspense> content must replace its skeleton before the capture.
+        await expect(page.locator("main .animate-pulse")).toHaveCount(0);
         await page.evaluate(() => document.fonts.ready);
         await expect(page).toHaveScreenshot({ fullPage: false });
       });
