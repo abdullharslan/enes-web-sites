@@ -6,17 +6,52 @@ Lüks ikinci el çanta (Hermès, Louis Vuitton, Chanel), saat (Rolex, Patek Phil
 
 ## Hızlı başlangıç
 
-Gereksinim: Node.js ≥ 20.9
+Gereksinimler: Node.js ≥ 20.9, Docker (macOS'ta `colima start`) ve `docker-compose`.
+
+1. Bağımlılıklar:
 
 ```bash
 npm install
 ```
+
+2. Ortam dosyası: `.env.example`'ı `.env.local` olarak kopyalayın ve `change-me` yerine güçlü bir parola yazın (`openssl rand -hex 24`). `.env.local` asla commit edilmez.
+
+3. Veritabanını başlat, şemayı kur, demo veriyi yükle:
+
+```bash
+npm run db:up
+```
+
+```bash
+npm run db:migrate
+```
+
+```bash
+npm run db:seed
+```
+
+4. Geliştirme sunucusu:
 
 ```bash
 npm run dev
 ```
 
 Arayüz: <http://localhost:1111> (tarayıcı diline göre `/de`, `/en` veya `/tr`'ye yönlendirir).
+
+> Katalog verisi `"use cache"` ile önbelleğe alınır ve admin panelindeki her kayıt önbelleği anında yeniler. `db:seed` gibi **panel dışından** yapılan değişikliklerden sonra çalışan dev sunucusunu yeniden başlatın.
+
+### Veritabanı ve dosyalar
+
+| Komut                 | Ne yapar                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| `npm run db:up/down`  | PostgreSQL 17 konteynerini başlatır/durdurur (yalnızca `127.0.0.1:5433`)                  |
+| `npm run db:migrate`  | `db/migrations/` içindeki sürümlü SQL migration'ları uygular (tekrar çalıştırmak güvenli) |
+| `npm run db:generate` | `db/schema.ts` değişince yeni migration üretir                                            |
+| `npm run db:seed`     | Demo katalogu yükler; mevcut kayıtlara dokunmaz (idempotent)                              |
+| `npm run test:int`    | Gerçek PostgreSQL'e karşı entegrasyon testleri (`*_test` veritabanı sıfırdan kurulur)     |
+
+Yüklenen görseller `storage/media/` altında **asla üzerine yazılmayan**, sürümlü adlarla tutulur:
+`{tür}/{varlık}/{YYYYMMDD-HHmmss}_v{N}_{sha256-8}.webp` — ör. `product/rolex-explorer-224270/20261013-220805_v1_2a3acf12.webp`. Görseller yüklenirken doğrulanır, EXIF/GPS bilgisi silinir ve WebP'ye dönüştürülür.
 
 ## Komutlar
 

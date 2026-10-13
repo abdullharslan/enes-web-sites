@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CATEGORIES, CONDITIONS, SET_ITEMS } from "@/lib/catalog/schema";
+import { CONDITIONS, SET_ITEMS } from "@/lib/catalog/schema";
 
 export const ERROR_CODES = [
   "required",
@@ -66,20 +66,22 @@ export const inquirySchema = z.object({
   message: requiredText(FIELD_LIMITS.message),
 });
 
-export const sellSchema = z.object({
-  brand: requiredText(FIELD_LIMITS.short),
-  category: z.enum(CATEGORIES, { error: "required" }),
-  model: requiredText(FIELD_LIMITS.short),
-  condition: z.enum(CONDITIONS, { error: "required" }),
-  year: optionalInt(1900, 2100, "invalidYear"),
-  askingPrice: optionalInt(1, 100_000_000, "invalidNumber"),
-  setItems: z.array(z.enum(SET_ITEMS, { error: "invalid" })).default([]),
-  ...contactFields,
-  message: optionalText(FIELD_LIMITS.message),
-});
+/** Consignment form schema; categories come from the live catalog. */
+export const createSellSchema = (categorySlugs: readonly string[]) =>
+  z.object({
+    brand: requiredText(FIELD_LIMITS.short),
+    category: z.string().refine((v) => categorySlugs.includes(v), { error: "required" }),
+    model: requiredText(FIELD_LIMITS.short),
+    condition: z.enum(CONDITIONS, { error: "required" }),
+    year: optionalInt(1900, 2100, "invalidYear"),
+    askingPrice: optionalInt(1, 100_000_000, "invalidNumber"),
+    setItems: z.array(z.enum(SET_ITEMS, { error: "invalid" })).default([]),
+    ...contactFields,
+    message: optionalText(FIELD_LIMITS.message),
+  });
 
 export type InquiryData = z.infer<typeof inquirySchema>;
-export type SellData = z.infer<typeof sellSchema>;
+export type SellData = z.infer<ReturnType<typeof createSellSchema>>;
 
 export type FormErrors = Partial<Record<string, ErrorCode>>;
 export type ValidationResult<T> =

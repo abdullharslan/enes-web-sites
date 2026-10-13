@@ -148,6 +148,8 @@
       "available": "Verfügbar",
       "all": "Inkl. verkaufte",
       "newest": "Neueste zuerst",
+      "name-asc": "Name A–Z",
+      "name-desc": "Name Z–A",
       "price-asc": "Preis aufsteigend",
       "price-desc": "Preis absteigend",
       "reset": "Filter zurücksetzen"

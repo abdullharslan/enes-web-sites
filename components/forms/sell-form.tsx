@@ -1,12 +1,13 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useMemo } from "react";
 import { buildMailtoUrl } from "@/lib/contact-links";
-import { CATEGORIES, CONDITIONS, SET_ITEMS, type Brand } from "@/lib/catalog/schema";
+import { CONDITIONS, SET_ITEMS, type Brand, type Category } from "@/lib/catalog/schema";
 import { composeMessage } from "@/lib/forms/compose";
-import { sellSchema } from "@/lib/forms/schemas";
+import { createSellSchema } from "@/lib/forms/schemas";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { interpolate } from "@/lib/i18n/interpolate";
+import type { Locale } from "@/lib/i18n/locales";
 import { CheckboxGroup, SelectField, SubmitButton, TextField } from "./fields";
 import { FormStatus } from "./form-status";
 import { useValidatedForm } from "./use-validated-form";
@@ -15,30 +16,40 @@ const OTHER_BRAND = "other";
 
 interface SellFormProps {
   recipient: string;
-  brands: readonly Brand[];
+  brands: readonly Pick<Brand, "slug" | "name">[];
+  categories: readonly Pick<Category, "slug" | "name">[];
+  locale: Locale;
   labels: {
     forms: Dictionary["forms"];
     sell: Dictionary["sell"];
-    catalog: Pick<Dictionary["catalog"], "categories" | "conditions" | "setItems">;
+    catalog: Pick<Dictionary["catalog"], "conditions" | "setItems">;
   };
 }
 
-export function SellForm({ recipient, brands, labels }: SellFormProps) {
+export function SellForm({
+  recipient,
+  brands,
+  categories,
+  locale,
+  labels,
+}: SellFormProps) {
   const uid = useId();
   const { forms, sell, catalog } = labels;
   const f = sell.fields;
 
+  const categoryName = (slug: string) =>
+    categories.find((c) => c.slug === slug)?.name[locale] ?? slug;
   const brandName = (slug: string) =>
     brands.find((b) => b.slug === slug)?.name ?? f.otherBrand;
 
   const { errors, status, handleSubmit } = useValidatedForm(
-    sellSchema,
+    useMemo(() => createSellSchema(categories.map((c) => c.slug)), [categories]),
     ["setItems"],
     (data) => {
       const item = `${brandName(data.brand)} ${data.model}`;
       const body = composeMessage([
         [f.brand, brandName(data.brand)],
-        [f.category, catalog.categories[data.category]],
+        [f.category, categoryName(data.category)],
         [f.model, data.model],
         [f.condition, catalog.conditions[data.condition]],
         [f.year, data.year],
@@ -81,7 +92,7 @@ export function SellForm({ recipient, brands, labels }: SellFormProps) {
           name="category"
           label={f.category}
           placeholder={forms.select}
-          options={CATEGORIES.map((c) => ({ value: c, label: catalog.categories[c] }))}
+          options={categories.map((c) => ({ value: c.slug, label: c.name[locale] }))}
           error={error("category")}
         />
         <TextField

@@ -1,13 +1,14 @@
 import type { MetadataRoute } from "next";
 import { SITE } from "@/config/site";
-import { PRODUCTS } from "@/data/products";
 import { LOCALES } from "@/lib/i18n/locales";
 import { buildAlternates } from "@/lib/seo";
+import { getCatalog } from "@/lib/server/catalog";
 
 const STATIC_PATHS = ["/", "/collection", "/sell", "/about", "/journal", "/contact"];
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const paths = [...STATIC_PATHS, ...PRODUCTS.map((p) => `/collection/${p.slug}`)];
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const { products } = await getCatalog();
+  const paths = [...STATIC_PATHS, ...products.map((p) => `/collection/${p.slug}`)];
   return paths.flatMap((path) =>
     LOCALES.map((locale) => {
       const { canonical, languages } = buildAlternates(locale, path);

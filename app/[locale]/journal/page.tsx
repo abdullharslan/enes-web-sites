@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 import { JournalList } from "@/components/home/journal-list";
 import { PageHeader } from "@/components/ui/page-header";
-import { JOURNAL } from "@/data/journal";
+import { JOURNAL } from "@/db/seed-data/journal";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export async function generateMetadata(): Promise<Metadata> {

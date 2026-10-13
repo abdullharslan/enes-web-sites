@@ -3,8 +3,8 @@ import { pageMetadata } from "@/lib/seo";
 import { SellForm } from "@/components/forms/sell-form";
 import { PageHeader } from "@/components/ui/page-header";
 import { SITE } from "@/config/site";
-import { BRANDS } from "@/data/brands";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getCatalog } from "@/lib/server/catalog";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { locale, dict } = await getDictionary();
@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SellPage() {
-  const { dict } = await getDictionary();
+  const [{ locale, dict }, catalog] = await Promise.all([getDictionary(), getCatalog()]);
   return (
     <>
       <PageHeader
@@ -57,7 +57,9 @@ export default async function SellPage() {
           </h2>
           <SellForm
             recipient={SITE.email}
-            brands={BRANDS}
+            brands={catalog.brands}
+            categories={catalog.categories}
+            locale={locale}
             labels={{ forms: dict.forms, sell: dict.sell, catalog: dict.catalog }}
           />
         </div>

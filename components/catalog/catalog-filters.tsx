@@ -1,21 +1,26 @@
 import Link from "next/link";
 import { useId } from "react";
 import type { Brand, Category } from "@/lib/catalog/schema";
+import type { Locale } from "@/lib/i18n/locales";
 import {
   AVAILABILITY,
   DEFAULT_FILTER,
   SORTS,
-  isDefaultFilter,
+  serializeCatalogFilter,
   type CatalogFilter,
 } from "@/lib/catalog/filter";
-import { CATEGORIES } from "@/lib/catalog/schema";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 interface CatalogFiltersProps {
   filter: CatalogFilter;
-  brands: readonly Brand[];
+  /** Omit to hide the brand group (e.g. on a single brand's page). */
+  brands?: readonly Brand[];
+  categories: readonly Category[];
+  locale: Locale;
   labels: Dictionary["catalog"];
   hrefFor: (filter: CatalogFilter) => string;
+  /** The filter the reset link returns to. */
+  resetTo?: CatalogFilter;
 }
 
 interface ChipOption {
@@ -66,7 +71,15 @@ function ChipGroup({ legend, options }: { legend: string; options: ChipOption[] 
 }
 
 /** Link-based filters: shareable URLs, no client JavaScript required. */
-export function CatalogFilters({ filter, brands, labels, hrefFor }: CatalogFiltersProps) {
+export function CatalogFilters({
+  filter,
+  brands,
+  categories,
+  locale,
+  labels,
+  hrefFor,
+  resetTo = DEFAULT_FILTER,
+}: CatalogFiltersProps) {
   const option = (
     key: string,
     label: string,
@@ -82,22 +95,29 @@ export function CatalogFilters({ filter, brands, labels, hrefFor }: CatalogFilte
 
   return (
     <nav aria-label={f.label} className="flex flex-col gap-6">
-      <ChipGroup
-        legend={f.brand}
-        options={[
-          option("all", f.allBrands, { brand: null }, filter.brand === null),
-          ...brands.map((b) => ({
-            ...option(b.slug, b.name, { brand: b.slug }, filter.brand === b.slug),
-            lang: "en",
-          })),
-        ]}
-      />
+      {brands && (
+        <ChipGroup
+          legend={f.brand}
+          options={[
+            option("all", f.allBrands, { brand: null }, filter.brand === null),
+            ...brands.map((b) => ({
+              ...option(b.slug, b.name, { brand: b.slug }, filter.brand === b.slug),
+              lang: "en",
+            })),
+          ]}
+        />
+      )}
       <ChipGroup
         legend={f.category}
         options={[
           option("all", f.allCategories, { category: null }, filter.category === null),
-          ...CATEGORIES.map((c: Category) =>
-            option(c, labels.categories[c], { category: c }, filter.category === c),
+          ...categories.map((c) =>
+            option(
+              c.slug,
+              c.name[locale],
+              { category: c.slug },
+              filter.category === c.slug,
+            ),
           ),
         ]}
       />
@@ -111,10 +131,10 @@ export function CatalogFilters({ filter, brands, labels, hrefFor }: CatalogFilte
         legend={f.sort}
         options={SORTS.map((s) => option(s, f[s], { sort: s }, filter.sort === s))}
       />
-      {isDefaultFilter(filter) ? null : (
+      {serializeCatalogFilter(filter) === serializeCatalogFilter(resetTo) ? null : (
         <p>
           <Link
-            href={hrefFor(DEFAULT_FILTER)}
+            href={hrefFor(resetTo)}
             scroll={false}
             className="inline-flex min-h-11 items-center text-xs font-semibold uppercase tracking-label text-gold underline-offset-8 hover:underline"
           >

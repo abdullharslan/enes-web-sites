@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getBrandName } from "@/data/brands";
 import type { Product } from "@/lib/catalog/schema";
 import { formatPrice } from "@/lib/format";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -24,7 +23,7 @@ export function ProductCard({
   headingLevel: Heading = "h3",
 }: ProductCardProps) {
   const [image] = product.images;
-  const brandName = getBrandName(product.brand);
+  const { brandName } = product;
   const isSold = product.status === "sold";
 
   return (

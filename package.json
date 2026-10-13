@@ -15,12 +15,23 @@
     "test:e2e": "playwright test",
     "test:e2e:repeat": "playwright test --repeat-each=3",
     "audit": "npm audit --omit=dev",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build && npm run test:e2e:repeat && npm run audit"
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run test:int && npm run build && npm run test:e2e:repeat && npm run audit",
+    "db:up": "docker-compose --env-file .env.local up -d --wait",
+    "db:down": "docker-compose --env-file .env.local down",
+    "db:generate": "node --env-file=.env.local node_modules/.bin/drizzle-kit generate",
+    "db:migrate": "tsx --env-file=.env.local db/migrate.ts",
+    "db:seed": "tsx --env-file=.env.local db/seed.ts",
+    "test:int": "vitest run --config vitest.integration.config.mts"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.2.2",
+    "drizzle-orm": "^0.45.4",
     "next": "16.4.0",
+    "postgres": "^3.4.9",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -35,12 +46,14 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.1.2",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
     "fast-check": "^4.10.2",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.10",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^4.1.11"
   },

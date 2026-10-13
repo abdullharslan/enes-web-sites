@@ -1,4 +1,4 @@
-import type { LocalizedText, Product } from "@/lib/catalog/schema";
+import { t, type SeedProduct } from "./types";
 
 /*
  * DEMO DATA — illustrative listings. Photos are royalty-free Unsplash images
@@ -7,8 +7,6 @@ import type { LocalizedText, Product } from "@/lib/catalog/schema";
  * Replace with real stock, own photos and verified details before going live.
  */
 
-const t = (de: string, en: string, tr: string): LocalizedText => ({ de, en, tr });
-
 /** Shown where no brand-accurate demo photo exists; never substitute another brand's photo. */
 const PHOTO_TO_FOLLOW = t(
   "Platzhalter – Foto folgt",
@@ -16,7 +14,7 @@ const PHOTO_TO_FOLLOW = t(
   "Yer tutucu – fotoğraf yakında",
 );
 
-export const PRODUCTS: readonly Product[] = [
+export const SEED_PRODUCTS: readonly SeedProduct[] = [
   {
     slug: "rolex-submariner-date-126610ln",
     brand: "rolex",

@@ -1,6 +1,8 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { FIELD_LIMITS, inquirySchema, sellSchema, validateForm } from "./schemas";
+import { FIELD_LIMITS, createSellSchema, inquirySchema, validateForm } from "./schemas";
+
+const sellSchema = createSellSchema(["bags", "watches", "jewellery"]);
 
 const validInquiry = {
   name: "Ada Lovelace",

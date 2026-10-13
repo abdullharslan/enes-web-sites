@@ -11,7 +11,12 @@ export default defineConfig({
   retries: 0,
   reporter: [["list"], ["html", { open: "never" }]],
   expect: {
-    toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: "disabled" },
+    // Strict per-pixel threshold: low-contrast text on the dark theme slips through the 0.2 default.
+    toHaveScreenshot: {
+      threshold: 0.05,
+      maxDiffPixelRatio: 0.001,
+      animations: "disabled",
+    },
   },
   use: {
     baseURL,

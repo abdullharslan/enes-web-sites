@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { BRANDS } from "@/data/brands";
-import { JOURNAL } from "@/data/journal";
-import { PRODUCTS } from "@/data/products";
-import { brandSchema, productSchema } from "@/lib/catalog/schema";
+import { JOURNAL } from "@/db/seed-data/journal";
+import { SEED_CATEGORIES } from "@/db/seed-data/categories";
+import { brandSchema, categorySchema, productSchema } from "@/lib/catalog/schema";
+import { seedCatalogFixture } from "../fixtures/catalog";
+
+const {
+  brands: BRANDS,
+  categories: CATEGORIES,
+  products: PRODUCTS,
+} = seedCatalogFixture();
 import { LOCALES } from "@/lib/i18n/locales";
 import de from "@/messages/de.json";
 import en from "@/messages/en.json";
@@ -73,9 +79,11 @@ describe("dictionaries contract", () => {
 });
 
 describe("catalog data contract", () => {
-  it("every brand matches the schema and slugs are unique", () => {
+  it("every brand and category matches the schema and slugs are unique", () => {
     BRANDS.forEach((b) => expect(brandSchema.parse(b)).toEqual(b));
+    CATEGORIES.forEach((c) => expect(categorySchema.parse(c)).toEqual(c));
     expect(new Set(BRANDS.map((b) => b.slug)).size).toBe(BRANDS.length);
+    expect(new Set(CATEGORIES.map((c) => c.slug)).size).toBe(CATEGORIES.length);
   });
 
   it.each(PRODUCTS.map((p) => [p.slug, p] as const))(
@@ -89,17 +97,23 @@ describe("catalog data contract", () => {
     expect(new Set(PRODUCTS.map((p) => p.slug)).size).toBe(PRODUCTS.length);
   });
 
-  it("every product references a known brand that offers its category", () => {
+  it("every product references a known brand and category", () => {
     for (const p of PRODUCTS) {
-      const brand = BRANDS.find((b) => b.slug === p.brand);
-      expect(brand, p.slug).toBeDefined();
-      expect(brand?.categories, p.slug).toContain(p.category);
+      expect(
+        BRANDS.map((b) => b.slug),
+        p.slug,
+      ).toContain(p.brand);
+      expect(
+        CATEGORIES.map((c) => c.slug),
+        p.slug,
+      ).toContain(p.category);
     }
   });
 
   it("every referenced image exists on disk", () => {
     const sources = [
       ...PRODUCTS.flatMap((p) => p.images.map((i) => i.src)),
+      ...SEED_CATEGORIES.map((c) => c.tileImage.src),
       ...JOURNAL.map((j) => j.image),
     ];
     expect(sources.filter((src) => !existsSync(publicFile(src)))).toEqual([]);

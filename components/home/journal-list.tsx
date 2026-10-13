@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { JournalEntry } from "@/data/journal";
+import type { JournalEntry } from "@/db/seed-data/journal";
 import { INTL_LOCALE, type Locale } from "@/lib/i18n/locales";
 
 interface JournalListProps {

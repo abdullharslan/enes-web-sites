@@ -2,11 +2,16 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CatalogFilters } from "@/components/catalog/catalog-filters";
 import { ProductCard } from "@/components/catalog/product-card";
-import { BRANDS } from "@/data/brands";
-import { PRODUCTS } from "@/data/products";
+import { seedCatalogFixture } from "../fixtures/catalog";
 import { DEFAULT_FILTER, serializeCatalogFilter } from "@/lib/catalog/filter";
 import type { Product } from "@/lib/catalog/schema";
 import { dict } from "./fixtures";
+
+const {
+  brands: BRANDS,
+  categories: CATEGORIES,
+  products: PRODUCTS,
+} = seedCatalogFixture();
 
 vi.mock("next/image", () => ({
   // eslint-disable-next-line @next/next/no-img-element
@@ -81,6 +86,8 @@ describe("CatalogFilters", () => {
       <CatalogFilters
         filter={{ ...DEFAULT_FILTER, brand: "rolex" }}
         brands={BRANDS}
+        categories={CATEGORIES}
+        locale="de"
         labels={dict.catalog}
         hrefFor={hrefFor}
       />,
@@ -98,6 +105,8 @@ describe("CatalogFilters", () => {
       <CatalogFilters
         filter={DEFAULT_FILTER}
         brands={BRANDS}
+        categories={CATEGORIES}
+        locale="de"
         labels={dict.catalog}
         hrefFor={hrefFor}
       />,
@@ -110,6 +119,8 @@ describe("CatalogFilters", () => {
       <CatalogFilters
         filter={{ ...DEFAULT_FILTER, sort: "price-asc" }}
         brands={BRANDS}
+        categories={CATEGORIES}
+        locale="de"
         labels={dict.catalog}
         hrefFor={hrefFor}
       />,

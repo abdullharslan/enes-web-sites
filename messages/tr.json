@@ -148,6 +148,8 @@
       "available": "Satışta",
       "all": "Satılanlar dahil",
       "newest": "En yeniler",
+      "name-asc": "İsim A–Z",
+      "name-desc": "İsim Z–A",
       "price-asc": "Fiyat artan",
       "price-desc": "Fiyat azalan",
       "reset": "Filtreleri sıfırla"

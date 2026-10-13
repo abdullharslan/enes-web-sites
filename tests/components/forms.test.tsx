@@ -3,8 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { SellForm } from "@/components/forms/sell-form";
-import { BRANDS } from "@/data/brands";
+import { seedCatalogFixture } from "../fixtures/catalog";
 import { dict } from "./fixtures";
+
+const { brands: BRANDS, categories: CATEGORIES } = seedCatalogFixture();
 
 const assign = vi.fn();
 const originalLocation = window.location;
@@ -86,6 +88,8 @@ describe("SellForm", () => {
       <SellForm
         recipient="concierge@example.com"
         brands={BRANDS}
+        categories={CATEGORIES}
+        locale="de"
         labels={{ forms: dict.forms, sell: dict.sell, catalog: dict.catalog }}
       />,
     );
@@ -113,6 +117,8 @@ describe("SellForm", () => {
       <SellForm
         recipient="concierge@example.com"
         brands={BRANDS}
+        categories={CATEGORIES}
+        locale="de"
         labels={{ forms: dict.forms, sell: dict.sell, catalog: dict.catalog }}
       />,
     );

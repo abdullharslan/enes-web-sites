@@ -2,7 +2,9 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import type { Product } from "./schema";
 import {
+  AVAILABILITY,
   DEFAULT_FILTER,
+  SORTS,
   filterProducts,
   isDefaultFilter,
   parseCatalogFilter,
@@ -11,11 +13,14 @@ import {
 } from "./filter";
 
 const BRANDS = ["rolex", "hermes"] as const;
+const CATEGORIES = ["bags", "watches", "jewellery"] as const;
+const ALLOWED = { brands: BRANDS, categories: CATEGORIES };
 
 function product(overrides: Partial<Product>): Product {
   return {
     slug: "p",
     brand: "rolex",
+    brandName: "Rolex",
     category: "watches",
     model: "Model",
     condition: "excellent",
@@ -65,14 +70,14 @@ const slugs = (products: readonly Product[]) => products.map((p) => p.slug);
 
 describe("parseCatalogFilter", () => {
   it("returns defaults for empty params", () => {
-    expect(parseCatalogFilter(new URLSearchParams(), BRANDS)).toEqual(DEFAULT_FILTER);
+    expect(parseCatalogFilter(new URLSearchParams(), ALLOWED)).toEqual(DEFAULT_FILTER);
   });
 
   it("reads valid values", () => {
     const params = new URLSearchParams(
       "brand=hermes&category=bags&availability=all&sort=price-desc",
     );
-    expect(parseCatalogFilter(params, BRANDS)).toEqual({
+    expect(parseCatalogFilter(params, ALLOWED)).toEqual({
       brand: "hermes",
       category: "bags",
       availability: "all",
@@ -84,7 +89,7 @@ describe("parseCatalogFilter", () => {
     const params = new URLSearchParams(
       "brand=gucci&category=cars&availability=x&sort=random",
     );
-    expect(parseCatalogFilter(params, BRANDS)).toEqual(DEFAULT_FILTER);
+    expect(parseCatalogFilter(params, ALLOWED)).toEqual(DEFAULT_FILTER);
   });
 
   it("round-trips through serializeCatalogFilter", () => {
@@ -95,18 +100,23 @@ describe("parseCatalogFilter", () => {
       sort: "price-asc",
     };
     expect(
-      parseCatalogFilter(new URLSearchParams(serializeCatalogFilter(filter)), BRANDS),
+      parseCatalogFilter(new URLSearchParams(serializeCatalogFilter(filter)), ALLOWED),
     ).toEqual(filter);
   });
 
   it("never throws and always yields a valid filter for arbitrary query strings", () => {
     fc.assert(
       fc.property(fc.string(), (query) => {
-        const filter = parseCatalogFilter(new URLSearchParams(query), BRANDS);
+        const filter = parseCatalogFilter(new URLSearchParams(query), ALLOWED);
         expect(
-          filter.brand === null ||
-            BRANDS.includes(filter.brand as (typeof BRANDS)[number]),
+          filter.brand === null || (BRANDS as readonly string[]).includes(filter.brand),
         ).toBe(true);
+        expect(
+          filter.category === null ||
+            (CATEGORIES as readonly string[]).includes(filter.category),
+        ).toBe(true);
+        expect(AVAILABILITY).toContain(filter.availability);
+        expect(SORTS).toContain(filter.sort);
       }),
     );
   });
@@ -188,5 +198,36 @@ describe("isDefaultFilter", () => {
   it("is true only for the default filter", () => {
     expect(isDefaultFilter(DEFAULT_FILTER)).toBe(true);
     expect(isDefaultFilter({ ...DEFAULT_FILTER, sort: "price-asc" })).toBe(false);
+  });
+});
+
+describe("name sorting (A–Z / Z–A)", () => {
+  const named: Product[] = [
+    product({ slug: "z", brandName: "Rolex", model: "Submariner" }),
+    product({ slug: "a", brandName: "Audemars", model: "Royal Oak" }),
+    product({ slug: "e", brandName: "Éclat", model: "Ring" }),
+    product({ slug: "r", brandName: "Rolex", model: "Datejust" }),
+  ];
+
+  it("sorts by brand then model, accent-aware", () => {
+    expect(
+      slugs(filterProducts(named, { ...DEFAULT_FILTER, sort: "name-asc" }, "de")),
+    ).toEqual(["a", "e", "r", "z"]);
+  });
+
+  it("reverses for Z–A", () => {
+    expect(
+      slugs(filterProducts(named, { ...DEFAULT_FILTER, sort: "name-desc" }, "de")),
+    ).toEqual(["z", "r", "e", "a"]);
+  });
+
+  it("uses locale-aware collation (Turkish dotted/dotless i)", () => {
+    const turkish: Product[] = [
+      product({ slug: "i", brandName: "İzmir", model: "x" }),
+      product({ slug: "ı", brandName: "Iğdır", model: "x" }),
+    ];
+    expect(
+      slugs(filterProducts(turkish, { ...DEFAULT_FILTER, sort: "name-asc" }, "tr")),
+    ).toEqual(["ı", "i"]);
   });
 });

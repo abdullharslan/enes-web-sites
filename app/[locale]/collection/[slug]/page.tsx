@@ -8,14 +8,13 @@ import { InquiryForm } from "@/components/forms/inquiry-form";
 import { ButtonLink } from "@/components/ui/button-link";
 import { ArrowLeftIcon, ChatIcon } from "@/components/ui/icons";
 import { SITE } from "@/config/site";
-import { getBrandName } from "@/data/brands";
-import { PRODUCTS } from "@/data/products";
 import { findProduct, getRelatedProducts } from "@/lib/catalog/queries";
 import { buildWhatsAppUrl } from "@/lib/contact-links";
 import { formatPrice } from "@/lib/format";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { interpolate } from "@/lib/i18n/interpolate";
 import { localePath } from "@/lib/i18n/locales";
+import { getCatalog } from "@/lib/server/catalog";
 
 /*
  * Fail-closed 404s: with Partial Prefetching an unlisted slug would otherwise
@@ -27,23 +26,27 @@ export const ensureStatic = "navigation";
 
 const RELATED_LIMIT = 4;
 
-export function generateStaticParams() {
-  return PRODUCTS.map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  const { products } = await getCatalog();
+  return products.map((p) => ({ slug: p.slug }));
 }
 
 async function loadProduct(params: PageProps<"/[locale]/collection/[slug]">["params"]) {
-  const { slug } = await params;
-  const product = findProduct(PRODUCTS, slug);
+  const [{ slug }, catalog] = await Promise.all([params, getCatalog()]);
+  const product = findProduct(catalog.products, slug);
   if (!product) notFound();
-  return product;
+  return { product, catalog };
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/collection/[slug]">): Promise<Metadata> {
-  const [{ locale }, product] = await Promise.all([getDictionary(), loadProduct(params)]);
+  const [{ locale }, { product }] = await Promise.all([
+    getDictionary(),
+    loadProduct(params),
+  ]);
   return pageMetadata(locale, `/collection/${product.slug}`, {
-    title: `${getBrandName(product.brand)} ${product.model}`,
+    title: `${product.brandName} ${product.model}`,
     description: product.description[locale],
     images: product.images.map((i) => i.src),
   });
@@ -52,12 +55,12 @@ export async function generateMetadata({
 export default async function ProductPage({
   params,
 }: PageProps<"/[locale]/collection/[slug]">) {
-  const [{ locale, dict }, product] = await Promise.all([
+  const [{ locale, dict }, { product, catalog }] = await Promise.all([
     getDictionary(),
     loadProduct(params),
   ]);
   const p = dict.product;
-  const brandName = getBrandName(product.brand);
+  const { brandName } = product;
   const item = [brandName, product.model, product.reference].filter(Boolean).join(" ");
   const isSold = product.status === "sold";
   const [mainImage, ...moreImages] = product.images;
@@ -215,7 +218,7 @@ export default async function ProductPage({
           {p.related}
         </h2>
         <ProductGrid
-          products={getRelatedProducts(product, PRODUCTS, RELATED_LIMIT)}
+          products={getRelatedProducts(product, catalog.products, RELATED_LIMIT)}
           locale={locale}
           labels={dict.catalog}
         />
