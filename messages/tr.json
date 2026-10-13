@@ -1,0 +1,269 @@
+{
+  "meta": {
+    "title": "Maison Vault | Lüks Çanta, Saat ve Mücevher",
+    "description": "Hermès, Louis Vuitton ve Chanel çantaları, Rolex ve Patek Philippe saatleri, Van Cleef & Arpels mücevherleri – incelenmiş, sigortalı gönderim, kişisel danışmanlık."
+  },
+  "nav": {
+    "home": "Ana sayfa",
+    "collection": "Koleksiyon",
+    "about": "Hakkımızda",
+    "sell": "Sat",
+    "journal": "Journal",
+    "contact": "İletişim",
+    "menu": "Menü",
+    "openMenu": "Menüyü aç",
+    "closeMenu": "Menüyü kapat",
+    "language": "Dil",
+    "skipToContent": "İçeriğe geç",
+    "primary": "Ana menü"
+  },
+  "hero": {
+    "eyebrow": "Lüks & Ayrıcalıklı",
+    "title": "Çanta, Saat ve Mücevher",
+    "subtitle": "Büyük Maison'ların seçkin başyapıtları – incelenmiş, belgelenmiş ve sizin için özenle seçilmiş.",
+    "ctaCollection": "Koleksiyonu keşfet",
+    "ctaSell": "Konsinye satış"
+  },
+  "brands": {
+    "title": "Bir marka seçin",
+    "all": "Tüm markalar"
+  },
+  "about": {
+    "eyebrow": "Hakkımızda",
+    "title": "Biz Maison Vault'uz",
+    "teaser": "En saygın evlerin seçkin çanta, saat ve mücevherlerini alıp satıyoruz. Bağımsız, uluslararası ve bir adım öteye geçen bir hizmet anlayışıyla.",
+    "body": "Her parça satıştan önce uzmanlar tarafından titizlikle incelenir: kondisyon, malzeme, seri numaraları ve belgeler. Şüphesiz biçimde değerlendiremediğimiz hiçbir ürünü portföyümüze almayız.",
+    "cta": "Hakkımızda daha fazla",
+    "values": [
+      {
+        "title": "Titiz inceleme",
+        "text": "Her ürün listelenmeden önce uzmanlarca incelenir ve şeffaf biçimde tanımlanır."
+      },
+      {
+        "title": "Gizlilik",
+        "text": "Alım, satım ve danışmanlığı gizlilikle yürütürüz – isterseniz herkese açık listeleme olmadan."
+      },
+      {
+        "title": "Kişisel hizmet",
+        "text": "Aramadan sigortalı teslimata kadar size tek bir sabit danışman eşlik eder."
+      }
+    ]
+  },
+  "newArrivals": {
+    "eyebrow": "Yeni gelenler",
+    "title": "Yeni eklenenler",
+    "viewAll": "Tüm koleksiyonumuz",
+    "previous": "Önceki ürünler",
+    "next": "Sonraki ürünler"
+  },
+  "categories": {
+    "eyebrow": "Kategoriler",
+    "title": "Dünyaları keşfedin",
+    "explore": "Keşfet"
+  },
+  "sold": {
+    "eyebrow": "Geçmişten öne çıkanlar",
+    "title": "Yeni sahiplerine ulaştı"
+  },
+  "sellCta": {
+    "eyebrow": "Konsinye satış",
+    "title": "Lüks parçanızı satın",
+    "text": "Çantanızı, saatinizi veya mücevherinizi ücretsiz değerlendiriyor; sunum, inceleme ve sigortalı gönderimi üstleniyoruz.",
+    "cta": "Konsinye satış hakkında"
+  },
+  "trust": {
+    "title": "Sözümüz",
+    "items": [
+      {
+        "title": "Uzman incelemesi",
+        "text": "Her satıştan önce kondisyon, malzeme ve belgeler incelenir."
+      },
+      {
+        "title": "Sigortalı gönderim",
+        "text": "Takip numarası, değer sigortası ve teslimat kanıtı."
+      },
+      {
+        "title": "Güvenli ödeme",
+        "text": "Banka havalesi veya güvenilir ödeme sağlayıcıları – kart bilgisi saklamayız."
+      },
+      {
+        "title": "Kişisel danışmanlık",
+        "text": "Telefon, WhatsApp veya randevu ile."
+      }
+    ]
+  },
+  "story": {
+    "eyebrow": "Bul & Sahiplen",
+    "title": "Hayalinizdeki parça",
+    "text": "Çoğu kişi için her şey unutulmayan bir görüntüyle başlar: ilk Kelly, bir Nautilus kadranı, bir Alhambra motifinin ışıltısı. Bir hayalin sizin olduğu anın ne kadar özel olduğunu biliyoruz – ve sizin için özel arama da yapıyoruz.",
+    "cta": "Özel arama talebi",
+    "social": "Yeni parçalar ve ilham için bizi takip edin."
+  },
+  "journal": {
+    "eyebrow": "Güncel",
+    "title": "Journal",
+    "overview": "Tümü",
+    "intro": "Büyük Maison'ların dünyasından haberler, bakım önerileri ve hikâyeler."
+  },
+  "footer": {
+    "tagline": "İkinci el lüks ve sıra dışı parçalar",
+    "contact": "İletişim",
+    "legal": "Yasal",
+    "explore": "Keşfet",
+    "rights": "Tüm hakları saklıdır.",
+    "demoNotice": "Demo sürüm: ürünler, fiyatlar ve fotoğraflar yer tutucudur.",
+    "trademarkNotice": "Marka adları ilgili sahiplerine aittir. Maison Vault bağımsız bir satıcıdır ve adı geçen markalarla bağlantılı değildir."
+  },
+  "contactBar": {
+    "call": "Ara",
+    "whatsapp": "WhatsApp",
+    "email": "E-posta gönder"
+  },
+  "contactPage": {
+    "eyebrow": "İletişim",
+    "title": "Sizin için buradayız",
+    "text": "Belirli bir ürün, özel arama talebi veya satış için bize yazın. Genellikle bir iş günü içinde yanıt veririz.",
+    "addressTitle": "Showroom (randevu ile)",
+    "formTitle": "Mesaj gönderin"
+  },
+  "catalog": {
+    "eyebrow": "Koleksiyon",
+    "title": "Koleksiyonumuz",
+    "intro": "Seçkin çanta, saat ve mücevherler – her ürün incelenmiş ve ayrıntılı olarak belgelenmiştir.",
+    "results": "{count} ürün",
+    "empty": "Bu seçim için şu anda ürünümüz yok. Sizin için özel arama yapmaktan memnuniyet duyarız.",
+    "priceOnRequest": "Fiyat için sorunuz",
+    "filters": {
+      "label": "Filtreler",
+      "brand": "Marka",
+      "category": "Kategori",
+      "availability": "Durum",
+      "sort": "Sıralama",
+      "allBrands": "Tüm markalar",
+      "allCategories": "Tüm kategoriler",
+      "available": "Satışta",
+      "all": "Satılanlar dahil",
+      "newest": "En yeniler",
+      "price-asc": "Fiyat artan",
+      "price-desc": "Fiyat azalan",
+      "reset": "Filtreleri sıfırla"
+    },
+    "categories": {
+      "bags": "Çantalar",
+      "watches": "Saatler",
+      "jewellery": "Mücevher"
+    },
+    "conditions": {
+      "new": "Yeni",
+      "unworn": "Hiç kullanılmamış",
+      "excellent": "Mükemmel",
+      "very-good": "Çok iyi",
+      "good": "İyi"
+    },
+    "setItems": {
+      "box": "Kutu",
+      "papers": "Belgeler",
+      "invoice": "Fatura",
+      "dust-bag": "Toz torbası",
+      "certificate": "Sertifika",
+      "warranty-card": "Garanti kartı"
+    },
+    "statuses": {
+      "available": "Satışta",
+      "reserved": "Rezerve",
+      "sold": "Satıldı"
+    }
+  },
+  "product": {
+    "back": "Koleksiyona dön",
+    "item": "Ürün",
+    "details": "Detaylar",
+    "reference": "Referans",
+    "year": "Yıl",
+    "condition": "Kondisyon",
+    "setItems": "Set içeriği",
+    "material": "Malzeme",
+    "dimensions": "Ölçüler",
+    "status": "Durum",
+    "noSetItems": "Aksesuarsız",
+    "inquireWhatsapp": "WhatsApp ile sor",
+    "inquireForm": "Talep gönder",
+    "whatsappMessage": "Merhaba, {item} ile ilgileniyorum.",
+    "inquirySubject": "Talep: {item}",
+    "related": "Bunlar da ilginizi çekebilir",
+    "assurance": "Satıştan önce uzmanlarca incelenir. Takipli, sigortalı gönderim. Online alışverişlerde yasal cayma hakkı geçerlidir.",
+    "soldNotice": "Bu ürün satılmıştır. Sizin için benzer bir parça bulmaktan memnuniyet duyarız."
+  },
+  "forms": {
+    "name": "Ad soyad",
+    "email": "E-posta",
+    "phone": "Telefon",
+    "message": "Mesaj",
+    "optional": "isteğe bağlı",
+    "submit": "Gönder",
+    "select": "Lütfen seçin",
+    "handoffNote": "Gönder'e bastığınızda e-posta uygulamanız hazır bir mesajla açılır. Bu sitede hiçbir veri saklanmaz.",
+    "success": "E-posta uygulamanız açıldı. Lütfen hazırlanan mesajı oradan gönderin.",
+    "errorSummary": "Lütfen işaretli alanları kontrol edin.",
+    "errors": {
+      "required": "Bu alan zorunludur.",
+      "tooLong": "Metin çok uzun.",
+      "invalidEmail": "Lütfen geçerli bir e-posta adresi girin.",
+      "invalidPhone": "Lütfen geçerli bir telefon numarası girin.",
+      "invalidYear": "Lütfen geçerli bir yıl girin.",
+      "invalidNumber": "Lütfen geçerli bir tutar girin.",
+      "invalid": "Geçersiz seçim."
+    }
+  },
+  "sell": {
+    "eyebrow": "Konsinye satış",
+    "title": "Bizimle satın",
+    "intro": "Değerleme, inceleme, profesyonel sunum ve sigortalı gönderimi biz üstleniyoruz – başarılı satışın ardından anlaşılan tutarı alırsınız.",
+    "stepsTitle": "Nasıl çalışır?",
+    "steps": [
+      {
+        "title": "Talep",
+        "text": "Ürününüzü formda tanımlayın."
+      },
+      {
+        "title": "Değerleme",
+        "text": "Size bağlayıcı olmayan bir değerlendirmeyle dönüş yaparız."
+      },
+      {
+        "title": "İnceleme",
+        "text": "Uzmanlarımız ürünü bizzat inceler."
+      },
+      {
+        "title": "Satış",
+        "text": "Sunar, satar ve şeffaf biçimde hesaplaşırız."
+      }
+    ],
+    "formTitle": "Ürün teklif edin",
+    "subject": "Konsinye satış: {item}",
+    "photoHint": "Fotoğrafları lütfen doğrudan e-posta eki veya WhatsApp ile gönderin.",
+    "fields": {
+      "brand": "Marka",
+      "category": "Kategori",
+      "model": "Model / ad",
+      "condition": "Kondisyon",
+      "year": "Satın alma yılı",
+      "askingPrice": "Beklenen fiyat (EUR)",
+      "setItems": "Mevcut aksesuarlar",
+      "otherBrand": "Diğer marka"
+    }
+  },
+  "legal": {
+    "titles": {
+      "impressum": "Künye (Impressum)",
+      "datenschutz": "Gizlilik politikası",
+      "agb": "Satış koşulları",
+      "widerruf": "Cayma hakkı"
+    },
+    "placeholder": "Bu metin bir yer tutucudur. Yayına almadan önce e-ticaret alanında uzman bir hukuk bürosu tarafından hazırlanmalı veya kontrol edilmelidir."
+  },
+  "notFound": {
+    "title": "Sayfa bulunamadı",
+    "text": "Aradığınız sayfa mevcut değil veya taşınmış.",
+    "cta": "Koleksiyona git"
+  }
+}

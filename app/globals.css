@@ -1,26 +1,83 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Design tokens — the only colours, fonts and tracking values the UI may use.
+ * Contrast (WCAG 2.x, computed): cream/ink 17.0:1, gold/ink 8.8:1, ink/gold 8.8:1,
+ * mist/ink 7.7:1, mist/coal 7.3:1, mist/graphite 6.7:1, danger/coal 9.3:1 — all above AA 4.5:1.
+ */
+@theme {
+  --color-ink: #0a0a0a;
+  --color-coal: #121212;
+  --color-graphite: #1c1b1a;
+  --color-line: #2e2a25;
+  --color-gold: #c9a96e;
+  --color-gold-soft: #e0c99c;
+  --color-cream: #f2ede4;
+  --color-mist: #a8a198;
+  --color-danger: #f0a39b;
+
+  --font-display: var(--font-cormorant), "Times New Roman", serif;
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+
+  --text-2xs: 0.6875rem;
+
+  --tracking-luxe: 0.32em;
+  --tracking-label: 0.18em;
+
+  --animate-reveal: reveal 1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-ink font-sans text-cream antialiased;
+  }
+
+  ::selection {
+    @apply bg-gold text-ink;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-4 outline-gold;
+  }
+}
+
+/* Scroll-driven reveal: progressive enhancement, content is visible without support. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: var(--animate-reveal);
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

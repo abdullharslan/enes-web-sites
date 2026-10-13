@@ -1,0 +1,269 @@
+{
+  "meta": {
+    "title": "Maison Vault | Luxury Bags, Watches & Jewellery",
+    "description": "Curated bags from Hermès, Louis Vuitton and Chanel, watches from Rolex and Patek Philippe and jewellery from Van Cleef & Arpels – inspected, shipped insured, personally advised."
+  },
+  "nav": {
+    "home": "Home",
+    "collection": "Collection",
+    "about": "About us",
+    "sell": "Sell",
+    "journal": "Journal",
+    "contact": "Contact",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "language": "Language",
+    "skipToContent": "Skip to content",
+    "primary": "Main navigation"
+  },
+  "hero": {
+    "eyebrow": "Luxury & Exclusive",
+    "title": "Bags, Timepieces & Jewellery",
+    "subtitle": "Curated masterpieces from the great Maisons – inspected, documented and personally selected for you.",
+    "ctaCollection": "View the collection",
+    "ctaSell": "Consignment"
+  },
+  "brands": {
+    "title": "Choose a brand",
+    "all": "All brands"
+  },
+  "about": {
+    "eyebrow": "About us",
+    "title": "We are Maison Vault",
+    "teaser": "We buy and sell selected bags, watches and jewellery from the most renowned houses. Independent, international and with a service that goes one step further.",
+    "body": "Every piece is carefully inspected by specialists before sale: condition, materials, serial numbers and documents. If we cannot place an item beyond doubt, we do not take it on.",
+    "cta": "More about us",
+    "values": [
+      {
+        "title": "Careful inspection",
+        "text": "Every object is examined by specialists before listing and described transparently."
+      },
+      {
+        "title": "Discretion",
+        "text": "Buying, selling and advice are handled confidentially – privately, without public listing, on request."
+      },
+      {
+        "title": "Personal service",
+        "text": "One dedicated contact accompanies you – from the search to insured delivery."
+      }
+    ]
+  },
+  "newArrivals": {
+    "eyebrow": "New arrivals",
+    "title": "Just in",
+    "viewAll": "Our complete collection",
+    "previous": "Previous items",
+    "next": "Next items"
+  },
+  "categories": {
+    "eyebrow": "Categories",
+    "title": "Discover the worlds",
+    "explore": "Explore"
+  },
+  "sold": {
+    "eyebrow": "Past highlights",
+    "title": "Already placed"
+  },
+  "sellCta": {
+    "eyebrow": "Consignment",
+    "title": "Sell your luxury piece",
+    "text": "We value your bag, watch or jewellery free of charge and take care of presentation, inspection and insured shipping.",
+    "cta": "Learn about consignment"
+  },
+  "trust": {
+    "title": "Our promise",
+    "items": [
+      {
+        "title": "Expert inspection",
+        "text": "Condition, materials and documents examined before every sale."
+      },
+      {
+        "title": "Insured shipping",
+        "text": "Tracking, value insurance and proof of delivery."
+      },
+      {
+        "title": "Secure payment",
+        "text": "Bank transfer or vetted payment providers – we never store card data."
+      },
+      {
+        "title": "Personal advice",
+        "text": "By phone, via WhatsApp or by appointment."
+      }
+    ]
+  },
+  "story": {
+    "eyebrow": "Find & Keep",
+    "title": "Your signature piece",
+    "text": "For many it starts with an image you never forget: the first Kelly, the dial of a Nautilus, the glow of an Alhambra motif. We know how special the moment is when a wish becomes yours – and we also search on your behalf.",
+    "cta": "Discuss a search request",
+    "social": "Follow us for new pieces and insights."
+  },
+  "journal": {
+    "eyebrow": "Latest",
+    "title": "Journal",
+    "overview": "Overview",
+    "intro": "News, care advice and background stories from the world of the great Maisons."
+  },
+  "footer": {
+    "tagline": "Pre-owned luxury & exceptional objects",
+    "contact": "Contact",
+    "legal": "Legal",
+    "explore": "Explore",
+    "rights": "All rights reserved.",
+    "demoNotice": "Demo version: items, prices and photos are placeholders.",
+    "trademarkNotice": "Brand names belong to their respective owners. Maison Vault is an independent reseller and is not affiliated with the brands mentioned."
+  },
+  "contactBar": {
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "email": "Send an e-mail"
+  },
+  "contactPage": {
+    "eyebrow": "Contact",
+    "title": "We are here for you",
+    "text": "Write to us about a specific item, a search request or a sale. We usually reply within one business day.",
+    "addressTitle": "Showroom (by appointment)",
+    "formTitle": "Send a message"
+  },
+  "catalog": {
+    "eyebrow": "Collection",
+    "title": "Our collection",
+    "intro": "Selected bags, watches and jewellery – every object inspected and documented in detail.",
+    "results": "{count} items",
+    "empty": "We currently have no items for this selection. We are happy to search for you.",
+    "priceOnRequest": "Price on request",
+    "filters": {
+      "label": "Filters",
+      "brand": "Brand",
+      "category": "Category",
+      "availability": "Availability",
+      "sort": "Sort by",
+      "allBrands": "All brands",
+      "allCategories": "All categories",
+      "available": "Available",
+      "all": "Incl. sold",
+      "newest": "Newest first",
+      "price-asc": "Price low to high",
+      "price-desc": "Price high to low",
+      "reset": "Reset filters"
+    },
+    "categories": {
+      "bags": "Bags",
+      "watches": "Watches",
+      "jewellery": "Jewellery"
+    },
+    "conditions": {
+      "new": "New",
+      "unworn": "Unworn",
+      "excellent": "Excellent",
+      "very-good": "Very good",
+      "good": "Good"
+    },
+    "setItems": {
+      "box": "Box",
+      "papers": "Papers",
+      "invoice": "Invoice",
+      "dust-bag": "Dust bag",
+      "certificate": "Certificate",
+      "warranty-card": "Warranty card"
+    },
+    "statuses": {
+      "available": "Available",
+      "reserved": "Reserved",
+      "sold": "Sold"
+    }
+  },
+  "product": {
+    "back": "Back to the collection",
+    "item": "Item",
+    "details": "Details",
+    "reference": "Reference",
+    "year": "Year",
+    "condition": "Condition",
+    "setItems": "Included",
+    "material": "Material",
+    "dimensions": "Dimensions",
+    "status": "Status",
+    "noSetItems": "No accessories",
+    "inquireWhatsapp": "Enquire via WhatsApp",
+    "inquireForm": "Send an enquiry",
+    "whatsappMessage": "Hello, I am interested in {item}.",
+    "inquirySubject": "Enquiry: {item}",
+    "related": "You may also like",
+    "assurance": "Inspected by specialists before sale. Insured shipping with tracking. Statutory right of withdrawal applies to online purchases.",
+    "soldNotice": "This item has already been sold. We would be glad to find a comparable piece for you."
+  },
+  "forms": {
+    "name": "Name",
+    "email": "E-mail",
+    "phone": "Phone",
+    "message": "Message",
+    "optional": "optional",
+    "submit": "Send",
+    "select": "Please choose",
+    "handoffNote": "Submitting opens your e-mail app with a prepared message. No data is stored on this website.",
+    "success": "Your e-mail app has been opened. Please send the prepared message from there.",
+    "errorSummary": "Please check the highlighted fields.",
+    "errors": {
+      "required": "This field is required.",
+      "tooLong": "The text is too long.",
+      "invalidEmail": "Please enter a valid e-mail address.",
+      "invalidPhone": "Please enter a valid phone number.",
+      "invalidYear": "Please enter a valid year.",
+      "invalidNumber": "Please enter a valid amount.",
+      "invalid": "Invalid selection."
+    }
+  },
+  "sell": {
+    "eyebrow": "Consignment",
+    "title": "Sell with us",
+    "intro": "We handle valuation, inspection, professional presentation and insured shipping – you receive the agreed proceeds after a successful sale.",
+    "stepsTitle": "How it works",
+    "steps": [
+      {
+        "title": "Request",
+        "text": "Describe your item in the form."
+      },
+      {
+        "title": "Valuation",
+        "text": "We get back to you with a non-binding estimate."
+      },
+      {
+        "title": "Inspection",
+        "text": "Our specialists examine the item in person."
+      },
+      {
+        "title": "Sale",
+        "text": "We present, sell and settle transparently."
+      }
+    ],
+    "formTitle": "Offer an item",
+    "subject": "Consignment: {item}",
+    "photoHint": "Please send photos directly as an e-mail attachment or via WhatsApp.",
+    "fields": {
+      "brand": "Brand",
+      "category": "Category",
+      "model": "Model / name",
+      "condition": "Condition",
+      "year": "Year of purchase",
+      "askingPrice": "Asking price (EUR)",
+      "setItems": "Accessories included",
+      "otherBrand": "Other brand"
+    }
+  },
+  "legal": {
+    "titles": {
+      "impressum": "Legal notice",
+      "datenschutz": "Privacy policy",
+      "agb": "Terms & conditions",
+      "widerruf": "Right of withdrawal"
+    },
+    "placeholder": "This text is a placeholder. Before going live it must be drafted or reviewed by a law firm specialising in e-commerce."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "text": "The page you are looking for does not exist or has moved.",
+    "cta": "To the collection"
+  }
+}

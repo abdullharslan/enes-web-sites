@@ -1,0 +1,269 @@
+{
+  "meta": {
+    "title": "Maison Vault | Luxustaschen, Uhren & Schmuck",
+    "description": "Ausgewählte Taschen von Hermès, Louis Vuitton und Chanel, Uhren von Rolex und Patek Philippe sowie Schmuck von Van Cleef & Arpels – geprüft, versichert versendet, persönlich betreut."
+  },
+  "nav": {
+    "home": "Startseite",
+    "collection": "Kollektion",
+    "about": "Über uns",
+    "sell": "Verkaufen",
+    "journal": "Journal",
+    "contact": "Kontakt",
+    "menu": "Menü",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen",
+    "language": "Sprache",
+    "skipToContent": "Zum Inhalt springen",
+    "primary": "Hauptnavigation"
+  },
+  "hero": {
+    "eyebrow": "Luxury & Exclusive",
+    "title": "Taschen, Uhren & Schmuck",
+    "subtitle": "Kuratierte Meisterstücke der großen Maisons – geprüft, dokumentiert und persönlich für Sie ausgewählt.",
+    "ctaCollection": "Kollektion ansehen",
+    "ctaSell": "Kommissionsverkauf"
+  },
+  "brands": {
+    "title": "Wählen Sie eine Marke",
+    "all": "Alle Marken"
+  },
+  "about": {
+    "eyebrow": "Über uns",
+    "title": "Wir sind Maison Vault",
+    "teaser": "Wir kaufen und verkaufen ausgewählte Taschen, Uhren und Schmuckstücke der renommiertesten Häuser. Unabhängig, international und mit einem Service, der einen Schritt weiter geht.",
+    "body": "Jedes Stück durchläuft vor dem Verkauf eine sorgfältige Prüfung durch Spezialisten: Zustand, Materialien, Seriennummern und Dokumente. Was wir nicht zweifelsfrei einordnen können, nehmen wir nicht ins Sortiment auf.",
+    "cta": "Mehr über uns",
+    "values": [
+      {
+        "title": "Sorgfältige Prüfung",
+        "text": "Jedes Objekt wird vor der Aufnahme von Spezialisten begutachtet und transparent beschrieben."
+      },
+      {
+        "title": "Diskretion",
+        "text": "Ankauf, Verkauf und Beratung behandeln wir vertraulich – auf Wunsch auch ohne öffentliche Listung."
+      },
+      {
+        "title": "Persönlicher Service",
+        "text": "Ein fester Ansprechpartner begleitet Sie – von der Suche bis zur versicherten Zustellung."
+      }
+    ]
+  },
+  "newArrivals": {
+    "eyebrow": "Neu im Angebot",
+    "title": "Neuzugänge",
+    "viewAll": "Unsere komplette Kollektion",
+    "previous": "Vorherige Objekte",
+    "next": "Nächste Objekte"
+  },
+  "categories": {
+    "eyebrow": "Kategorien",
+    "title": "Entdecken Sie die Welten",
+    "explore": "Entdecken"
+  },
+  "sold": {
+    "eyebrow": "Highlights der Vergangenheit",
+    "title": "Bereits vermittelt"
+  },
+  "sellCta": {
+    "eyebrow": "Kommissionsverkauf",
+    "title": "Verkaufen Sie Ihr Luxusstück",
+    "text": "Wir bewerten Ihre Tasche, Uhr oder Ihren Schmuck kostenlos und übernehmen Präsentation, Prüfung und versicherten Versand.",
+    "cta": "Mehr zum Kommissionsverkauf"
+  },
+  "trust": {
+    "title": "Unser Versprechen",
+    "items": [
+      {
+        "title": "Expertenprüfung",
+        "text": "Begutachtung von Zustand, Material und Dokumenten vor jedem Verkauf."
+      },
+      {
+        "title": "Versicherter Versand",
+        "text": "Sendungsverfolgung, Wertversicherung und Zustellnachweis."
+      },
+      {
+        "title": "Sichere Zahlung",
+        "text": "Banküberweisung oder geprüfte Zahlungsanbieter – keine Kartendaten bei uns."
+      },
+      {
+        "title": "Persönliche Beratung",
+        "text": "Telefonisch, per WhatsApp oder nach Vereinbarung."
+      }
+    ]
+  },
+  "story": {
+    "eyebrow": "Find & Keep",
+    "title": "Ihr Lieblingsstück",
+    "text": "Für viele beginnt es mit einem Bild, das man nicht vergisst: die erste Kelly, das Zifferblatt einer Nautilus, das Leuchten eines Alhambra-Motivs. Wir wissen, wie besonders der Moment ist, in dem aus dem Wunsch ein Besitz wird – und suchen auch gezielt für Sie.",
+    "cta": "Suchauftrag besprechen",
+    "social": "Folgen Sie uns für neue Stücke und Einblicke."
+  },
+  "journal": {
+    "eyebrow": "Aktuell",
+    "title": "Journal",
+    "overview": "Übersicht",
+    "intro": "Neuigkeiten, Pflegetipps und Hintergründe aus der Welt der großen Maisons."
+  },
+  "footer": {
+    "tagline": "Pre-owned Luxury & außergewöhnliche Objekte",
+    "contact": "Kontakt",
+    "legal": "Rechtliches",
+    "explore": "Entdecken",
+    "rights": "Alle Rechte vorbehalten.",
+    "demoNotice": "Demo-Version: Objekte, Preise und Fotos sind Platzhalter.",
+    "trademarkNotice": "Markennamen gehören ihren jeweiligen Inhabern. Maison Vault ist ein unabhängiger Händler und steht in keiner Verbindung zu den genannten Marken."
+  },
+  "contactBar": {
+    "call": "Anrufen",
+    "whatsapp": "WhatsApp",
+    "email": "E-Mail schreiben"
+  },
+  "contactPage": {
+    "eyebrow": "Kontakt",
+    "title": "Wir sind für Sie da",
+    "text": "Schreiben Sie uns zu einem bestimmten Objekt, einem Suchauftrag oder einem Verkauf. Wir antworten in der Regel innerhalb eines Werktages.",
+    "addressTitle": "Showroom (nach Vereinbarung)",
+    "formTitle": "Nachricht senden"
+  },
+  "catalog": {
+    "eyebrow": "Kollektion",
+    "title": "Unsere Kollektion",
+    "intro": "Ausgewählte Taschen, Uhren und Schmuckstücke – jedes Objekt geprüft und ausführlich dokumentiert.",
+    "results": "{count} Objekte",
+    "empty": "Für diese Auswahl haben wir aktuell keine Objekte. Gerne suchen wir gezielt für Sie.",
+    "priceOnRequest": "Preis auf Anfrage",
+    "filters": {
+      "label": "Filter",
+      "brand": "Marke",
+      "category": "Kategorie",
+      "availability": "Verfügbarkeit",
+      "sort": "Sortierung",
+      "allBrands": "Alle Marken",
+      "allCategories": "Alle Kategorien",
+      "available": "Verfügbar",
+      "all": "Inkl. verkaufte",
+      "newest": "Neueste zuerst",
+      "price-asc": "Preis aufsteigend",
+      "price-desc": "Preis absteigend",
+      "reset": "Filter zurücksetzen"
+    },
+    "categories": {
+      "bags": "Taschen",
+      "watches": "Uhren",
+      "jewellery": "Schmuck"
+    },
+    "conditions": {
+      "new": "Neu",
+      "unworn": "Ungetragen",
+      "excellent": "Hervorragend",
+      "very-good": "Sehr gut",
+      "good": "Gut"
+    },
+    "setItems": {
+      "box": "Box",
+      "papers": "Papiere",
+      "invoice": "Rechnung",
+      "dust-bag": "Staubbeutel",
+      "certificate": "Zertifikat",
+      "warranty-card": "Garantiekarte"
+    },
+    "statuses": {
+      "available": "Verfügbar",
+      "reserved": "Reserviert",
+      "sold": "Verkauft"
+    }
+  },
+  "product": {
+    "back": "Zurück zur Kollektion",
+    "item": "Objekt",
+    "details": "Details",
+    "reference": "Referenz",
+    "year": "Jahr",
+    "condition": "Zustand",
+    "setItems": "Lieferumfang",
+    "material": "Material",
+    "dimensions": "Maße",
+    "status": "Status",
+    "noSetItems": "Ohne Zubehör",
+    "inquireWhatsapp": "Per WhatsApp anfragen",
+    "inquireForm": "Anfrage senden",
+    "whatsappMessage": "Guten Tag, ich interessiere mich für {item}.",
+    "inquirySubject": "Anfrage: {item}",
+    "related": "Das könnte Ihnen auch gefallen",
+    "assurance": "Vor dem Verkauf von Spezialisten geprüft. Versicherter Versand mit Sendungsverfolgung. Bei Online-Käufen gilt das gesetzliche Widerrufsrecht.",
+    "soldNotice": "Dieses Objekt wurde bereits verkauft. Gerne suchen wir ein vergleichbares Stück für Sie."
+  },
+  "forms": {
+    "name": "Name",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "message": "Nachricht",
+    "optional": "optional",
+    "submit": "Absenden",
+    "select": "Bitte wählen",
+    "handoffNote": "Beim Absenden öffnet sich Ihr E-Mail-Programm mit einer vorbereiteten Nachricht. Es werden keine Daten auf dieser Website gespeichert.",
+    "success": "Ihr E-Mail-Programm wurde geöffnet. Bitte senden Sie die vorbereitete Nachricht dort ab.",
+    "errorSummary": "Bitte prüfen Sie die markierten Felder.",
+    "errors": {
+      "required": "Dieses Feld ist erforderlich.",
+      "tooLong": "Der Text ist zu lang.",
+      "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+      "invalidPhone": "Bitte geben Sie eine gültige Telefonnummer ein.",
+      "invalidYear": "Bitte geben Sie ein gültiges Jahr ein.",
+      "invalidNumber": "Bitte geben Sie einen gültigen Betrag ein.",
+      "invalid": "Ungültige Auswahl."
+    }
+  },
+  "sell": {
+    "eyebrow": "Kommissionsverkauf",
+    "title": "Verkaufen Sie mit uns",
+    "intro": "Wir übernehmen Bewertung, Prüfung, professionelle Präsentation und den versicherten Versand – Sie erhalten den vereinbarten Erlös nach erfolgreichem Verkauf.",
+    "stepsTitle": "So funktioniert es",
+    "steps": [
+      {
+        "title": "Anfrage",
+        "text": "Beschreiben Sie Ihr Objekt im Formular."
+      },
+      {
+        "title": "Bewertung",
+        "text": "Wir melden uns mit einer unverbindlichen Einschätzung."
+      },
+      {
+        "title": "Prüfung",
+        "text": "Unsere Spezialisten begutachten das Objekt persönlich."
+      },
+      {
+        "title": "Verkauf",
+        "text": "Wir präsentieren, verkaufen und rechnen transparent ab."
+      }
+    ],
+    "formTitle": "Objekt anbieten",
+    "subject": "Kommissionsverkauf: {item}",
+    "photoHint": "Fotos senden Sie uns bitte direkt per E-Mail-Anhang oder WhatsApp.",
+    "fields": {
+      "brand": "Marke",
+      "category": "Kategorie",
+      "model": "Modell / Bezeichnung",
+      "condition": "Zustand",
+      "year": "Kaufjahr",
+      "askingPrice": "Preisvorstellung (EUR)",
+      "setItems": "Vorhandenes Zubehör",
+      "otherBrand": "Andere Marke"
+    }
+  },
+  "legal": {
+    "titles": {
+      "impressum": "Impressum",
+      "datenschutz": "Datenschutzerklärung",
+      "agb": "AGB",
+      "widerruf": "Widerrufsbelehrung"
+    },
+    "placeholder": "Dieser Text ist ein Platzhalter. Vor dem Livegang muss er von einer auf E-Commerce spezialisierten Kanzlei erstellt bzw. geprüft werden."
+  },
+  "notFound": {
+    "title": "Seite nicht gefunden",
+    "text": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
+    "cta": "Zur Kollektion"
+  }
+}

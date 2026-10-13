@@ -1,0 +1,548 @@
+import type { LocalizedText, Product } from "@/lib/catalog/schema";
+
+/*
+ * DEMO DATA — illustrative listings. Photos are royalty-free Unsplash images
+ * (see README) chosen so that no other brand's logo is visible; where no
+ * suitable photo exists the Maison Vault monogram placeholder is used.
+ * Replace with real stock, own photos and verified details before going live.
+ */
+
+const t = (de: string, en: string, tr: string): LocalizedText => ({ de, en, tr });
+
+/** Shown where no brand-accurate demo photo exists; never substitute another brand's photo. */
+const PHOTO_TO_FOLLOW = t(
+  "Platzhalter – Foto folgt",
+  "Placeholder – photo to follow",
+  "Yer tutucu – fotoğraf yakında",
+);
+
+export const PRODUCTS: readonly Product[] = [
+  {
+    slug: "rolex-submariner-date-126610ln",
+    brand: "rolex",
+    category: "watches",
+    model: "Submariner Date",
+    reference: "126610LN",
+    year: 2022,
+    condition: "excellent",
+    setItems: ["box", "papers", "warranty-card"],
+    material: t(
+      "Edelstahl Oystersteel",
+      "Oystersteel stainless steel",
+      "Oystersteel paslanmaz çelik",
+    ),
+    dimensions: "41 mm",
+    description: t(
+      "Die Ikone unter den Taucheruhren mit schwarzem Cerachrom-Lünette, vollständigem Set und nur minimalen Tragespuren.",
+      "The definitive dive watch with black Cerachrom bezel, complete set and only minimal signs of wear.",
+      "Siyah Cerachrom bezelli ikonik dalgıç saati; tam set ve yalnızca minimal kullanım izleri.",
+    ),
+    price: { kind: "fixed", amountEur: 13900 },
+    status: "available",
+    images: [
+      {
+        src: "/images/watch-diver.jpg",
+        alt: t(
+          "Taucheruhr mit schwarzem Zifferblatt",
+          "Dive watch with black dial",
+          "Siyah kadranlı dalgıç saati",
+        ),
+      },
+    ],
+    addedAt: "2026-10-02",
+  },
+  {
+    slug: "rolex-datejust-41-126333",
+    brand: "rolex",
+    category: "watches",
+    model: "Datejust 41",
+    reference: "126333",
+    year: 2021,
+    condition: "very-good",
+    setItems: ["box", "papers"],
+    material: t("Edelstahl und Gelbgold", "Steel and yellow gold", "Çelik ve sarı altın"),
+    dimensions: "41 mm",
+    description: t(
+      "Zeitlose Rolesor-Kombination mit champagnerfarbenem Zifferblatt und Jubilé-Band.",
+      "Timeless Rolesor combination with champagne dial and Jubilee bracelet.",
+      "Şampanya kadran ve Jubilee kordonlu zamansız Rolesor kombinasyonu.",
+    ),
+    price: { kind: "fixed", amountEur: 15400 },
+    status: "available",
+    images: [
+      {
+        src: "/images/watch-two-tone.jpg",
+        alt: t(
+          "Bicolor-Armbanduhr auf dunklem Holz",
+          "Two-tone wristwatch on dark wood",
+          "Koyu ahşap üzerinde iki renkli saat",
+        ),
+      },
+    ],
+    addedAt: "2026-09-20",
+  },
+  {
+    slug: "rolex-explorer-224270",
+    brand: "rolex",
+    category: "watches",
+    model: "Explorer 40",
+    reference: "224270",
+    year: 2023,
+    condition: "unworn",
+    setItems: ["box", "papers", "warranty-card"],
+    material: t(
+      "Edelstahl Oystersteel",
+      "Oystersteel stainless steel",
+      "Oystersteel paslanmaz çelik",
+    ),
+    dimensions: "40 mm",
+    description: t(
+      "Ungetragen mit Schutzfolien – die puristische Explorer im neuen 40-mm-Gehäuse.",
+      "Unworn with stickers – the purist Explorer in the new 40 mm case.",
+      "Koruma bantlarıyla hiç takılmamış – yeni 40 mm kasada sade Explorer.",
+    ),
+    price: { kind: "fixed", amountEur: 9800 },
+    status: "reserved",
+    images: [
+      {
+        src: "/images/watch-black-dial.jpg",
+        alt: t(
+          "Stahluhr mit schwarzem Zifferblatt",
+          "Steel watch with black dial",
+          "Siyah kadranlı çelik saat",
+        ),
+      },
+    ],
+    addedAt: "2026-08-14",
+  },
+  {
+    slug: "patek-philippe-nautilus-5711",
+    brand: "patek-philippe",
+    category: "watches",
+    model: "Nautilus",
+    reference: "5711/1A-010",
+    year: 2019,
+    condition: "excellent",
+    setItems: ["box", "papers", "certificate"],
+    material: t("Edelstahl", "Stainless steel", "Paslanmaz çelik"),
+    dimensions: "40 mm",
+    description: t(
+      "Gérald Gentas Meisterwerk mit blauem Zifferblatt. Komplettes Set inklusive Extract from the Archives.",
+      "Gérald Genta's masterpiece with blue dial. Full set including Extract from the Archives.",
+      "Gérald Genta'nın mavi kadranlı başyapıtı. Extract from the Archives dahil tam set.",
+    ),
+    price: { kind: "on-request" },
+    status: "available",
+    images: [
+      {
+        src: "/images/placeholder-mv.jpg",
+        alt: PHOTO_TO_FOLLOW,
+      },
+    ],
+    addedAt: "2026-08-20",
+  },
+  {
+    slug: "patek-philippe-calatrava-5227g",
+    brand: "patek-philippe",
+    category: "watches",
+    model: "Calatrava",
+    reference: "5227G-010",
+    year: 2018,
+    condition: "very-good",
+    setItems: ["box", "certificate"],
+    material: t("Weißgold", "White gold", "Beyaz altın"),
+    dimensions: "39 mm",
+    description: t(
+      "Klassische Eleganz mit verdecktem Scharnierdeckel und Automatikkaliber 324 S C.",
+      "Classic elegance with hidden hinged dust cover and automatic calibre 324 S C.",
+      "Gizli menteşeli kapak ve 324 S C otomatik kalibre ile klasik zarafet.",
+    ),
+    price: { kind: "fixed", amountEur: 29500 },
+    status: "available",
+    images: [
+      {
+        src: "/images/placeholder-mv.jpg",
+        alt: PHOTO_TO_FOLLOW,
+      },
+    ],
+    addedAt: "2026-07-30",
+  },
+  {
+    slug: "patek-philippe-aquanaut-5167a",
+    brand: "patek-philippe",
+    category: "watches",
+    model: "Aquanaut",
+    reference: "5167A-001",
+    year: 2020,
+    condition: "excellent",
+    setItems: ["box", "papers"],
+    material: t(
+      "Edelstahl, Tropical-Kautschukband",
+      "Steel, tropical composite strap",
+      "Çelik, tropikal kompozit kayış",
+    ),
+    dimensions: "40 mm",
+    description: t(
+      "Sportliche Eleganz mit charakteristischem Tropical-Band.",
+      "Sporty elegance with the signature tropical strap.",
+      "İmza tropikal kayışıyla sportif zarafet.",
+    ),
+    price: { kind: "on-request" },
+    status: "sold",
+    images: [
+      {
+        src: "/images/watch-trio.jpg",
+        alt: t(
+          "Mehrere Sportuhren auf dunklem Grund",
+          "Several sports watches on a dark surface",
+          "Koyu zeminde birkaç spor saat",
+        ),
+      },
+    ],
+    addedAt: "2026-06-11",
+  },
+  {
+    slug: "hermes-kelly-28-sellier",
+    brand: "hermes",
+    category: "bags",
+    model: "Kelly 28 Sellier",
+    year: 2022,
+    condition: "excellent",
+    setItems: ["box", "dust-bag", "invoice"],
+    material: t(
+      "Epsom-Kalbsleder, Palladium-Beschläge",
+      "Epsom calfskin, palladium hardware",
+      "Epsom dana derisi, paladyum aksesuar",
+    ),
+    dimensions: "28 × 22 × 10 cm",
+    description: t(
+      "Strukturierte Sellier-Silhouette in leuchtendem Rot – ein Statement mit perfekten Ecken.",
+      "Structured Sellier silhouette in vivid red – a statement piece with perfect corners.",
+      "Canlı kırmızıda yapılandırılmış Sellier silueti – kusursuz köşeleriyle iddialı bir parça.",
+    ),
+    price: { kind: "on-request" },
+    status: "available",
+    images: [
+      {
+        src: "/images/placeholder-mv.jpg",
+        alt: PHOTO_TO_FOLLOW,
+      },
+    ],
+    addedAt: "2026-09-01",
+  },
+  {
+    slug: "hermes-constance-24-croco",
+    brand: "hermes",
+    category: "bags",
+    model: "Constance 24",
+    year: 2020,
+    condition: "very-good",
+    setItems: ["box", "dust-bag"],
+    material: t(
+      "Krokodilleder, Gold-Beschläge",
+      "Crocodile leather, gold hardware",
+      "Timsah derisi, altın aksesuar",
+    ),
+    dimensions: "24 × 15 × 5 cm",
+    description: t(
+      "Exotische Constance in tiefem Bordeaux mit ikonischer H-Schließe. CITES-Dokumentation vorhanden.",
+      "Exotic Constance in deep bordeaux with the iconic H clasp. CITES documentation available.",
+      "İkonik H tokalı, koyu bordo egzotik Constance. CITES belgeleri mevcut.",
+    ),
+    price: { kind: "fixed", amountEur: 48000 },
+    status: "available",
+    images: [
+      {
+        src: "/images/bag-burgundy-croc.jpg",
+        alt: t(
+          "Bordeauxfarbene Tasche in Krokoprägung",
+          "Burgundy crocodile-textured bag",
+          "Bordo timsah dokulu çanta",
+        ),
+      },
+    ],
+    addedAt: "2026-09-02",
+  },
+  {
+    slug: "hermes-picotin-lock-22",
+    brand: "hermes",
+    category: "bags",
+    model: "Picotin Lock 22",
+    year: 2021,
+    condition: "good",
+    setItems: ["dust-bag"],
+    material: t("Clemence-Kalbsleder", "Clemence calfskin", "Clemence dana derisi"),
+    dimensions: "22 × 21 × 14 cm",
+    description: t(
+      "Unkomplizierter Begleiter für jeden Tag. Leichte Patina an den Henkeln.",
+      "An effortless everyday companion. Light patina on the handles.",
+      "Her gün için zahmetsiz bir eşlikçi. Saplarda hafif patina.",
+    ),
+    price: { kind: "fixed", amountEur: 4900 },
+    status: "sold",
+    images: [
+      {
+        src: "/images/placeholder-mv.jpg",
+        alt: PHOTO_TO_FOLLOW,
+      },
+    ],
+    addedAt: "2026-07-05",
+  },
+  {
+    slug: "louis-vuitton-capucines-mm",
+    brand: "louis-vuitton",
+    category: "bags",
+    model: "Capucines MM",
+    year: 2023,
+    condition: "excellent",
+    setItems: ["box", "dust-bag", "invoice"],
+    material: t("Taurillon-Leder", "Taurillon leather", "Taurillon deri"),
+    dimensions: "31,5 × 20 × 11 cm",
+    description: t(
+      "Die eleganteste Linie des Hauses in zeitlosem Schwarz mit abnehmbarem Schulterriemen.",
+      "The house's most elegant line in timeless black with detachable shoulder strap.",
+      "Çıkarılabilir omuz askılı, zamansız siyahta markanın en zarif serisi.",
+    ),
+    price: { kind: "fixed", amountEur: 5600 },
+    status: "available",
+    images: [
+      {
+        src: "/images/placeholder-mv.jpg",
+        alt: PHOTO_TO_FOLLOW,
+      },
+    ],
+    addedAt: "2026-09-25",
+  },
+  {
+    slug: "louis-vuitton-twist-mm",
+    brand: "louis-vuitton",
+    category: "bags",
+    model: "Twist MM",
+    year: 2022,
+    condition: "very-good",
+    setItems: ["dust-bag"],
+    material: t("Epi-Leder", "Epi leather", "Epi deri"),
+    dimensions: "23 × 17 × 9,5 cm",
+    description: t(
+      "Verspielte Kettentasche in Petrol mit drehbarem LV-Verschluss.",
+      "Playful chain bag in petrol blue with twisting LV clasp.",
+      "Döner LV kilitli, petrol mavisi zincir askılı çanta.",
+    ),
+    price: { kind: "fixed", amountEur: 3200 },
+    status: "available",
+    images: [
+      {
+        src: "/images/bag-teal-flap.jpg",
+        alt: t(
+          "Petrolfarbene Ledertasche",
+          "Teal leather bag",
+          "Petrol mavisi deri çanta",
+        ),
+      },
+    ],
+    addedAt: "2026-08-28",
+  },
+  {
+    slug: "chanel-classic-flap-medium",
+    brand: "chanel",
+    category: "bags",
+    model: "Classic Flap Medium",
+    year: 2021,
+    condition: "excellent",
+    setItems: ["box", "dust-bag", "certificate"],
+    material: t(
+      "Lammleder, silberfarbene Beschläge",
+      "Lambskin, silver-tone hardware",
+      "Kuzu derisi, gümüş tonlu aksesuar",
+    ),
+    dimensions: "25,5 × 15,5 × 6,5 cm",
+    description: t(
+      "Der Inbegriff von Chanel in hellem Grau mit Kettenriemen und CC-Drehverschluss.",
+      "The epitome of Chanel in pale grey with chain strap and CC turn-lock.",
+      "Zincir askı ve CC döner kilitle açık gride Chanel'in özü.",
+    ),
+    price: { kind: "fixed", amountEur: 9200 },
+    status: "available",
+    images: [
+      {
+        src: "/images/placeholder-mv.jpg",
+        alt: PHOTO_TO_FOLLOW,
+      },
+    ],
+    addedAt: "2026-09-05",
+  },
+  {
+    slug: "chanel-wallet-on-chain",
+    brand: "chanel",
+    category: "bags",
+    model: "Wallet on Chain",
+    year: 2020,
+    condition: "very-good",
+    setItems: ["box", "dust-bag"],
+    material: t("Kaviarleder", "Caviar leather", "Havyar deri"),
+    dimensions: "19 × 12 × 3,5 cm",
+    description: t(
+      "Kompakte Abendtasche in Rosé.",
+      "Compact evening bag in rosé.",
+      "Pembe tonlarında kompakt gece çantası.",
+    ),
+    price: { kind: "fixed", amountEur: 3900 },
+    status: "sold",
+    images: [
+      {
+        src: "/images/bag-pink-chain.jpg",
+        alt: t("Rosafarbene Kettentasche", "Pink chain bag", "Pembe zincir askılı çanta"),
+      },
+    ],
+    addedAt: "2026-06-20",
+  },
+  {
+    slug: "van-cleef-arpels-perlee-ring",
+    brand: "van-cleef-arpels",
+    category: "jewellery",
+    model: "Perlée Diamonds Ring",
+    year: 2022,
+    condition: "excellent",
+    setItems: ["box", "certificate", "invoice"],
+    material: t("Weißgold, Diamanten", "White gold, diamonds", "Beyaz altın, pırlanta"),
+    dimensions: "EU 52",
+    description: t(
+      "Filigraner Ring mit Diamant-Pavé – zeitloses Signature-Design.",
+      "Delicate ring with diamond pavé – a timeless signature design.",
+      "Pırlanta pavé ile zarif yüzük – zamansız bir imza tasarım.",
+    ),
+    price: { kind: "fixed", amountEur: 7400 },
+    status: "available",
+    images: [
+      {
+        src: "/images/jewel-ring.jpg",
+        alt: t(
+          "Diamantring auf schwarzem Samt",
+          "Diamond ring on black velvet",
+          "Siyah kadife üzerinde pırlanta yüzük",
+        ),
+      },
+    ],
+    addedAt: "2026-09-30",
+  },
+  {
+    slug: "van-cleef-arpels-sweet-alhambra-earrings",
+    brand: "van-cleef-arpels",
+    category: "jewellery",
+    model: "Sweet Alhambra Earrings",
+    year: 2023,
+    condition: "unworn",
+    setItems: ["box", "certificate"],
+    material: t(
+      "Gelbgold, Perlmutt",
+      "Yellow gold, mother-of-pearl",
+      "Sarı altın, sedef",
+    ),
+    description: t(
+      "Glücksbringer im Vierblatt-Design. Ungetragen mit Originalzertifikat.",
+      "Lucky four-leaf clover motif. Unworn with original certificate.",
+      "Uğur getiren dört yapraklı yonca motifi. Orijinal sertifikasıyla hiç kullanılmamış.",
+    ),
+    price: { kind: "fixed", amountEur: 3600 },
+    status: "available",
+    images: [
+      {
+        src: "/images/jewel-earrings-gold.jpg",
+        alt: t(
+          "Goldene Ohrringe auf einer Muschel",
+          "Gold earrings on a shell",
+          "Deniz kabuğu üzerinde altın küpeler",
+        ),
+      },
+    ],
+    addedAt: "2026-09-12",
+  },
+  {
+    slug: "van-cleef-arpels-snowflake-earrings",
+    brand: "van-cleef-arpels",
+    category: "jewellery",
+    model: "Snowflake Earrings",
+    year: 2019,
+    condition: "excellent",
+    setItems: ["box", "certificate"],
+    material: t(
+      "Platin, Saphire, Diamanten",
+      "Platinum, sapphires, diamonds",
+      "Platin, safir, pırlanta",
+    ),
+    description: t(
+      "Haute-Joaillerie-Ohrhänger mit tiefblauen Saphiren.",
+      "High-jewellery drop earrings with deep blue sapphires.",
+      "Koyu mavi safirli yüksek mücevher sallantılı küpeler.",
+    ),
+    price: { kind: "on-request" },
+    status: "sold",
+    images: [
+      {
+        src: "/images/jewel-earrings-sapphire.jpg",
+        alt: t(
+          "Saphir-Ohrringe auf einem Blatt",
+          "Sapphire earrings on a leaf",
+          "Yaprak üzerinde safir küpeler",
+        ),
+      },
+    ],
+    addedAt: "2026-05-18",
+  },
+  {
+    slug: "chanel-coco-crush-bracelet",
+    brand: "chanel",
+    category: "jewellery",
+    model: "Coco Crush Bracelet",
+    year: 2021,
+    condition: "very-good",
+    setItems: ["box", "certificate"],
+    material: t("Roségold, Diamanten", "Rose gold, diamonds", "Rose altın, pırlanta"),
+    description: t(
+      "Gestepptes Motiv der Chanel-Taschen, übersetzt in Roségold.",
+      "The quilted motif of Chanel's bags, translated into rose gold.",
+      "Chanel çantalarının kapitone motifi, rose altına dönüştü.",
+    ),
+    price: { kind: "fixed", amountEur: 6800 },
+    status: "available",
+    images: [
+      {
+        src: "/images/jewel-bracelet.jpg",
+        alt: t(
+          "Roségold-Armband mit Diamanten",
+          "Rose gold bracelet with diamonds",
+          "Pırlantalı rose altın bileklik",
+        ),
+      },
+    ],
+    addedAt: "2026-08-03",
+  },
+  {
+    slug: "hermes-chaine-d-ancre-necklace",
+    brand: "hermes",
+    category: "jewellery",
+    model: "Chaîne d'Ancre Necklace",
+    year: 2022,
+    condition: "excellent",
+    setItems: ["box", "invoice"],
+    material: t("Gelbgold", "Yellow gold", "Sarı altın"),
+    description: t(
+      "Feine Gliederkette, inspiriert von der Ankerkette – mehrfach tragbar.",
+      "Fine chain inspired by the anchor chain – wear it layered.",
+      "Çapa zincirinden ilham alan ince kolye – katmanlı takılabilir.",
+    ),
+    price: { kind: "fixed", amountEur: 4200 },
+    status: "available",
+    images: [
+      {
+        src: "/images/jewel-layered.jpg",
+        alt: t(
+          "Mehrere feine Goldketten",
+          "Several fine gold necklaces",
+          "Birkaç ince altın kolye",
+        ),
+      },
+    ],
+    addedAt: "2026-07-22",
+  },
+];
