@@ -62,10 +62,34 @@ export const loginAttempts = pgTable(
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
     email: text("email").notNull(),
+    /** Client address bucket ("unknown" when not available). */
+    ip: text("ip").notNull().default("unknown"),
     succeeded: boolean("succeeded").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("login_attempts_email_time_idx").on(t.email, t.createdAt)],
+  (t) => [
+    index("login_attempts_email_time_idx").on(t.email, t.createdAt),
+    index("login_attempts_ip_time_idx").on(t.ip, t.createdAt),
+  ],
+);
+
+/**
+ * Browsers that have signed in successfully before. A login from a known
+ * device is not blocked by the per-e-mail cap, so attackers cannot lock the
+ * owner out by spraying failures from spoofed addresses.
+ */
+export const trustedDevices = pgTable(
+  "trusted_devices",
+  {
+    /** SHA-256 of the device token; the raw token only lives in the cookie. */
+    tokenHash: text("token_hash").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("trusted_devices_user_idx").on(t.userId)],
 );
 
 // ── Media (immutable, versioned files) ───────────────────────────────────────

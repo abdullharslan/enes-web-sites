@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { Executor } from "@/db/connection";
 import { revisions } from "@/db/schema";
 import { recordAudit } from "@/lib/server/audit";
@@ -40,12 +40,21 @@ export const restoreComment = (version: number) => `Wiederhergestellt aus v${ver
 export async function replayedResult(
   tx: Executor,
   key: string | undefined,
+  entityType: EditableEntity,
+  entityId: string | null,
 ): Promise<SaveResult | null> {
   if (!key) return null;
+  // Scoped to the record (or, for creates, the entity type): a key never replays another record's result.
   const [previous] = await tx
     .select({ id: revisions.entityId, version: revisions.version })
     .from(revisions)
-    .where(eq(revisions.idempotencyKey, key));
+    .where(
+      and(
+        eq(revisions.idempotencyKey, key),
+        eq(revisions.entityType, entityType),
+        entityId === null ? undefined : eq(revisions.entityId, entityId),
+      ),
+    );
   return previous ?? null;
 }
 

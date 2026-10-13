@@ -27,10 +27,14 @@ _Last updated: 2026-10-14 by Claude Opus 5.5_
 - [x] Step 3: auth (argon2id, hashed sessions, lockout), roles owner/editor, admin shell, user management, `admin:create`
 - [x] Step 4: catalog CRUD, versioned image uploads, history + restore, optimistic concurrency
 - [x] Step 5: home-page content editor (hero image etc.) with versions, journal, media library, audit view
-- [ ] Step 6: full verify, independent security review, fixes, re-review
+- [x] Step 6: full verify, independent security review (2 Important) → fixes → re-review (2 new Important) → fixes → re-review: all Important resolved; backup/restore with verified recovery
 - [ ] Push to GitHub — **only after explicit user approval**
 
 ## Known risks / open items
+
+- Login throttling relies on a reverse proxy that sets `X-Forwarded-For`; without one, per-address limits can be bypassed (per-e-mail cap of 50/15 min and trusted devices still hold). Documented in README.
+- Accepted Low items from the security review: a stolen device cookie still has its own 5/15 min limit; the per-address limit may overshoot slightly under concurrency (lock is per e-mail); a successful login does not reset earlier failures.
+- CSP still allows `'unsafe-inline'` scripts (static CSP trade-off); nonces for the dynamic admin could be added.
 
 - No admin account exists in the dev database yet: the owner must run `npm run admin:create` (password is never stored in files).
 - Next.js will make Partial Prefetching always-on in its next major; the real-404 strategy for unknown slugs must be revisited then.

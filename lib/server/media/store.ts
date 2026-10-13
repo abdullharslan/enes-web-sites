@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
-import { and, eq, max } from "drizzle-orm";
+import { and, eq, isNull, max } from "drizzle-orm";
 import sharp from "sharp";
 import type { Executor } from "@/db/connection";
 import { media, type Translations } from "@/db/schema";
@@ -14,8 +14,19 @@ const ACCEPTED_FORMATS = new Set(["jpeg", "png", "webp"]);
 
 export class MediaRejectedError extends Error {}
 
+/** A validated, re-encoded image that is ready to be stored. */
+export interface PreparedImage {
+  /** SHA-256 of the original upload (identical uploads are idempotent). */
+  sha256: string;
+  output: Buffer;
+  width: number;
+  height: number;
+}
+
 export interface StoreImageInput {
-  input: Buffer;
+  /** Raw upload (prepared on the fly) or an image prepared before the transaction. */
+  input?: Buffer;
+  prepared?: PreparedImage;
   kind: MediaKind;
   entitySlug: string;
   alt: Translations;
@@ -34,9 +45,11 @@ export function resolveInside(root: string, key: string): string {
   return target;
 }
 
-async function normalise(
-  input: Buffer,
-): Promise<{ output: Buffer; width: number; height: number }> {
+/**
+ * Validates and re-encodes an upload (CPU/memory heavy). Call it before opening
+ * a database transaction so image work never holds a pooled connection.
+ */
+export async function prepareImage(input: Buffer): Promise<PreparedImage> {
   if (input.length === 0) throw new MediaRejectedError("Empty file");
   if (input.length > MAX_UPLOAD_BYTES) throw new MediaRejectedError("File too large");
 
@@ -61,20 +74,34 @@ async function normalise(
     })
     .webp({ quality: 82 })
     .toBuffer({ resolveWithObject: true });
-  return { output: data, width: info.width, height: info.height };
+  return {
+    sha256: createHash("sha256").update(input).digest("hex"),
+    output: data,
+    width: info.width,
+    height: info.height,
+  };
 }
 
 /**
- * Stores an uploaded image as a new immutable version for `kind/entitySlug`.
- * Identical bytes for the same entity return the existing record (idempotent).
- * Files are written atomically and never overwritten.
+ * Stores an image as a new immutable version for `kind/entitySlug`. The row is
+ * inserted first and the file written afterwards (atomically, never
+ * overwritten); only recorded files are ever served (see findServableMedia).
  */
 export async function storeImage(
   tx: Executor,
   root: string,
-  { input, kind, entitySlug, alt, createdBy = null, now = new Date() }: StoreImageInput,
+  {
+    input,
+    prepared,
+    kind,
+    entitySlug,
+    alt,
+    createdBy = null,
+    now = new Date(),
+  }: StoreImageInput,
 ): Promise<MediaRecord> {
-  const sha256 = createHash("sha256").update(input).digest("hex");
+  if (!prepared && !input) throw new MediaRejectedError("No image given");
+  const image = prepared ?? (await prepareImage(input!));
 
   const [existing] = await tx
     .select()
@@ -83,25 +110,24 @@ export async function storeImage(
       and(
         eq(media.kind, kind),
         eq(media.entitySlug, entitySlug),
-        eq(media.sha256, sha256),
+        eq(media.sha256, image.sha256),
       ),
     );
   if (existing) return existing;
-
-  const { output, width, height } = await normalise(input);
 
   const [latest] = await tx
     .select({ version: max(media.version) })
     .from(media)
     .where(and(eq(media.kind, kind), eq(media.entitySlug, entitySlug)));
   const version = (latest?.version ?? 0) + 1;
-  const key = buildMediaKey({ kind, entitySlug, version, sha256, createdAt: now });
-
+  const key = buildMediaKey({
+    kind,
+    entitySlug,
+    version,
+    sha256: image.sha256,
+    createdAt: now,
+  });
   const target = resolveInside(root, key);
-  await mkdir(dirname(target), { recursive: true });
-  const temporary = `${target}.${process.pid}.tmp`;
-  await writeFile(temporary, output, { flag: "wx", mode: 0o644 });
-  await rename(temporary, target);
 
   const [record] = await tx
     .insert(media)
@@ -110,17 +136,34 @@ export async function storeImage(
       kind,
       entitySlug,
       version,
-      sha256,
+      sha256: image.sha256,
       mimeType: "image/webp",
-      width,
-      height,
-      bytes: output.length,
+      width: image.width,
+      height: image.height,
+      bytes: image.output.length,
       alt,
       createdBy,
     })
     .returning();
   if (!record) throw new Error("Media insert returned no row");
+
+  await mkdir(dirname(target), { recursive: true });
+  const temporary = `${target}.${process.pid}.${Date.now()}.tmp`;
+  await writeFile(temporary, image.output, { flag: "wx", mode: 0o644 });
+  await rename(temporary, target);
   return record;
+}
+
+/** The media row for a key, if it was committed and not archived; files without a row are never served. */
+export async function findServableMedia(
+  db: Executor,
+  key: string,
+): Promise<MediaRecord | null> {
+  const [row] = await db
+    .select()
+    .from(media)
+    .where(and(eq(media.key, key), isNull(media.archivedAt)));
+  return row ?? null;
 }
 
 export const mediaUrl = (key: string) => `/media/${key}`;

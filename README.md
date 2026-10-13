@@ -137,3 +137,40 @@ Panel: <http://localhost:1111/admin>. Roller:
 Güvenlik: parolalar argon2id ile saklanır, oturum çerezi `httpOnly` + `SameSite=Strict`, veritabanında yalnızca token'ın SHA-256 özeti tutulur, 15 dakikada 5 hatalı denemede hesap geçici olarak kilitlenir, her yönetim işlemi denetim kaydına yazılır.
 
 E2E testleri kendi izole veritabanını (`maison_vault_e2e`) her çalıştırmada sıfırdan kurar ve rastgele parolalı geçici test hesapları oluşturur; geliştirme verinize dokunmaz.
+
+### Panelde neler yapılabilir?
+
+| Bölüm                 | İşlev                                                                                                                                  |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Ürünler               | Ekle/düzenle, 4 dilde malzeme ve açıklama, fiyat (boş = "fiyat sorunuz"), durum, görünürlük, çoklu görsel                              |
+| Markalar              | Ekle/düzenle (ör. Miu Miu), açıklama, marka sayfası görseli, sıra, görünürlük — her markanın kendi sayfası olur                        |
+| Kategoriler           | Ekle/düzenle (ör. Ayakkabılar), kategori görseli                                                                                       |
+| Ana sayfa içeriği     | Giriş (hero) görseli ve metinleri dahil ana sayfadaki **her bölüm**, iletişim bilgileri (e-posta, telefon, WhatsApp, adres, Instagram) |
+| Journal               | Yazı ekle/düzenle, görsel                                                                                                              |
+| Medya                 | Yüklenen tüm görsellerin tüm sürümleri                                                                                                 |
+| Sürüm geçmişi         | Her kaydın her sürümü, alan bazında farklar, **"Bu sürüme dön"**                                                                       |
+| Denetim kaydı (sahip) | Kim, ne zaman, neyi değiştirdi                                                                                                         |
+
+**Sürümleme:** Her kaydetme yeni bir sürüm oluşturur; geri dönmek eski sürümü **yeni bir sürüm olarak** yayınlar, geçmiş asla silinmez. Görseller üzerine yazılmaz: yeni görsel yeni bir dosya sürümüdür (`home/home-hero/20261014-153000_v3_a1b2c3d4.webp`), eski dosya arşivde kalır. İki kişi aynı kaydı aynı anda düzenlerse ikinci kayıt reddedilir (veri kaybı olmaz).
+
+**Diller:** Almanca zorunludur; İngilizce, Fransızca ve Türkçe boş bırakılırsa sitede Almanca gösterilir ve panel eksik çevirileri listeler.
+
+**Değişiklikler sitede anında görünür** (önbellek her kayıtta yenilenir).
+
+### Yedekleme ve geri yükleme
+
+Veritabanı ve görseller birlikte yedeklenmelidir:
+
+```bash
+npm run db:backup
+```
+
+```bash
+npm run db:restore -- backups/<dosya>.dump
+```
+
+### Yayına alırken (güvenlik)
+
+- Uygulamayı doğrudan internete açmayın; önüne `X-Forwarded-For` başlığını **kendisi ekleyen/üzerine yazan** bir ters proxy (ör. nginx, Caddy, platform yük dengeleyicisi) koyun. Proxy'nin arkasında başka güvenilir proxy varsa sayısını `TRUSTED_PROXY_HOPS` ile belirtin (varsayılan `0`).
+- Giriş koruması: aynı e-posta + adres için 15 dakikada 5, aynı adres için 20, bir e-posta için tüm adreslerden 50 hatalı deneme sınırı. Daha önce başarıyla giriş yapılmış tarayıcılar ("güvenilir cihaz", 90 gün) e-posta sınırından etkilenmez — saldırgan sahibi kilitleyemez.
+- HTTPS zorunludur (çerezler `__Host-` önekli ve `Secure`, HSTS açık).

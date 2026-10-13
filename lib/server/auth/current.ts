@@ -5,7 +5,11 @@ import { db } from "@/db/client";
 import { can, type Permission } from "./permissions";
 import { validateSession, type SessionUser } from "./service";
 
-export const SESSION_COOKIE = "mv_session";
+/** `__Host-` (Secure, host-only, path=/) in production; plain name for http://localhost dev. */
+const secureCookies = process.env.NODE_ENV === "production";
+export const SESSION_COOKIE = secureCookies ? "__Host-mv_session" : "mv_session";
+/** Marks a browser that signed in before (see trusted devices in auth/service.ts). */
+export const DEVICE_COOKIE = secureCookies ? "__Host-mv_device" : "mv_device";
 
 /** The signed-in admin user for this request, or null. */
 export async function getCurrentUser(): Promise<SessionUser | null> {

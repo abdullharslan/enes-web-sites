@@ -1,4 +1,5 @@
 import { hash, verify } from "@node-rs/argon2";
+import { createSemaphore } from "./semaphore";
 
 export const PASSWORD_MIN_LENGTH = 12;
 const PASSWORD_MAX_LENGTH = 256;
@@ -20,12 +21,15 @@ export function hashPassword(password: string): Promise<string> {
   return hash(password, OPTIONS);
 }
 
+/** Bounds concurrent argon2 work (19 MiB each) so a burst of logins cannot exhaust CPU/memory. */
+const limitHashing = createSemaphore(4);
+
 export async function verifyPassword(
   passwordHash: string,
   password: string,
 ): Promise<boolean> {
   try {
-    return await verify(passwordHash, password);
+    return await limitHashing(() => verify(passwordHash, password));
   } catch {
     return false;
   }

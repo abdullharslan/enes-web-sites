@@ -1,13 +1,24 @@
-import { and, count, eq, gt } from "drizzle-orm";
+import { and, count, eq, gt, sql } from "drizzle-orm";
 import type { Executor } from "@/db/connection";
-import { loginAttempts, sessions, users } from "@/db/schema";
+import { loginAttempts, sessions, trustedDevices, users } from "@/db/schema";
 import { recordAudit } from "@/lib/server/audit";
 import { hashPassword, passwordProblems, verifyPassword } from "./password";
 import type { Role } from "./permissions";
 import { generateSessionToken, hashSessionToken } from "./token";
 
 export const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
-export const LOGIN_LOCKOUT = { maxFailures: 5, windowMs: 15 * 60 * 1000 } as const;
+/**
+ * Failed logins per e-mail *and* address within the window lock that pair only,
+ * so an attacker elsewhere cannot lock the owner out. Each address also has a
+ * global budget across all e-mails (credential stuffing).
+ */
+export const LOGIN_LOCKOUT = {
+  maxFailures: 5,
+  maxFailuresPerIp: 20,
+  /** Upper bound across all addresses (forwarded addresses can be spoofed). */
+  maxFailuresPerEmail: 50,
+  windowMs: 15 * 60 * 1000,
+} as const;
 
 export interface SessionUser {
   id: string;
@@ -61,52 +72,144 @@ export async function createUser(
 }
 
 export type AuthResult =
-  { ok: true; user: SessionUser } | { ok: false; reason: "invalid" | "locked" };
+  | { ok: true; user: SessionUser; deviceToken: string }
+  | { ok: false; reason: "invalid" | "locked" };
 
+export const TRUSTED_DEVICE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+/** Attempt buckets of trusted devices are prefixed so they never count against address limits. */
+const DEVICE_BUCKET = "device:";
+
+async function trustedDeviceOf(
+  db: Executor,
+  userId: string | undefined,
+  token: string | undefined,
+  now: Date,
+) {
+  if (!userId || !token) return null;
+  const tokenHash = hashSessionToken(token);
+  const [device] = await db
+    .select()
+    .from(trustedDevices)
+    .where(
+      and(
+        eq(trustedDevices.tokenHash, tokenHash),
+        eq(trustedDevices.userId, userId),
+        gt(trustedDevices.expiresAt, now),
+      ),
+    );
+  return device ? tokenHash : null;
+}
+
+/**
+ * Checks credentials with layered throttling:
+ * - per (e-mail, bucket): 5 failures / 15 min — the bucket is the trusted device or the client address;
+ * - per address: 20 failures / 15 min (credential stuffing);
+ * - per e-mail across addresses: 50 / 15 min (addresses can be spoofed) — not applied to trusted devices,
+ *   so nobody can lock the owner out of a browser that has signed in before.
+ * The limit check and the attempt record happen in one short transaction under a per-e-mail advisory
+ * lock (parallel requests cannot slip through); the slow password hash runs without holding a connection.
+ */
 export async function authenticate(
   db: Executor,
-  { email, password, now = new Date() }: { email: string; password: string; now?: Date },
+  {
+    email,
+    password,
+    ip = "unknown",
+    deviceToken,
+    now = new Date(),
+  }: { email: string; password: string; ip?: string; deviceToken?: string; now?: Date },
 ): Promise<AuthResult> {
   const normalised = normaliseEmail(email);
   const windowStart = new Date(now.getTime() - LOGIN_LOCKOUT.windowMs);
+  const recentFailures = and(
+    eq(loginAttempts.succeeded, false),
+    gt(loginAttempts.createdAt, windowStart),
+  );
 
-  const [failures] = await db
-    .select({ n: count() })
-    .from(loginAttempts)
-    .where(
-      and(
-        eq(loginAttempts.email, normalised),
-        eq(loginAttempts.succeeded, false),
-        gt(loginAttempts.createdAt, windowStart),
-      ),
-    );
-  if ((failures?.n ?? 0) >= LOGIN_LOCKOUT.maxFailures) {
-    await db
+  const gate = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${normalised}))`);
+    const [user] = await tx.select().from(users).where(eq(users.email, normalised));
+    const device = await trustedDeviceOf(tx, user?.id, deviceToken, now);
+    const bucket = device
+      ? `${DEVICE_BUCKET}${device.slice(0, 32)}`
+      : ip.slice(0, 64) || "unknown";
+
+    const [[pair], [perIp], [perEmail]] = await Promise.all([
+      tx
+        .select({ n: count() })
+        .from(loginAttempts)
+        .where(
+          and(
+            eq(loginAttempts.email, normalised),
+            eq(loginAttempts.ip, bucket),
+            recentFailures,
+          ),
+        ),
+      tx
+        .select({ n: count() })
+        .from(loginAttempts)
+        .where(and(eq(loginAttempts.ip, bucket), recentFailures)),
+      tx
+        .select({ n: count() })
+        .from(loginAttempts)
+        .where(
+          and(
+            eq(loginAttempts.email, normalised),
+            sql`${loginAttempts.ip} NOT LIKE ${DEVICE_BUCKET + "%"}`,
+            recentFailures,
+          ),
+        ),
+    ]);
+    const locked =
+      (pair?.n ?? 0) >= LOGIN_LOCKOUT.maxFailures ||
+      (!device && (perIp?.n ?? 0) >= LOGIN_LOCKOUT.maxFailuresPerIp) ||
+      (!device && (perEmail?.n ?? 0) >= LOGIN_LOCKOUT.maxFailuresPerEmail);
+    // Attempts made while locked are not recorded, so they cannot extend the lock.
+    if (locked) return { locked: true as const };
+
+    // Recorded as a failure up front; flipped to success below if the password matches.
+    const [attempt] = await tx
       .insert(loginAttempts)
-      .values({ email: normalised, succeeded: false, createdAt: now });
-    return { ok: false, reason: "locked" };
-  }
+      .values({ email: normalised, ip: bucket, succeeded: false, createdAt: now })
+      .returning({ id: loginAttempts.id });
+    return { locked: false as const, user, device, attemptId: attempt!.id };
+  });
+  if (gate.locked) return { ok: false, reason: "locked" };
 
-  const [user] = await db.select().from(users).where(eq(users.email, normalised));
+  const { user } = gate;
   const valid = await verifyPassword(
     user?.passwordHash ?? (await getDummyHash()),
     password,
   );
-  const succeeded = Boolean(user && user.isActive && valid);
+  if (!user || !user.isActive || !valid) return { ok: false, reason: "invalid" };
 
-  await db.insert(loginAttempts).values({ email: normalised, succeeded, createdAt: now });
-  if (!succeeded || !user) return { ok: false, reason: "invalid" };
-
-  await recordAudit(db, {
-    actorId: user.id,
-    action: "auth.login",
-    entityType: "user",
-    entityId: user.id,
+  return db.transaction(async (tx) => {
+    await tx
+      .update(loginAttempts)
+      .set({ succeeded: true })
+      .where(eq(loginAttempts.id, gate.attemptId));
+    let token = deviceToken ?? "";
+    if (!gate.device) {
+      token = generateSessionToken();
+      await tx.insert(trustedDevices).values({
+        tokenHash: hashSessionToken(token),
+        userId: user.id,
+        expiresAt: new Date(now.getTime() + TRUSTED_DEVICE_TTL_MS),
+        createdAt: now,
+      });
+    }
+    await recordAudit(tx, {
+      actorId: user.id,
+      action: "auth.login",
+      entityType: "user",
+      entityId: user.id,
+    });
+    return {
+      ok: true as const,
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      deviceToken: token,
+    };
   });
-  return {
-    ok: true,
-    user: { id: user.id, email: user.email, name: user.name, role: user.role },
-  };
 }
 
 export async function createSession(

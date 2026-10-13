@@ -55,3 +55,6 @@ next-env.d.ts
 
 # E2E throw-away credentials
 /e2e/.auth/
+
+# local backups (contain personal data and password hashes)
+/backups/

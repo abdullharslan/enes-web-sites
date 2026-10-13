@@ -1,23 +1,19 @@
 "use server";
 
-import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { db } from "@/db/client";
-import type { Executor } from "@/db/connection";
+import type { FormState } from "@/lib/admin/form-state";
+import { isFormState, prepareUpload, runAdminChange } from "@/lib/admin/run-change";
 import {
   brandInput,
   categoryInput,
   productInput,
   translationsFromForm,
 } from "@/lib/admin/schemas";
-import { fieldErrors, formValues, type FormState } from "@/lib/admin/form-state";
 import { CATALOG_TAG } from "@/lib/server/catalog";
 import {
-  DuplicateSlugError,
-  RecordNotFoundError,
-  VersionConflictError,
   addProductImage,
+  catalogSlug,
   removeProductImage,
   saveBrand,
   saveCategory,
@@ -26,11 +22,12 @@ import {
   setCategoryTile,
   type SaveResult,
 } from "@/lib/server/catalog/admin";
-import { ForbiddenError, requirePermission } from "@/lib/server/auth/current";
-import { MediaRejectedError, storeImage } from "@/lib/server/media/store";
-import type { MediaKind } from "@/lib/server/media/naming";
+import type { Executor } from "@/db/connection";
+import { storeImage } from "@/lib/server/media/store";
 
 const MEDIA_ROOT = process.env.MEDIA_ROOT ?? "storage/media";
+const TAGS = [CATALOG_TAG] as const;
+const UPLOAD_PERMISSIONS = ["catalog:write", "media:write"] as const;
 
 // ── Form parsing ─────────────────────────────────────────────────────────────
 
@@ -47,73 +44,24 @@ const optionalInt = (fd: FormData, key: string) =>
   text(fd, key).trim() === "" ? null : int(fd, key);
 const optionalText = (fd: FormData, key: string) => text(fd, key).trim() || null;
 const checked = (fd: FormData, key: string) => fd.get(key) === "on";
-const recordId = (fd: FormData) => z.uuid().safeParse(text(fd, "id")).data ?? null;
-const idempotencyKey = (fd: FormData) =>
-  z.uuid().safeParse(text(fd, "idempotencyKey")).data;
-
-// ── Shared execution ─────────────────────────────────────────────────────────
-
-/**
- * Authorises, runs the change in one transaction and refreshes the public
- * cache. Known failures become form errors; anything else propagates.
- */
-async function execute(
-  fd: FormData,
-  change: (tx: Executor, actorId: string) => Promise<SaveResult>,
-): Promise<{ result: SaveResult } | { state: FormState }> {
-  const values = formValues(fd);
-  try {
-    const actor = await requirePermission("catalog:write");
-    // One transaction: entity row, revision and audit event commit or roll back together.
-    const result = await db.transaction((tx) => change(tx, actor.id));
-    updateTag(CATALOG_TAG);
-    return { result };
-  } catch (error) {
-    if (error instanceof ForbiddenError)
-      return { state: { status: "error", error: "forbidden" } };
-    if (error instanceof z.ZodError) {
-      return {
-        state: {
-          status: "error",
-          error: "invalid",
-          fieldErrors: fieldErrors(error),
-          values,
-        },
-      };
-    }
-    if (error instanceof VersionConflictError)
-      return { state: { status: "error", error: "conflict", values } };
-    if (error instanceof DuplicateSlugError) {
-      return {
-        state: {
-          status: "error",
-          error: "duplicateSlug",
-          fieldErrors: { slug: "duplicate" },
-          values,
-        },
-      };
-    }
-    if (error instanceof RecordNotFoundError)
-      return { state: { status: "error", error: "notFound" } };
-    if (error instanceof MediaRejectedError)
-      return { state: { status: "error", error: "upload", values } };
-    throw error;
-  }
-}
+const uuid = (value: string) => z.uuid().safeParse(value).data ?? null;
+const idempotencyKey = (fd: FormData) => uuid(text(fd, "idempotencyKey")) ?? undefined;
 
 async function saveAndRespond(
   fd: FormData,
   basePath: string,
   change: (tx: Executor, actorId: string, id: string | null) => Promise<SaveResult>,
 ): Promise<FormState> {
-  const id = recordId(fd);
-  const outcome = await execute(fd, (tx, actorId) => change(tx, actorId, id));
+  const id = uuid(text(fd, "id"));
+  const outcome = await runAdminChange(fd, ["catalog:write"], TAGS, (tx, actorId) =>
+    change(tx, actorId, id),
+  );
   if ("state" in outcome) return outcome.state;
   // New records continue on their edit page; edits re-render with a fresh version.
   redirect(`${basePath}/${outcome.result.id}?saved=${outcome.result.version}`);
 }
 
-// ── Brands & categories ──────────────────────────────────────────────────────
+// ── Brands, categories, products ─────────────────────────────────────────────
 
 export async function saveBrandAction(
   _prev: FormState,
@@ -158,8 +106,6 @@ export async function saveCategoryAction(
   );
 }
 
-// ── Products ─────────────────────────────────────────────────────────────────
-
 export async function saveProductAction(
   _prev: FormState,
   fd: FormData,
@@ -195,17 +141,7 @@ export async function saveProductAction(
 
 // ── Images ───────────────────────────────────────────────────────────────────
 
-const imageTarget = z.object({
-  target: z.enum(["brand", "category", "product"]),
-  id: z.uuid(),
-  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-});
-
-const KIND: Record<"brand" | "category" | "product", MediaKind> = {
-  brand: "brand",
-  category: "category",
-  product: "product",
-};
+const TARGETS = ["brand", "category", "product"] as const;
 const EDIT_PATH = {
   brand: "/admin/brands",
   category: "/admin/categories",
@@ -217,38 +153,44 @@ export async function uploadImageAction(
   _prev: FormState,
   fd: FormData,
 ): Promise<FormState> {
-  const file = fd.get("image");
-  const parsed = imageTarget.safeParse({
-    target: text(fd, "target"),
-    id: text(fd, "id"),
-    slug: text(fd, "slug"),
-  });
-  if (!parsed.success || !(file instanceof File) || file.size === 0) {
-    return { status: "error", error: "upload", values: formValues(fd) };
-  }
-  const { target, id, slug } = parsed.data;
-  const alt = translationsFromForm(fd, "alt");
-  const outcome = await execute(fd, async (tx, actorId) => {
-    const media = await storeImage(tx, MEDIA_ROOT, {
-      input: Buffer.from(await file.arrayBuffer()),
-      kind: KIND[target],
-      entitySlug: slug,
-      alt: alt.de ? alt : { de: slug },
-      createdBy: actorId,
-    });
-    if (target === "brand") return setBrandHero(tx, actorId, id, media.id);
-    if (target === "category") return setCategoryTile(tx, actorId, id, media.id);
-    return addProductImage(tx, actorId, id, media.id);
-  });
+  const target = z.enum(TARGETS).safeParse(text(fd, "target")).data;
+  const id = uuid(text(fd, "id"));
+  if (!target || !id) return { status: "error", error: "upload" };
+
+  const upload = await prepareUpload(fd, UPLOAD_PERMISSIONS);
+  if (isFormState(upload)) return upload;
+
+  const outcome = await runAdminChange(
+    fd,
+    ["catalog:write", "media:write"],
+    TAGS,
+    async (tx, actorId) => {
+      const slug = await catalogSlug(tx, target, id);
+      const media = await storeImage(tx, MEDIA_ROOT, {
+        prepared: upload.prepared,
+        kind: target,
+        entitySlug: slug,
+        alt: upload.alt.de ? upload.alt : { de: slug },
+        createdBy: actorId,
+      });
+      if (target === "brand") return setBrandHero(tx, actorId, id, media.id);
+      if (target === "category") return setCategoryTile(tx, actorId, id, media.id);
+      return addProductImage(tx, actorId, id, media.id);
+    },
+  );
   if ("state" in outcome) return outcome.state;
   redirect(`${EDIT_PATH[target]}/${id}?saved=${outcome.result.version}`);
 }
 
 export async function removeProductImageAction(fd: FormData): Promise<void> {
-  const productId = z.uuid().parse(text(fd, "productId"));
-  const mediaId = z.uuid().parse(text(fd, "mediaId"));
-  const outcome = await execute(fd, (tx, actorId) =>
-    removeProductImage(tx, actorId, productId, mediaId),
+  const productId = uuid(text(fd, "productId"));
+  const mediaId = uuid(text(fd, "mediaId"));
+  if (!productId || !mediaId) return;
+  const outcome = await runAdminChange(
+    fd,
+    ["catalog:write", "media:write"],
+    TAGS,
+    (tx, actorId) => removeProductImage(tx, actorId, productId, mediaId),
   );
   if ("result" in outcome)
     redirect(`/admin/products/${productId}?saved=${outcome.result.version}`);

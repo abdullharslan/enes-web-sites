@@ -42,9 +42,12 @@ test.describe("admin authentication", () => {
     await expect(menu.getByRole("link", { name: "Kullanıcılar" })).toBeVisible();
     await expect(menu.getByRole("link", { name: "Denetim kaydı" })).toBeVisible();
 
-    const cookie = (await context.cookies()).find((c) => c.name === "mv_session");
+    const cookie = (await context.cookies()).find((c) => c.name.endsWith("mv_session"));
     expect(cookie?.httpOnly).toBe(true);
     expect(cookie?.sameSite).toBe("Strict");
+    const device = (await context.cookies()).find((c) => c.name.endsWith("mv_device"));
+    expect(device?.httpOnly).toBe(true);
+    expect(device?.value).toMatch(/^[A-Za-z0-9_-]{43}$/);
 
     await menu.getByRole("button", { name: "Çıkış yap" }).click();
     await expect(page).toHaveURL(/\/admin\/login$/);

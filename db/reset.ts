@@ -14,10 +14,10 @@ export function assertLocalDatabase(
   nodeEnv = process.env.NODE_ENV,
 ): string {
   if (!url) throw new Error("DATABASE_URL is not set");
-  if (nodeEnv === "production") throw new Error("db:reset is disabled in production");
+  if (nodeEnv === "production") throw new Error("This command is disabled in production");
   const host = new URL(url).hostname.replace(/^\[|\]$/g, "");
   if (!LOCAL_HOSTS.has(host))
-    throw new Error(`db:reset only runs against a local database, not ${host}`);
+    throw new Error(`This command only runs against a local database, not ${host}`);
   return url;
 }
 

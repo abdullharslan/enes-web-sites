@@ -8,6 +8,20 @@
       "when": 1791928822733,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791933342532,
+      "tag": "0001_login_attempts_ip",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791934031815,
+      "tag": "0002_trusted_devices",
+      "breakpoints": true
     }
   ]
 }

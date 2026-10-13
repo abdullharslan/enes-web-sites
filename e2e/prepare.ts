@@ -30,8 +30,14 @@ async function prepare(): Promise<void> {
     const exists = await admin.db.execute(
       sql`SELECT 1 FROM pg_database WHERE datname = ${database}`,
     );
-    if (exists.length === 0)
-      await admin.db.execute(sql.raw(`CREATE DATABASE "${database}"`));
+    // Identifiers cannot be bound parameters: allow-list the name, then quote it.
+    if (!/^[a-z0-9_]+$/.test(database))
+      throw new Error(`Unsafe database name: ${database}`);
+    if (exists.length === 0) {
+      await admin.db.execute(
+        sql.raw(`CREATE DATABASE "${database.replaceAll('"', '""')}"`),
+      );
+    }
   } finally {
     await admin.close();
   }

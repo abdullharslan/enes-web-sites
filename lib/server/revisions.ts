@@ -30,7 +30,15 @@ export async function recordRevision(
     const [existing] = await tx
       .select({ version: revisions.version })
       .from(revisions)
-      .where(eq(revisions.idempotencyKey, input.idempotencyKey));
+      .where(
+        and(
+          eq(revisions.idempotencyKey, input.idempotencyKey),
+          eq(revisions.entityType, input.entityType),
+          eq(revisions.entityId, input.entityId),
+        ),
+      );
+    // Same entity → replay. Another entity with this key → the insert below hits
+    // the unique constraint and the whole change rolls back (fail-closed).
     if (existing) return { version: existing.version, created: false };
   }
 

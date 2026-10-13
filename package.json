@@ -23,7 +23,9 @@
     "db:seed": "tsx --env-file=.env.local db/seed.ts",
     "test:int": "vitest run --config vitest.integration.config.mts",
     "db:reset": "tsx --env-file=.env.local db/reset.ts",
-    "admin:create": "tsx --env-file=.env.local db/create-admin.ts"
+    "admin:create": "tsx --env-file=.env.local db/create-admin.ts",
+    "db:backup": "tsx --env-file=.env.local scripts/backup.ts",
+    "db:restore": "tsx --env-file=.env.local scripts/restore.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",

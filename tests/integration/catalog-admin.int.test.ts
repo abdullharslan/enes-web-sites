@@ -8,6 +8,7 @@ import {
   removeProductImage,
   restoreRevision,
   saveBrand,
+  saveCategory,
   saveProduct,
   setBrandHero,
   VersionConflictError,
@@ -240,5 +241,52 @@ describe("products", () => {
           expectedVersion: 0,
         }),
       ).rejects.toThrow(/slug/i);
+    }));
+});
+
+describe("idempotency key scope", () => {
+  it("a key used for one entity type is never replayed for another", () =>
+    withRollback(async (tx) => {
+      const saved = await saveBrand(tx, null, null, brand, {
+        idempotencyKey: "shared-key",
+      });
+      await expect(
+        saveCategory(
+          tx,
+          null,
+          null,
+          {
+            slug: "scope-test",
+            name: { de: "Test" },
+            sortOrder: 0,
+            isVisible: true,
+            expectedVersion: 0,
+          },
+          { idempotencyKey: "shared-key" },
+        ),
+      ).rejects.not.toEqual(saved);
+    }));
+});
+
+describe("idempotency key scope (per record)", () => {
+  it("a key used for brand A is never replayed as a save of brand B", () =>
+    withRollback(async (tx) => {
+      const a = await saveBrand(tx, null, null, { ...brand, slug: "brand-a" });
+      const b = await saveBrand(tx, null, null, { ...brand, slug: "brand-b" });
+      await saveBrand(
+        tx,
+        null,
+        a.id,
+        { ...brand, slug: "brand-a", name: "A2", expectedVersion: 1 },
+        { idempotencyKey: "k-1" },
+      );
+      const result = saveBrand(
+        tx,
+        null,
+        b.id,
+        { ...brand, slug: "brand-b", name: "B2", expectedVersion: 1 },
+        { idempotencyKey: "k-1" },
+      );
+      await expect(result).rejects.toThrow();
     }));
 });

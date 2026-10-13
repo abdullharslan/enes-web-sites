@@ -1,16 +1,22 @@
 import { readFile } from "node:fs/promises";
+import { db } from "@/db/client";
 import { parseMediaKey } from "@/lib/server/media/naming";
-import { resolveInside } from "@/lib/server/media/store";
+import { findServableMedia, resolveInside } from "@/lib/server/media/store";
 
 const MEDIA_ROOT = process.env.MEDIA_ROOT ?? "storage/media";
 
-/** Serves immutable, versioned uploads. Keys are parsed strictly before any disk access. */
+/**
+ * Serves immutable, versioned uploads. The key is parsed strictly and must
+ * belong to a committed media row before the disk is touched.
+ */
 export async function GET(
   _request: Request,
   { params }: RouteContext<"/media/[...key]">,
 ) {
   const key = (await params).key.join("/");
-  if (!parseMediaKey(key)) return new Response("Not found", { status: 404 });
+  if (!parseMediaKey(key) || !(await findServableMedia(db, key))) {
+    return new Response("Not found", { status: 404 });
+  }
 
   try {
     const file = await readFile(resolveInside(MEDIA_ROOT, key));

@@ -62,7 +62,7 @@ export async function saveContentBlock(
   input: Record<string, unknown> & { expectedVersion: number },
   options: SaveOptions = {},
 ): Promise<SaveResult> {
-  const replay = await replayedResult(tx, options.idempotencyKey);
+  const replay = await replayedResult(tx, options.idempotencyKey, "content", key);
   if (replay) return replay;
   const { expectedVersion, ...rest } = input;
   const data = blockInputSchema(key).parse(rest);
@@ -177,7 +177,7 @@ export async function saveJournalEntry(
   input: JournalInput,
   options: SaveOptions = {},
 ): Promise<SaveResult> {
-  const replay = await replayedResult(tx, options.idempotencyKey);
+  const replay = await replayedResult(tx, options.idempotencyKey, "journal", id);
   if (replay) return replay;
   const { expectedVersion, ...values } = journalInput.parse(input);
   const row = await writeJournal(tx, id, values, expectedVersion);
@@ -282,4 +282,13 @@ export async function restoreContentRevision(
   if (!(entityId in CONTENT_BLOCKS))
     throw new RecordNotFoundError(`Unknown content block ${entityId}`);
   return restoreContent(tx, actorId, entityId as ContentKey, revision.data, version);
+}
+
+export async function journalSlug(tx: Executor, id: string): Promise<string> {
+  const [row] = await tx
+    .select({ slug: journalEntries.slug })
+    .from(journalEntries)
+    .where(eq(journalEntries.id, id));
+  if (!row) throw new RecordNotFoundError(`No journal entry ${id}`);
+  return row.slug;
 }

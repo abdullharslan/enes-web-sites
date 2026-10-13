@@ -114,7 +114,7 @@ export async function saveBrand(
   input: BrandInput,
   options: SaveOptions = {},
 ): Promise<SaveResult> {
-  const replay = await replayedResult(tx, options.idempotencyKey);
+  const replay = await replayedResult(tx, options.idempotencyKey, "brand", id);
   if (replay) return replay;
   const { expectedVersion, ...values } = brandInput.parse(input);
   const row = await writeBrand(tx, id, values, expectedVersion);
@@ -185,7 +185,7 @@ export async function saveCategory(
   input: CategoryInput,
   options: SaveOptions = {},
 ): Promise<SaveResult> {
-  const replay = await replayedResult(tx, options.idempotencyKey);
+  const replay = await replayedResult(tx, options.idempotencyKey, "category", id);
   if (replay) return replay;
   const { expectedVersion, ...values } = categoryInput.parse(input);
   const row = await writeCategory(tx, id, values, expectedVersion);
@@ -276,7 +276,7 @@ export async function saveProduct(
   input: ProductInput,
   options: SaveOptions = {},
 ): Promise<SaveResult> {
-  const replay = await replayedResult(tx, options.idempotencyKey);
+  const replay = await replayedResult(tx, options.idempotencyKey, "product", id);
   if (replay) return replay;
   const { expectedVersion, ...values } = productInput.parse(input);
   const row = await writeProduct(tx, id, values, expectedVersion);
@@ -430,4 +430,17 @@ export async function restoreRevision(
       });
     }
   }
+}
+
+/** The stored slug of a catalog record (never trust a slug sent by the client). */
+export async function catalogSlug(
+  tx: Executor,
+  entity: CatalogEntity,
+  id: string,
+): Promise<string> {
+  const table =
+    entity === "brand" ? brands : entity === "category" ? categories : products;
+  const [row] = await tx.select({ slug: table.slug }).from(table).where(eq(table.id, id));
+  if (!row) throw new RecordNotFoundError(`No ${entity} ${id}`);
+  return row.slug;
 }

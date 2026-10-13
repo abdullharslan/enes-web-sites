@@ -104,3 +104,6 @@ export const journalInput = z.object({
 });
 
 export type JournalInput = z.infer<typeof journalInput>;
+
+/** Alt text for an uploaded image (optional; German required if any language is given). */
+export const altInput = optionalTranslations(300);

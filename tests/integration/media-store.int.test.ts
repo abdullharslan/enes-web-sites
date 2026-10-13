@@ -110,3 +110,31 @@ describe("storeImage", () => {
       ).rejects.toThrow();
     }));
 });
+
+describe("serving only recorded media", () => {
+  it("finds a stored key and ignores a file whose transaction was rolled back", async () => {
+    const { findServableMedia, prepareImage } = await import("@/lib/server/media/store");
+    let key = "";
+    await withRollback(async (tx) => {
+      const record = await storeImage(tx, media.root, {
+        prepared: await prepareImage(await sampleJpeg("#abcdef")),
+        kind: "brand",
+        entitySlug: "orphan-test",
+        alt,
+        now,
+      });
+      key = record.key;
+      expect(await findServableMedia(tx, key)).toMatchObject({ key });
+    });
+    // The transaction rolled back: the file may exist on disk, but it is not served.
+    const { testDb } = await import("./helpers");
+    expect(await findServableMedia(testDb, key)).toBeNull();
+  });
+
+  it("rejects bad input before any database work", async () => {
+    const { prepareImage } = await import("@/lib/server/media/store");
+    await expect(prepareImage(Buffer.from("GIF89a"))).rejects.toBeInstanceOf(
+      MediaRejectedError,
+    );
+  });
+});
