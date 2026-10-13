@@ -87,7 +87,8 @@ export function SiteHeader({ locale, homeHref, links, labels }: SiteHeaderProps)
           </span>
         </Link>
 
-        <div className="justify-self-end">{switcher}</div>
+        {/* Four locales do not fit next to the logo on phones; there the switcher lives in the menu. */}
+        <div className="hidden justify-self-end sm:block">{switcher}</div>
       </div>
 
       <dialog

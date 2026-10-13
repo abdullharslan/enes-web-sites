@@ -30,7 +30,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
-  partialPrefetching: true,
+  // Partial Prefetching stays off: without it, routes that await params outside
+  // <Suspense> block until rendered, so unknown slugs return a real HTTP 404.
   poweredByHeader: false,
   turbopack: {
     rules: {

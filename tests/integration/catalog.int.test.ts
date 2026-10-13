@@ -56,7 +56,11 @@ describe("seedCatalog + loadCatalog", () => {
     withRollback(async (tx) => {
       const first = await seedCatalog(tx, { mediaRoot: media.root, now });
       const second = await seedCatalog(tx, { mediaRoot: media.root, now });
-      expect(first).toEqual({ brands: 6, categories: 3, products: SEED_PRODUCTS.length });
+      expect(first).toEqual({
+        brands: SEED_BRANDS.length,
+        categories: SEED_CATEGORIES.length,
+        products: SEED_PRODUCTS.length,
+      });
       expect(second).toEqual({ brands: 0, categories: 0, products: 0 });
 
       const [row] = await tx

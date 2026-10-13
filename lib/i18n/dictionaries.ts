@@ -8,6 +8,7 @@ export type Dictionary = typeof de;
 const loaders: Record<Locale, () => Promise<Dictionary>> = {
   de: () => import("@/messages/de.json").then((m) => m.default),
   en: () => import("@/messages/en.json").then((m) => m.default),
+  fr: () => import("@/messages/fr.json").then((m) => m.default),
   tr: () => import("@/messages/tr.json").then((m) => m.default),
 };
 

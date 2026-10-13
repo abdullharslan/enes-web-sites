@@ -44,10 +44,12 @@ test.describe("privacy without JavaScript", () => {
 
 test("language switch keeps collection filters", async ({ page }) => {
   await page.goto("/de/collection?brand=rolex&sort=price-asc");
-  await page
+  const en = page
     .getByRole("navigation", { name: "Sprache" })
-    .getByRole("link", { name: "en" })
-    .click();
+    .getByRole("link", { name: "en" });
+  // The query is client data: before hydration the link keeps the page but not the filters.
+  await expect(en).toHaveAttribute("href", /\?brand=rolex&sort=price-asc$/);
+  await en.click();
   await expect(page).toHaveURL(/\/en\/collection\?brand=rolex&sort=price-asc$/);
 });
 
@@ -78,9 +80,24 @@ test("focused elements are not hidden under the fixed header (WCAG 2.4.11)", asy
   await page.locator("footer a").last().focus();
   for (let i = 0; i < 25; i += 1) {
     await page.keyboard.press("Shift+Tab");
-    const top = await page.evaluate(() => {
+    const top = await page.evaluate(async () => {
+      // Focus scrolling is asynchronous: measure only once the position is stable.
+      let last = -1;
+      let stableFrames = 0;
+      while (stableFrames < 3) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        stableFrames = window.scrollY === last ? stableFrames + 1 : 0;
+        last = window.scrollY;
+      }
       const el = document.activeElement;
-      if (!el || el.closest("header")) return null;
+      // The header itself and fixed overlays (skip link, contact rail) are never scrolled under it.
+      if (!el || el.closest("header") || getComputedStyle(el).position === "fixed")
+        return null;
+      if (
+        el.closest("aside") &&
+        getComputedStyle(el.closest("aside")!).position === "fixed"
+      )
+        return null;
       return el.getBoundingClientRect().top;
     });
     if (top !== null) expect(top).toBeGreaterThanOrEqual(80);

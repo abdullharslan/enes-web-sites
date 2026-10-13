@@ -5,6 +5,7 @@ import { localePath, type Locale } from "@/lib/i18n/locales";
 const NAV_ITEMS = [
   ["home", "/"],
   ["collection", "/collection"],
+  ["brands", "/brands"],
   ["about", "/about"],
   ["sell", "/sell"],
   ["journal", "/journal"],

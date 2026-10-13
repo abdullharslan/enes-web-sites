@@ -14,7 +14,7 @@ describe("isLocale", () => {
     expect(isLocale(locale)).toBe(true);
   });
 
-  it.each(["", "DE", "fr", "de-DE", " de", "__proto__", "constructor"])(
+  it.each(["", "DE", "it", "fr-FR", "de-DE", " de", "__proto__", "constructor"])(
     "rejects unsupported value %j",
     (value) => {
       expect(isLocale(value)).toBe(false);
@@ -28,16 +28,20 @@ describe("resolveLocale", () => {
     expect(resolveLocale("")).toBe(DEFAULT_LOCALE);
   });
 
+  it("supports French", () => {
+    expect(resolveLocale("fr-FR,fr;q=0.9")).toBe("fr");
+  });
+
   it("matches a region-specific tag to its base language", () => {
     expect(resolveLocale("tr-TR,tr;q=0.9")).toBe("tr");
   });
 
   it("respects quality weights rather than header order", () => {
-    expect(resolveLocale("fr;q=0.9,en;q=0.5,tr;q=0.8")).toBe("tr");
+    expect(resolveLocale("it;q=0.9,en;q=0.5,tr;q=0.8")).toBe("tr");
   });
 
   it("ignores unsupported languages and wildcard", () => {
-    expect(resolveLocale("fr-FR,*;q=0.1")).toBe(DEFAULT_LOCALE);
+    expect(resolveLocale("it-IT,*;q=0.1")).toBe(DEFAULT_LOCALE);
   });
 
   it("ignores entries with q=0 or malformed weights", () => {

@@ -122,12 +122,15 @@ export default async function ProductPage({
 
         <div className="flex flex-col gap-8 lg:sticky lg:top-28 lg:self-start">
           <header className="flex flex-col gap-3">
-            <p
-              lang="en"
-              translate="no"
-              className="text-xs font-semibold uppercase tracking-luxe text-gold"
-            >
-              {brandName}
+            <p>
+              <Link
+                href={localePath(locale, `/brands/${product.brand}`)}
+                lang="en"
+                translate="no"
+                className="inline-flex min-h-11 items-center text-xs font-semibold uppercase tracking-luxe text-gold underline-offset-8 hover:underline"
+              >
+                {brandName}
+              </Link>
             </p>
             <h1 className="font-display text-5xl leading-tight font-light text-cream sm:text-6xl">
               {product.model}

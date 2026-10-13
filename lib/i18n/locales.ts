@@ -1,4 +1,4 @@
-export const LOCALES = ["de", "en", "tr"] as const;
+export const LOCALES = ["de", "en", "fr", "tr"] as const;
 
 export type Locale = (typeof LOCALES)[number];
 
@@ -8,6 +8,7 @@ export const DEFAULT_LOCALE: Locale = "de";
 export const INTL_LOCALE: Record<Locale, string> = {
   de: "de-DE",
   en: "en-GB",
+  fr: "fr-FR",
   tr: "tr-TR",
 };
 

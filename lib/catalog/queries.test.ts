@@ -11,10 +11,10 @@ const base = {
   model: "M",
   condition: "excellent",
   setItems: [],
-  material: { de: "x", en: "x", tr: "x" },
-  description: { de: "x", en: "x", tr: "x" },
+  material: { de: "x", en: "x", fr: "x", tr: "x" },
+  description: { de: "x", en: "x", fr: "x", tr: "x" },
   price: { kind: "on-request" },
-  images: [{ src: "/images/x.jpg", alt: { de: "x", en: "x", tr: "x" } }],
+  images: [{ src: "/images/x.jpg", alt: { de: "x", en: "x", fr: "x", tr: "x" } }],
 } as const;
 
 const p = (slug: string, extra: Partial<Product>): Product =>

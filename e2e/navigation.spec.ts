@@ -13,7 +13,7 @@ test.describe("locale routing", () => {
   });
 
   test("falls back to German for unsupported languages", async ({ browser }) => {
-    const context = await browser.newContext({ locale: "fr-FR" });
+    const context = await browser.newContext({ locale: "it-IT" });
     const page = await context.newPage();
     await page.goto("/collection");
     await expect(page).toHaveURL(/\/de\/collection$/);
@@ -34,7 +34,7 @@ test.describe("locale routing", () => {
 });
 
 test.describe("browsing flow", () => {
-  test("home → brand → product → WhatsApp enquiry", async ({ page }) => {
+  test("home → brand page → product → WhatsApp enquiry", async ({ page }) => {
     await page.goto("/de");
     await expect(
       page.getByRole("heading", { level: 1, name: "Taschen, Uhren & Schmuck" }),
@@ -44,7 +44,8 @@ test.describe("browsing flow", () => {
       .getByRole("region", { name: "Wählen Sie eine Marke" })
       .getByRole("link", { name: "Rolex" })
       .click();
-    await expect(page).toHaveURL(/\/de\/collection\?brand=rolex$/);
+    await expect(page).toHaveURL(/\/de\/brands\/rolex$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Rolex" })).toBeVisible();
     await expect(page.getByRole("status")).toHaveText("3 Objekte");
 
     await page.getByRole("link", { name: /Submariner Date/ }).click();

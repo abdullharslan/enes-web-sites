@@ -26,6 +26,8 @@ const fileFor = (path: string) =>
 for (const path of PAGES) {
   test(`golden master: ${path}`, async ({ page }) => {
     await page.goto(path);
+    // Streamed <Suspense> content must have replaced its skeleton before capturing.
+    await expect(page.locator("main .animate-pulse")).toHaveCount(0);
     const text = (await page.locator("main").innerText())
       .replace(/[ \t]+\n/g, "\n")
       .trim();

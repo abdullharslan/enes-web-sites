@@ -21,7 +21,8 @@
     "db:generate": "node --env-file=.env.local node_modules/.bin/drizzle-kit generate",
     "db:migrate": "tsx --env-file=.env.local db/migrate.ts",
     "db:seed": "tsx --env-file=.env.local db/seed.ts",
-    "test:int": "vitest run --config vitest.integration.config.mts"
+    "test:int": "vitest run --config vitest.integration.config.mts",
+    "db:reset": "tsx --env-file=.env.local db/reset.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",

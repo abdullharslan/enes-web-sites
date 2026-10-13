@@ -44,9 +44,7 @@ export default async function HomePage() {
       <BrandSelector
         brands={catalog.brands}
         dict={dict.brands}
-        hrefFor={(brand) =>
-          collectionHref(serializeCatalogFilter({ ...DEFAULT_FILTER, brand }))
-        }
+        hrefFor={(brand) => href(brand ? `/brands/${brand}` : "/brands")}
       />
       <AboutTeaser dict={dict.about} aboutHref={href("/about")} />
       <NewArrivals

@@ -52,6 +52,8 @@ export function ProductCarousel({ children, labels }: ProductCarouselProps) {
       </div>
       <ul
         id={trackId}
+        // Intentional horizontal scroll area (excluded from the viewport overflow check).
+        data-scroll-x=""
         ref={trackRef}
         className="-mx-4 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-px-4 px-4 pb-4 [scrollbar-width:none] sm:-mx-8 sm:scroll-px-8 sm:px-8"
       >

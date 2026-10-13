@@ -34,6 +34,8 @@ interface CatalogBrowserProps {
   basePath: string;
   /** Restricts the listing to one brand and hides the brand filter. */
   fixedBrand?: string;
+  /** Heading level of product names, following the page outline. */
+  cardHeadingLevel?: "h2" | "h3";
 }
 
 /** Filterable, sortable product listing driven entirely by the URL. */
@@ -44,6 +46,7 @@ export async function CatalogBrowser({
   dict,
   basePath,
   fixedBrand,
+  cardHeadingLevel = "h2",
 }: CatalogBrowserProps) {
   const scope = fixedBrand
     ? catalog.products.filter((p) => p.brand === fixedBrand)
@@ -83,7 +86,7 @@ export async function CatalogBrowser({
       </p>
       {products.length > 0 ? (
         <ProductGrid
-          headingLevel="h2"
+          headingLevel={cardHeadingLevel}
           products={products}
           locale={locale}
           labels={dict.catalog}

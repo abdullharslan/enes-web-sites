@@ -6,6 +6,7 @@
   "nav": {
     "home": "Startseite",
     "collection": "Kollektion",
+    "brands": "Marken",
     "about": "Über uns",
     "sell": "Verkaufen",
     "journal": "Journal",
@@ -271,5 +272,17 @@
     "title": "Seite nicht gefunden",
     "text": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
     "cta": "Zur Kollektion"
+  },
+  "brandsPage": {
+    "eyebrow": "Marken",
+    "title": "Unsere Maisons",
+    "intro": "Jede Marke mit eigener Welt – entdecken Sie die Stücke, die wir aktuell anbieten.",
+    "discover": "Entdecken",
+    "pieces": {
+      "one": "{count} Stück",
+      "other": "{count} Stücke"
+    },
+    "back": "Alle Marken",
+    "collectionTitle": "Die Kollektion"
   }
 }

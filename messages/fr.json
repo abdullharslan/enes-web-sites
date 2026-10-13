@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "title": "Maison Vault | Sacs, montres et bijoux de luxe",
+    "description": "Sacs Hermès, Louis Vuitton et Chanel, montres Rolex et Patek Philippe, bijoux Van Cleef & Arpels – expertisés, expédiés assurés, conseil personnalisé."
+  },
+  "nav": {
+    "home": "Accueil",
+    "collection": "Collection",
+    "brands": "Maisons",
+    "about": "À propos",
+    "sell": "Vendre",
+    "journal": "Journal",
+    "contact": "Contact",
+    "menu": "Menu",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "language": "Langue",
+    "skipToContent": "Aller au contenu",
+    "primary": "Navigation principale",
+    "opensInNewTab": "(s'ouvre dans un nouvel onglet)"
+  },
+  "hero": {
+    "eyebrow": "Luxe & Exclusivité",
+    "title": "Sacs, montres et bijoux",
+    "subtitle": "Des chefs-d'œuvre des grandes Maisons – expertisés, documentés et sélectionnés pour vous.",
+    "ctaCollection": "Voir la collection",
+    "ctaSell": "Dépôt-vente"
+  },
+  "brands": {
+    "title": "Choisissez une maison",
+    "all": "Toutes les maisons"
+  },
+  "about": {
+    "eyebrow": "À propos",
+    "title": "Nous sommes Maison Vault",
+    "teaser": "Nous achetons et vendons des sacs, montres et bijoux d'exception des plus grandes maisons. Indépendants, internationaux, avec un service qui va toujours un pas plus loin.",
+    "body": "Chaque pièce est minutieusement expertisée par des spécialistes avant la vente : état, matériaux, numéros de série et documents. Ce que nous ne pouvons pas authentifier sans le moindre doute, nous ne le proposons pas.",
+    "cta": "En savoir plus",
+    "values": [
+      {
+        "title": "Expertise minutieuse",
+        "text": "Chaque objet est examiné par des spécialistes avant sa mise en vente et décrit en toute transparence."
+      },
+      {
+        "title": "Discrétion",
+        "text": "Achat, vente et conseil en toute confidentialité – sur demande, sans publication."
+      },
+      {
+        "title": "Service personnalisé",
+        "text": "Un interlocuteur dédié vous accompagne – de la recherche à la livraison assurée."
+      }
+    ]
+  },
+  "newArrivals": {
+    "eyebrow": "Nouveautés",
+    "title": "Dernières arrivées",
+    "viewAll": "Toute notre collection",
+    "previous": "Pièces précédentes",
+    "next": "Pièces suivantes"
+  },
+  "categories": {
+    "eyebrow": "Catégories",
+    "title": "Découvrez nos univers",
+    "explore": "Découvrir"
+  },
+  "sold": {
+    "eyebrow": "Moments forts",
+    "title": "Déjà confiées"
+  },
+  "sellCta": {
+    "eyebrow": "Dépôt-vente",
+    "title": "Vendez votre pièce de luxe",
+    "text": "Nous estimons gratuitement votre sac, votre montre ou votre bijou et prenons en charge la présentation, l'expertise et l'expédition assurée.",
+    "cta": "En savoir plus sur le dépôt-vente"
+  },
+  "trust": {
+    "title": "Notre engagement",
+    "items": [
+      {
+        "title": "Expertise",
+        "text": "État, matériaux et documents examinés avant chaque vente."
+      },
+      {
+        "title": "Expédition assurée",
+        "text": "Suivi, assurance de la valeur et preuve de livraison."
+      },
+      {
+        "title": "Paiement sécurisé",
+        "text": "Virement bancaire ou prestataires vérifiés – nous ne conservons jamais vos données de carte."
+      },
+      {
+        "title": "Conseil personnalisé",
+        "text": "Par téléphone, WhatsApp ou sur rendez-vous."
+      }
+    ]
+  },
+  "story": {
+    "eyebrow": "Trouver & garder",
+    "title": "Votre pièce signature",
+    "text": "Pour beaucoup, tout commence par une image inoubliable : le premier Kelly, le cadran d'une Nautilus, l'éclat d'un motif Alhambra. Nous savons combien est précieux le moment où un rêve devient le vôtre – et nous cherchons aussi pour vous.",
+    "cta": "Confier une recherche",
+    "social": "Suivez-nous pour nos nouvelles pièces et nos coulisses."
+  },
+  "journal": {
+    "eyebrow": "Actualités",
+    "title": "Journal",
+    "overview": "Tout voir",
+    "intro": "Actualités, conseils d'entretien et histoires du monde des grandes Maisons."
+  },
+  "footer": {
+    "tagline": "Luxe de seconde main & objets d'exception",
+    "contact": "Contact",
+    "legal": "Mentions légales",
+    "explore": "Découvrir",
+    "rights": "Tous droits réservés.",
+    "demoNotice": "Version de démonstration : pièces, prix et photos sont fictifs.",
+    "trademarkNotice": "Les noms de marques appartiennent à leurs propriétaires respectifs. Maison Vault est un revendeur indépendant, sans lien avec les marques citées."
+  },
+  "contactBar": {
+    "call": "Appeler",
+    "whatsapp": "WhatsApp",
+    "email": "Envoyer un e-mail"
+  },
+  "contactPage": {
+    "eyebrow": "Contact",
+    "title": "Nous sommes à votre écoute",
+    "text": "Écrivez-nous au sujet d'une pièce, d'une recherche ou d'une vente. Nous répondons généralement sous un jour ouvré.",
+    "addressTitle": "Showroom (sur rendez-vous)",
+    "formTitle": "Envoyer un message"
+  },
+  "catalog": {
+    "eyebrow": "Collection",
+    "title": "Notre collection",
+    "intro": "Sacs, montres et bijoux sélectionnés – chaque objet expertisé et documenté en détail.",
+    "results": {
+      "one": "{count} pièce",
+      "other": "{count} pièces"
+    },
+    "empty": "Aucune pièce ne correspond actuellement à cette sélection. Nous serions ravis de chercher pour vous.",
+    "priceOnRequest": "Prix sur demande",
+    "filters": {
+      "label": "Filtres",
+      "brand": "Maison",
+      "category": "Catégorie",
+      "availability": "Disponibilité",
+      "sort": "Trier par",
+      "allBrands": "Toutes les maisons",
+      "allCategories": "Toutes les catégories",
+      "available": "Disponible",
+      "all": "Vendues incluses",
+      "newest": "Les plus récentes",
+      "name-asc": "Nom A–Z",
+      "name-desc": "Nom Z–A",
+      "price-asc": "Prix croissant",
+      "price-desc": "Prix décroissant",
+      "reset": "Réinitialiser les filtres"
+    },
+    "categories": {
+      "bags": "Sacs",
+      "watches": "Montres",
+      "jewellery": "Bijoux"
+    },
+    "conditions": {
+      "new": "Neuf",
+      "unworn": "Jamais porté",
+      "excellent": "Excellent",
+      "very-good": "Très bon",
+      "good": "Bon"
+    },
+    "setItems": {
+      "box": "Boîte",
+      "papers": "Papiers",
+      "invoice": "Facture",
+      "dust-bag": "Housse",
+      "certificate": "Certificat",
+      "warranty-card": "Carte de garantie"
+    },
+    "statuses": {
+      "available": "Disponible",
+      "reserved": "Réservée",
+      "sold": "Vendue"
+    }
+  },
+  "product": {
+    "back": "Retour à la collection",
+    "item": "Pièce",
+    "details": "Détails",
+    "reference": "Référence",
+    "year": "Année",
+    "condition": "État",
+    "setItems": "Inclus",
+    "material": "Matière",
+    "dimensions": "Dimensions",
+    "status": "Statut",
+    "noSetItems": "Sans accessoires",
+    "inquireWhatsapp": "Demander via WhatsApp",
+    "inquireForm": "Envoyer une demande",
+    "whatsappMessage": "Bonjour, je suis intéressé(e) par {item}.",
+    "inquirySubject": "Demande : {item}",
+    "related": "Vous aimerez aussi",
+    "assurance": "Expertisé par des spécialistes avant la vente. Expédition assurée et suivie. Le droit de rétractation légal s'applique aux achats en ligne.",
+    "soldNotice": "Cette pièce a déjà été vendue. Nous serions ravis de trouver une pièce comparable pour vous."
+  },
+  "forms": {
+    "name": "Nom",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "message": "Message",
+    "optional": "facultatif",
+    "submit": "Envoyer",
+    "select": "Veuillez choisir",
+    "handoffNote": "L'envoi ouvre votre messagerie avec un message pré-rempli. Aucune donnée n'est enregistrée sur ce site.",
+    "success": "Votre messagerie a été ouverte. Veuillez y envoyer le message préparé.",
+    "errorSummary": "Veuillez vérifier les champs signalés.",
+    "errors": {
+      "required": "Ce champ est obligatoire.",
+      "tooLong": "Le texte est trop long.",
+      "invalidEmail": "Veuillez saisir une adresse e-mail valide.",
+      "invalidPhone": "Veuillez saisir un numéro de téléphone valide.",
+      "invalidYear": "Veuillez saisir une année valide.",
+      "invalidNumber": "Veuillez saisir un montant valide.",
+      "invalid": "Sélection non valide."
+    }
+  },
+  "sell": {
+    "eyebrow": "Dépôt-vente",
+    "title": "Vendez avec nous",
+    "intro": "Nous prenons en charge l'estimation, l'expertise, la présentation professionnelle et l'expédition assurée – vous recevez le montant convenu après la vente.",
+    "stepsTitle": "Comment ça marche",
+    "steps": [
+      {
+        "title": "Demande",
+        "text": "Décrivez votre pièce dans le formulaire."
+      },
+      {
+        "title": "Estimation",
+        "text": "Nous revenons vers vous avec une estimation sans engagement."
+      },
+      {
+        "title": "Expertise",
+        "text": "Nos spécialistes examinent la pièce en personne."
+      },
+      {
+        "title": "Vente",
+        "text": "Nous présentons, vendons et réglons en toute transparence."
+      }
+    ],
+    "formTitle": "Proposer une pièce",
+    "subject": "Dépôt-vente : {item}",
+    "photoHint": "Merci d'envoyer les photos en pièce jointe par e-mail ou via WhatsApp.",
+    "fields": {
+      "brand": "Maison",
+      "category": "Catégorie",
+      "model": "Modèle / désignation",
+      "condition": "État",
+      "year": "Année d'achat",
+      "askingPrice": "Prix souhaité (EUR)",
+      "setItems": "Accessoires présents",
+      "otherBrand": "Autre maison"
+    }
+  },
+  "legal": {
+    "titles": {
+      "impressum": "Mentions légales (Impressum)",
+      "datenschutz": "Politique de confidentialité",
+      "agb": "Conditions générales de vente",
+      "widerruf": "Droit de rétractation"
+    },
+    "placeholder": "Ce texte est provisoire. Avant la mise en ligne, il doit être rédigé ou vérifié par un cabinet spécialisé en e-commerce."
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "text": "La page que vous recherchez n'existe pas ou a été déplacée.",
+    "cta": "Vers la collection"
+  },
+  "brandsPage": {
+    "eyebrow": "Maisons",
+    "title": "Nos Maisons",
+    "intro": "Chaque maison, un univers – découvrez les pièces que nous proposons actuellement.",
+    "discover": "Découvrir",
+    "pieces": {
+      "one": "{count} pièce",
+      "other": "{count} pièces"
+    },
+    "back": "Toutes les maisons",
+    "collectionTitle": "La collection"
+  }
+}

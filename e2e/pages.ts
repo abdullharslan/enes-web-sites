@@ -1,6 +1,9 @@
 /** Representative routes covering every page template. */
 export const PAGES = [
   "/de",
+  "/fr",
+  "/en/brands",
+  "/fr/brands/rolex?sort=price-desc",
   "/en/collection",
   "/tr/collection?category=watches&availability=all",
   "/de/collection/rolex-submariner-date-126610ln",

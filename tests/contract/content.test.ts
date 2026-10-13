@@ -15,6 +15,7 @@ import { LOCALES } from "@/lib/i18n/locales";
 import de from "@/messages/de.json";
 import en from "@/messages/en.json";
 import tr from "@/messages/tr.json";
+import fr from "@/messages/fr.json";
 
 const publicFile = (src: string) => join(process.cwd(), "public", src);
 
@@ -42,6 +43,7 @@ function leaves(value: unknown): unknown[] {
 describe("dictionaries contract", () => {
   it.each([
     ["en", en],
+    ["fr", fr],
     ["tr", tr],
   ])("%s has exactly the same keys and structure as de", (_, dict) => {
     expect(shape(dict).sort()).toEqual(shape(de).sort());
@@ -50,6 +52,7 @@ describe("dictionaries contract", () => {
   it.each([
     ["de", de],
     ["en", en],
+    ["fr", fr],
     ["tr", tr],
   ])("%s contains no empty strings", (_, dict) => {
     expect(leaves(dict).filter((v) => typeof v !== "string" || v.trim() === "")).toEqual(
@@ -72,7 +75,7 @@ describe("dictionaries contract", () => {
     };
     const reference = entries(de);
     expect([...reference.values()].some((p) => p !== "")).toBe(true);
-    for (const dict of [en, tr]) {
+    for (const dict of [en, fr, tr]) {
       expect(Object.fromEntries(entries(dict))).toEqual(Object.fromEntries(reference));
     }
   });

@@ -34,6 +34,32 @@ test.describe("responsive layout", () => {
         );
         expect(overflow).toBeLessThanOrEqual(0);
 
+        // Fixed elements never widen the document, so also check every control is inside the viewport.
+        const offscreen = await page.evaluate(() =>
+          [
+            ...document.querySelectorAll<HTMLElement>(
+              "a[href], button, select, input, textarea",
+            ),
+          ]
+            .filter(
+              (el) =>
+                el.checkVisibility() &&
+                !el.closest("dialog:not([open])") &&
+                !el.closest("[data-scroll-x]") &&
+                !el.matches(".sr-only"),
+            )
+            .map((el) => ({ el, box: el.getBoundingClientRect() }))
+            .filter(
+              ({ box }) =>
+                box.width > 0 && (box.left < 0 || box.right > window.innerWidth + 0.5),
+            )
+            .map(
+              ({ el, box }) =>
+                `${el.tagName} "${el.textContent?.trim().slice(0, 20)}" ${Math.round(box.left)}–${Math.round(box.right)}`,
+            ),
+        );
+        expect(offscreen).toEqual([]);
+
         const smallTargets = await page.evaluate((min) => {
           const selector =
             "a[href], button, select, input:not([type=checkbox]), textarea";

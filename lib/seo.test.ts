@@ -12,6 +12,7 @@ describe("buildAlternates", () => {
     expect(buildAlternates("tr", "/sell").languages).toEqual({
       "de-DE": "/de/sell",
       "en-GB": "/en/sell",
+      "fr-FR": "/fr/sell",
       "tr-TR": "/tr/sell",
       "x-default": "/de/sell",
     });

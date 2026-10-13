@@ -6,6 +6,7 @@
   "nav": {
     "home": "Ana sayfa",
     "collection": "Koleksiyon",
+    "brands": "Markalar",
     "about": "Hakkımızda",
     "sell": "Sat",
     "journal": "Journal",
@@ -271,5 +272,17 @@
     "title": "Sayfa bulunamadı",
     "text": "Aradığınız sayfa mevcut değil veya taşınmış.",
     "cta": "Koleksiyona git"
+  },
+  "brandsPage": {
+    "eyebrow": "Markalar",
+    "title": "Maison'larımız",
+    "intro": "Her marka ayrı bir dünya – şu anda sunduğumuz parçaları keşfedin.",
+    "discover": "Keşfet",
+    "pieces": {
+      "one": "{count} parça",
+      "other": "{count} parça"
+    },
+    "back": "Tüm markalar",
+    "collectionTitle": "Koleksiyon"
   }
 }

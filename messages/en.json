@@ -6,6 +6,7 @@
   "nav": {
     "home": "Home",
     "collection": "Collection",
+    "brands": "Brands",
     "about": "About us",
     "sell": "Sell",
     "journal": "Journal",
@@ -271,5 +272,17 @@
     "title": "Page not found",
     "text": "The page you are looking for does not exist or has moved.",
     "cta": "To the collection"
+  },
+  "brandsPage": {
+    "eyebrow": "Brands",
+    "title": "Our Maisons",
+    "intro": "Each brand its own world – discover the pieces we currently offer.",
+    "discover": "Discover",
+    "pieces": {
+      "one": "{count} piece",
+      "other": "{count} pieces"
+    },
+    "back": "All brands",
+    "collectionTitle": "The collection"
   }
 }

@@ -5,6 +5,7 @@ export const SEED_BRANDS: readonly SeedBrand[] = [
   { slug: "hermes", name: "Hermès" },
   { slug: "louis-vuitton", name: "Louis Vuitton" },
   { slug: "chanel", name: "Chanel" },
+  { slug: "miu-miu", name: "Miu Miu" },
   { slug: "rolex", name: "Rolex" },
   { slug: "patek-philippe", name: "Patek Philippe" },
   { slug: "van-cleef-arpels", name: "Van Cleef & Arpels" },
