@@ -26,7 +26,8 @@
     "logout": "Çıkış yap",
     "account": "Hesabım",
     "inquiries": "Talepler",
-    "newCount": "{n} yeni"
+    "newCount": "{n} yeni",
+    "analytics": "Analiz"
   },
   "roles": {
     "owner": "Sahip",
@@ -303,5 +304,24 @@
     "notFound": "Talep bulunamadı.",
     "retention": "Tamamlanan talepler 6 ay sonra, diğerleri en geç 1 yıl sonra otomatik silinir.",
     "filter": "Durum filtresi"
+  },
+  "analytics": {
+    "title": "Analiz",
+    "range": "Zaman aralığı",
+    "days": "Son {n} gün",
+    "views": "Sayfa görüntüleme",
+    "inquiries": "Talep",
+    "perDay": "Günlük sayfa görüntüleme",
+    "inquiriesPerDay": "Günlük talepler",
+    "day": "Gün",
+    "count": "Adet",
+    "topProducts": "En çok bakılan ürünler",
+    "topBrands": "Marka ilgisi (marka sayfası + ürünleri)",
+    "topPages": "En çok bakılan sayfalar",
+    "page": "Sayfa",
+    "product": "Ürün",
+    "brand": "Marka",
+    "none": "Bu aralıkta veri yok.",
+    "privacy": "Çerez kullanılmaz; ziyaretçi, IP adresi veya cihaz bilgisi saklanmaz. Yalnızca \"hangi sayfa hangi gün kaç kez görüntülendi\" sayılır. \"Do Not Track\" veya \"Global Privacy Control\" gönderen ziyaretçiler ve botlar sayılmaz. Talep sayıları saklama süresiyle birlikte azalır."
   }
 }

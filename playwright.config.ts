@@ -6,6 +6,7 @@ if (existsSync(".env.local")) process.loadEnvFile(".env.local");
 
 // E2E runs a production server on its own port so the dev server on 1111 stays usable.
 const PORT = Number(process.env.E2E_PORT ?? 1112);
+const SITE_WIDE_STATE = /admin-(content|analytics)\.spec\.ts/;
 const baseURL = `http://localhost:${PORT}`;
 
 export default defineConfig({
@@ -36,10 +37,21 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
     // …then admin tests, which mutate data, so they can never disturb the baselines.
+    // Tests on their own records (unique names) run in parallel …
     {
       name: "admin",
       testMatch: /admin-.*\.spec\.ts/,
+      testIgnore: SITE_WIDE_STATE,
       dependencies: ["site"],
+      use: { ...devices["Desktop Chrome"] },
+    },
+    // … tests that change one site-wide thing (home/footer content, legal texts,
+    // analytics counters) run one at a time, so repeats cannot race each other.
+    {
+      name: "admin-serial",
+      testMatch: SITE_WIDE_STATE,
+      dependencies: ["site"],
+      workers: 1,
       use: { ...devices["Desktop Chrome"] },
     },
   ],

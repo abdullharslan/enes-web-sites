@@ -165,6 +165,13 @@ E2E testleri kendi izole veritabanını (`maison_vault_e2e`) her çalıştırmad
 - Saklama süresi: tamamlanan talepler 6 ay sonra, diğerleri en geç 1 yıl sonra **otomatik silinir** (fotoğraflarıyla birlikte).
 - **Yayından önce:** Datenschutzerklärung (gizlilik politikası) bu işleme, saklama süresine ve silme hakkına göre bir hukukçuyla güncellenmelidir. Yeni talep için e-posta bildirimi henüz yok (SMTP gerektirir); panelde "Talepler" yanında yeni talep sayısı görünür.
 
+### Analiz (çerezsiz)
+
+- Ziyaretçi tarafında çerez, IP adresi, tarayıcı bilgisi **saklanmaz**; yalnızca "hangi sayfa, hangi gün, kaç kez" sayılır (400 gün tutulur).
+- "Do Not Track" / "Global Privacy Control" gönderen ziyaretçiler, botlar, başka sitelerden gelen istekler ve var olmayan sayfalar sayılmaz.
+- Sayaçlar kasıtlı sahte isteklerle şişirilebilir (kimlik tutulmadığı için ayırt edilemez); sayılar eğilim göstergesidir, kesin ölçüm değildir.
+- Yayından önce gizlilik politikasında kısaca belirtilmelidir (hukukçu onayı).
+
 ### Yedekleme ve geri yükleme
 
 Veritabanı, görseller ve gizli dosyalar (talep fotoğrafları) birlikte yedeklenir:

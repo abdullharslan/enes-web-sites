@@ -312,3 +312,17 @@ export const inquiryPhotos = pgTable(
   },
   (t) => [unique("inquiry_photos_position_uq").on(t.inquiryId, t.position)],
 );
+
+// ── Analytics (aggregate counters only: no visitor data at all) ──────────────
+
+export const pageViewsDaily = pgTable(
+  "page_views_daily",
+  {
+    day: date("day").notNull(),
+    locale: text("locale").notNull(),
+    /** Path without the locale, e.g. "/collection/rolex-explorer-224270". */
+    page: text("page").notNull(),
+    views: integer("views").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.locale, t.page] })],
+);

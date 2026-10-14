@@ -10,6 +10,7 @@ interface AdminNavItem {
 const ITEMS: readonly AdminNavItem[] = [
   { href: "/admin", label: T.nav.dashboard },
   { href: "/admin/inquiries", label: T.nav.inquiries, permission: "inquiries:manage" },
+  { href: "/admin/analytics", label: T.nav.analytics, permission: "analytics:read" },
   { href: "/admin/products", label: T.nav.products, permission: "catalog:write" },
   { href: "/admin/brands", label: T.nav.brands, permission: "catalog:write" },
   { href: "/admin/categories", label: T.nav.categories, permission: "catalog:write" },

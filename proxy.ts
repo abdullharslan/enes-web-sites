@@ -14,6 +14,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Skip Next internals, static assets, the admin area, media and any path with a file extension.
-  matcher: ["/((?!_next/|images/|admin(?:/|$)|media/|favicon.ico|.*\\..*).*)"],
+  // Skip Next internals, static assets, the admin area, media, API routes and any path with a file extension.
+  matcher: ["/((?!_next/|images/|admin(?:/|$)|media/|api/|favicon.ico|.*\\..*).*)"],
 };

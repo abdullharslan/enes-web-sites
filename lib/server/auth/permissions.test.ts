@@ -15,6 +15,7 @@ describe("role permission matrix", () => {
 
   it("lets editors handle inquiries", () => {
     expect(can("editor", "inquiries:manage")).toBe(true);
+    expect(can("editor", "analytics:read")).toBe(true);
   });
 
   it("keeps user management and the audit log owner-only", () => {

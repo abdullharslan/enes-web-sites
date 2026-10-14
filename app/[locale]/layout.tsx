@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 import { Cormorant_Garamond, Montserrat } from "next/font/google";
 import { FloatingContact } from "@/components/layout/floating-contact";
+import { PageViewBeacon } from "@/components/layout/page-view-beacon";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SITE } from "@/config/site";
@@ -70,6 +71,7 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
           }}
         />
         <main id="content">{children}</main>
+        <PageViewBeacon />
         <SiteFooter
           contact={contact}
           content={footer}

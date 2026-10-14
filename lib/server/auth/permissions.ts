@@ -9,6 +9,7 @@ export const PERMISSIONS = [
   "audit:read",
   "users:manage",
   "inquiries:manage",
+  "analytics:read",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -21,6 +22,8 @@ const GRANTS: Record<Role, ReadonlySet<Permission>> = {
     "history:read",
     // Staff answer customers, so they read and handle inquiries (personal data).
     "inquiries:manage",
+    // Aggregate counts only, no personal data.
+    "analytics:read",
   ]),
 };
 
