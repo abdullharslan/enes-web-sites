@@ -31,7 +31,7 @@ _Last updated: 2026-10-14 by Claude Opus 5.5_
 - [x] Pushed to GitHub (user approved); later commits stay local until the next approval
 - [x] Gap step 1: about/sell/contact/legal pages, footer, SEO editable (`65f7b3a`)
 - [x] Gap step 2: product image ordering/cover + site search; catalog/search pages work without JavaScript
-- [ ] Gap step 3: user management (own password change, owner reset, role change, last-owner protection)
+- [x] Gap step 3: user management (own password change, owner reset, role change, last-owner protection)
 - [ ] Gap step 4: inquiries inbox (forms stored server-side, rate limit, honeypot, private sell photos, status, retention)
 - [ ] Gap step 5: cookieless analytics dashboard
 - [ ] Gap step 6: CI (GitHub Actions), full verify, independent review → fixes → re-review

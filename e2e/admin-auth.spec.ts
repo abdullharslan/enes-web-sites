@@ -88,7 +88,78 @@ test.describe("admin authentication", () => {
       .fill("a long enough passphrase");
     await form.getByRole("button", { name: "Yeni ekle" }).click();
     await expect(page.getByText("Kullanıcı oluşturuldu.")).toBeVisible();
-    await expect(page.getByRole("cell", { name })).toBeVisible();
+    await expect(page.getByRole("cell", { name, exact: true })).toBeVisible();
+  });
+
+  test("owner resets a password and changes a role; the user changes their own password", async ({
+    page,
+    browser,
+  }) => {
+    const id = Date.now().toString(36);
+    const name = `Rollen ${id}`;
+    const email = `role-${id}@e2e.example`;
+    const first = `first passphrase ${id}`;
+    const reset = `reset passphrase ${id}`;
+    const own = `own passphrase ${id}`;
+
+    await signIn(page, accounts().owner);
+    await page.goto("/admin/users");
+    const create = page.locator("form").filter({ hasText: "Yeni kullanıcı" });
+    await create.getByLabel("Ad").fill(name);
+    await create.getByLabel("E-posta").fill(email);
+    await create.getByLabel("İlk parola (en az 12 karakter)").fill(first);
+    await create.getByRole("button", { name: "Yeni ekle" }).click();
+    await expect(page.getByRole("cell", { name, exact: true })).toBeVisible();
+
+    // The user signs in on another device …
+    const other = await browser.newContext();
+    const userPage = await other.newPage();
+    await signIn(userPage, { email, password: first });
+
+    // … then the owner resets the password: that session ends immediately.
+    const row = page.getByRole("row").filter({ hasText: email });
+    await row.getByLabel(`Yeni parola (en az 12 karakter): ${name}`).fill(reset);
+    await row.getByRole("button", { name: "Parolayı sıfırla" }).click();
+    await expect(
+      row.getByText("Parola değiştirildi; kullanıcının tüm oturumları kapatıldı."),
+    ).toBeVisible();
+    await userPage.goto("/admin");
+    await expect(userPage).toHaveURL(/\/admin\/login$/);
+
+    // Promote to owner; the new role applies to the next request.
+    await row.getByLabel(`Rol: ${name}`).selectOption("owner");
+    await row.getByRole("button", { name: "Rolü kaydet" }).click();
+    await expect(row.getByText("Rol güncellendi.")).toBeVisible();
+    await signIn(userPage, { email, password: reset });
+    const menu = userPage.getByRole("navigation", { name: "Yönetim menüsü" });
+    await expect(menu.getByRole("link", { name: "Kullanıcılar" })).toBeVisible();
+
+    // The user changes their own password; a wrong current password is refused.
+    await userPage.goto("/admin/account");
+    await userPage.getByLabel("Mevcut parola").fill("not the password");
+    await userPage.getByLabel("Yeni parola (en az 12 karakter)").fill(own);
+    await userPage.getByLabel("Yeni parola (tekrar)").fill(own);
+    await userPage.getByRole("button", { name: "Parolayı değiştir" }).click();
+    await expect(userPage.getByText("Mevcut parola yanlış.")).toBeVisible();
+    await userPage.getByLabel("Mevcut parola").fill(reset);
+    await userPage.getByLabel("Yeni parola (en az 12 karakter)").fill(own);
+    await userPage.getByLabel("Yeni parola (tekrar)").fill(own);
+    await userPage.getByRole("button", { name: "Parolayı değiştir" }).click();
+    await expect(
+      userPage.getByText(
+        "Parolanız değiştirildi. Diğer cihazlardaki oturumlar kapatıldı.",
+      ),
+    ).toBeVisible();
+    // This session survives the change.
+    await userPage.goto("/admin/account");
+    await expect(userPage).toHaveURL(/\/admin\/account$/);
+    await other.close();
+
+    // The owner's own row offers no role/status controls (cannot lock themselves out).
+    await page.reload();
+    const ownRow = page.getByRole("row").filter({ hasText: accounts().owner.email });
+    await expect(ownRow.getByRole("combobox")).toHaveCount(0);
+    await expect(ownRow.getByRole("button")).toHaveCount(0);
   });
 
   test("admin pages have no accessibility violations", async ({ page }) => {
@@ -101,7 +172,7 @@ test.describe("admin authentication", () => {
       ).violations,
     ).toEqual([]);
     await signIn(page, accounts().owner);
-    for (const path of ["/admin", "/admin/users"]) {
+    for (const path of ["/admin", "/admin/users", "/admin/account"]) {
       await page.goto(path);
       const result = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag22aa"])

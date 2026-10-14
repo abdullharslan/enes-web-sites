@@ -19,4 +19,10 @@ describe("adminNavFor", () => {
     expect(hrefs).not.toContain("/admin/users");
     expect(hrefs).not.toContain("/admin/audit");
   });
+
+  it("lets every role reach its own account page", () => {
+    for (const role of ["owner", "editor"] as const) {
+      expect(adminNavFor(role).map((i) => i.href)).toContain("/admin/account");
+    }
+  });
 });

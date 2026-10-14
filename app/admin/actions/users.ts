@@ -2,14 +2,27 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { users } from "@/db/schema";
-import { recordAudit } from "@/lib/server/audit";
-import { ForbiddenError, requirePermission } from "@/lib/server/auth/current";
+import {
+  ForbiddenError,
+  SESSION_COOKIE,
+  requirePermission,
+  requireUser,
+} from "@/lib/server/auth/current";
 import { ROLES } from "@/lib/server/auth/permissions";
-import { createUser, deleteUserSessions } from "@/lib/server/auth/service";
+import { createUser } from "@/lib/server/auth/service";
 import { passwordProblems } from "@/lib/server/auth/password";
+import {
+  UserRuleError,
+  changeOwnPassword,
+  changeUserRole,
+  resetUserPassword,
+  setUserActive,
+  type UserRuleCode,
+} from "@/lib/server/auth/users";
 
 /** Echoed back on errors so React's post-submit form reset keeps what was typed (never the password). */
 export interface UserFormValues {
@@ -23,7 +36,7 @@ export type UserActionState =
   | { status: "ok" }
   | {
       status: "error";
-      error: "forbidden" | "invalid" | "weakPassword" | "duplicate" | "self";
+      error: UserRuleCode | "invalid" | "duplicate" | "wrongPassword" | "mismatch";
       values?: UserFormValues;
     };
 
@@ -73,27 +86,93 @@ export async function createUserAction(
   return { status: "ok" };
 }
 
+/** Rule violations become form errors; anything else fails loudly. */
+function asFormError(error: unknown): UserActionState {
+  if (error instanceof UserRuleError) return { status: "error", error: error.code };
+  throw error;
+}
+
+async function applyRule(change: () => Promise<void>): Promise<UserActionState> {
+  try {
+    await change();
+  } catch (error) {
+    return asFormError(error);
+  }
+  revalidatePath("/admin/users");
+  return { status: "ok" };
+}
+
 const toggleSchema = z.object({ userId: z.uuid(), active: z.enum(["true", "false"]) });
 
 export async function setUserActiveAction(formData: FormData): Promise<void> {
   const actor = await guard();
   if ("status" in actor) return;
   const parsed = toggleSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success || parsed.data.userId === actor.id) return;
+  if (!parsed.success) return;
+  const { userId, active } = parsed.data;
+  await applyRule(() =>
+    db.transaction((tx) => setUserActive(tx, actor.id, userId, active === "true")),
+  );
+}
 
-  const active = parsed.data.active === "true";
-  await db.transaction(async (tx) => {
-    await tx
-      .update(users)
-      .set({ isActive: active, updatedAt: new Date() })
-      .where(eq(users.id, parsed.data.userId));
-    if (!active) await deleteUserSessions(tx, parsed.data.userId);
-    await recordAudit(tx, {
-      actorId: actor.id,
-      action: active ? "user.activated" : "user.deactivated",
-      entityType: "user",
-      entityId: parsed.data.userId,
-    });
-  });
-  revalidatePath("/admin/users");
+const roleSchema = z.object({ userId: z.uuid(), role: z.enum(ROLES) });
+
+export async function changeUserRoleAction(
+  _prev: UserActionState,
+  formData: FormData,
+): Promise<UserActionState> {
+  const actor = await guard();
+  if ("status" in actor) return actor;
+  const parsed = roleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { status: "error", error: "invalid" };
+  const { userId, role } = parsed.data;
+  return applyRule(() =>
+    db.transaction((tx) => changeUserRole(tx, actor.id, userId, role)),
+  );
+}
+
+const resetSchema = z.object({ userId: z.uuid(), password: z.string().max(256) });
+
+export async function resetUserPasswordAction(
+  _prev: UserActionState,
+  formData: FormData,
+): Promise<UserActionState> {
+  const actor = await guard();
+  if ("status" in actor) return actor;
+  const parsed = resetSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { status: "error", error: "invalid" };
+  const { userId, password } = parsed.data;
+  return applyRule(() =>
+    db.transaction((tx) => resetUserPassword(tx, actor.id, userId, password)),
+  );
+}
+
+const ownPasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(256),
+  newPassword: z.string().max(256),
+  confirmPassword: z.string().max(256),
+});
+
+/** Any signed-in user may change their own password (role-independent). */
+export async function changeOwnPasswordAction(
+  _prev: UserActionState,
+  formData: FormData,
+): Promise<UserActionState> {
+  const me = await requireUser();
+  const parsed = ownPasswordSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { status: "error", error: "invalid" };
+  const { currentPassword, newPassword, confirmPassword } = parsed.data;
+  if (newPassword !== confirmPassword) return { status: "error", error: "mismatch" };
+  const keepSessionToken = (await cookies()).get(SESSION_COOKIE)?.value ?? "";
+
+  try {
+    const outcome = await db.transaction((tx) =>
+      changeOwnPassword(tx, me.id, { currentPassword, newPassword, keepSessionToken }),
+    );
+    return outcome === "changed"
+      ? { status: "ok" }
+      : { status: "error", error: "wrongPassword" };
+  } catch (error) {
+    return asFormError(error);
+  }
 }

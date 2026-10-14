@@ -3,18 +3,7 @@
 import { useActionState } from "react";
 import { createUserAction, type UserActionState } from "@/app/admin/actions/users";
 import { T } from "@/lib/admin/text";
-
-const INPUT =
-  "w-full min-h-11 border border-line bg-ink px-3 py-2 text-cream focus:border-gold";
-const LABEL = "text-xs font-semibold uppercase tracking-label";
-
-const MESSAGES: Record<string, string> = {
-  forbidden: T.common.forbidden,
-  invalid: T.common.error,
-  weakPassword: T.users.weakPassword,
-  duplicate: T.users.duplicate,
-  self: T.users.self,
-};
+import { USER_INPUT as INPUT, USER_LABEL as LABEL, UserFormStatus } from "./user-forms";
 
 export function NewUserForm() {
   const [state, action, pending] = useActionState<UserActionState, FormData>(
@@ -68,11 +57,8 @@ export function NewUserForm() {
           className={INPUT}
         />
       </label>
-      <div aria-live="polite" className="text-sm sm:col-span-2">
-        {state.status === "ok" && <p className="text-gold">{T.users.created}</p>}
-        {state.status === "error" && (
-          <p className="text-danger">{MESSAGES[state.error]}</p>
-        )}
+      <div className="sm:col-span-2">
+        <UserFormStatus state={state} ok={T.users.created} />
       </div>
       <div className="sm:col-span-2">
         <button

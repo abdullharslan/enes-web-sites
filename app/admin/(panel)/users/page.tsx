@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { asc } from "drizzle-orm";
 import { setUserActiveAction } from "@/app/admin/actions/users";
 import { AccessDenied, AdminPageTitle } from "@/components/admin/admin-shell";
 import { NewUserForm } from "@/components/admin/new-user-form";
+import { ResetPasswordForm, RoleForm } from "@/components/admin/user-forms";
 import { db } from "@/db/client";
 import { users } from "@/db/schema";
 import { T } from "@/lib/admin/text";
@@ -35,24 +37,39 @@ export default async function UsersPage() {
               <tr key={u.id}>
                 <td className="py-3 pr-4">{u.name}</td>
                 <td className="py-3 pr-4">{u.email}</td>
-                <td className="py-3 pr-4">{T.roles[u.role]}</td>
+                <td className="py-3 pr-4">
+                  {u.id === me.id ? (
+                    T.roles[u.role]
+                  ) : (
+                    <RoleForm userId={u.id} userName={u.name} role={u.role} />
+                  )}
+                </td>
                 <td className="py-3 pr-4">
                   {u.isActive ? T.users.active : T.users.inactive}
                 </td>
                 <td className="py-3">
                   {u.id === me.id ? (
-                    <span className="text-mist">—</span>
+                    <Link
+                      href="/admin/account"
+                      className="inline-flex min-h-11 items-center text-gold underline-offset-4 hover:underline"
+                    >
+                      {T.account.title}
+                    </Link>
                   ) : (
-                    <form action={setUserActiveAction}>
-                      <input type="hidden" name="userId" value={u.id} />
-                      <input type="hidden" name="active" value={String(!u.isActive)} />
-                      <button
-                        type="submit"
-                        className="min-h-11 text-gold underline-offset-4 hover:underline"
-                      >
-                        {u.isActive ? T.users.deactivate : T.users.activate}
-                      </button>
-                    </form>
+                    <div className="flex flex-col gap-3">
+                      <ResetPasswordForm userId={u.id} userName={u.name} />
+                      <form action={setUserActiveAction}>
+                        <input type="hidden" name="userId" value={u.id} />
+                        <input type="hidden" name="active" value={String(!u.isActive)} />
+                        <button
+                          type="submit"
+                          aria-label={`${u.isActive ? T.users.deactivate : T.users.activate}: ${u.name}`}
+                          className="min-h-11 text-gold underline-offset-4 hover:underline"
+                        >
+                          {u.isActive ? T.users.deactivate : T.users.activate}
+                        </button>
+                      </form>
+                    </div>
                   )}
                 </td>
               </tr>

@@ -23,7 +23,8 @@
     "audit": "Denetim kaydı",
     "users": "Kullanıcılar",
     "viewSite": "Siteyi görüntüle",
-    "logout": "Çıkış yap"
+    "logout": "Çıkış yap",
+    "account": "Hesabım"
   },
   "roles": {
     "owner": "Sahip",
@@ -78,9 +79,15 @@
     "created": "Kullanıcı oluşturuldu.",
     "deactivate": "Pasifleştir",
     "activate": "Aktifleştir",
-    "self": "Kendi hesabınızı pasifleştiremezsiniz.",
     "weakPassword": "Parola en az 12 karakter olmalı.",
-    "duplicate": "Bu e-posta zaten kayıtlı."
+    "duplicate": "Bu e-posta zaten kayıtlı.",
+    "changeRole": "Rolü kaydet",
+    "roleSaved": "Rol güncellendi.",
+    "resetPassword": "Yeni parola (en az 12 karakter)",
+    "resetSubmit": "Parolayı sıfırla",
+    "resetDone": "Parola değiştirildi; kullanıcının tüm oturumları kapatıldı.",
+    "notFound": "Kullanıcı bulunamadı.",
+    "selfChange": "Kendi rolünüzü, durumunuzu veya parolanızı buradan değiştiremezsiniz."
   },
   "audit": {
     "title": "Denetim kaydı",
@@ -233,5 +240,18 @@
     "version": "Sürüm",
     "size": "Boyut",
     "created": "Yüklenme"
+  },
+  "account": {
+    "title": "Hesabım",
+    "passwordTitle": "Parola değiştir",
+    "currentPassword": "Mevcut parola",
+    "newPassword": "Yeni parola (en az 12 karakter)",
+    "confirmPassword": "Yeni parola (tekrar)",
+    "submit": "Parolayı değiştir",
+    "changed": "Parolanız değiştirildi. Diğer cihazlardaki oturumlar kapatıldı.",
+    "wrongPassword": "Mevcut parola yanlış.",
+    "mismatch": "Yeni parolalar eşleşmiyor.",
+    "unchanged": "Yeni parola eskisinden farklı olmalı.",
+    "tooManyAttempts": "Çok fazla hatalı deneme. 15 dakika sonra tekrar deneyin."
   }
 }

@@ -17,6 +17,7 @@ const ITEMS: readonly AdminNavItem[] = [
   { href: "/admin/media", label: T.nav.media, permission: "media:write" },
   { href: "/admin/audit", label: T.nav.audit, permission: "audit:read" },
   { href: "/admin/users", label: T.nav.users, permission: "users:manage" },
+  { href: "/admin/account", label: T.nav.account },
 ];
 
 /** Menu entries the role may use; hidden entries are also enforced server-side. */
