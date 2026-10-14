@@ -56,3 +56,17 @@ export function parseProxyHops(value: string | undefined): number {
     throw new Error(`TRUSTED_PROXY_HOPS must be a single digit, got "${value}"`);
   return Number(value);
 }
+
+/**
+ * Production must state its proxy setup explicitly: a silent default of 0 would
+ * make an app exposed without a proxy look correctly configured, while clients
+ * could then choose their own address (see clientAddress).
+ */
+export function requireProxyHops(value: string | undefined, production: boolean): number {
+  if (production && (value === undefined || value === "")) {
+    throw new Error(
+      "TRUSTED_PROXY_HOPS must be set in production (run behind a reverse proxy; see README)",
+    );
+  }
+  return parseProxyHops(value);
+}

@@ -65,6 +65,8 @@ export default defineConfig({
       MEDIA_ROOT: "storage/e2e-media",
       PRIVATE_STORAGE_ROOT: "storage/e2e-private",
       // Every test submits from 127.0.0.1; the real limit is covered by integration tests.
+      // Playwright is the only client of this server, there is no proxy in between.
+      TRUSTED_PROXY_HOPS: "0",
       INQUIRY_LIMIT_PER_ADDRESS: "1000",
       ANALYTICS_LIMIT_PER_ADDRESS: "10000",
     },

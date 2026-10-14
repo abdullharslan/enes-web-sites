@@ -1,8 +1,14 @@
 import "server-only";
 import { headers } from "next/headers";
-import { addressBucket, clientAddress, parseProxyHops } from "./auth/client-address";
+import { addressBucket, clientAddress, requireProxyHops } from "./auth/client-address";
 
-const TRUSTED_PROXY_HOPS = parseProxyHops(process.env.TRUSTED_PROXY_HOPS);
+let proxyHops: number | undefined;
+/** Checked on first use (not at import), so builds and tooling are unaffected. */
+const trustedProxyHops = () =>
+  (proxyHops ??= requireProxyHops(
+    process.env.TRUSTED_PROXY_HOPS,
+    process.env.NODE_ENV === "production",
+  ));
 
 /**
  * The rate-limit bucket of the current request's client (IPv4 address or IPv6
@@ -10,6 +16,6 @@ const TRUSTED_PROXY_HOPS = parseProxyHops(process.env.TRUSTED_PROXY_HOPS);
  */
 export async function requestAddressBucket(): Promise<string> {
   return addressBucket(
-    clientAddress((await headers()).get("x-forwarded-for"), TRUSTED_PROXY_HOPS),
+    clientAddress((await headers()).get("x-forwarded-for"), trustedProxyHops()),
   );
 }

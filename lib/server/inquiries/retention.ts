@@ -1,14 +1,18 @@
 import { inArray } from "drizzle-orm";
 import type { Database } from "@/db/connection";
 import { inquiries } from "@/db/schema";
-import { photoFolderIds, removeInquiryFiles, sweepOrphanFolders } from "./photos";
+import { removeInquiryFiles, staleFolderIds } from "./photos";
 import { purgeExpiredInquiries } from "./service";
 
+/** Ids per lookup query: far below PostgreSQL's 65,535 bind-parameter limit. */
+const LOOKUP_CHUNK = 1000;
+
 /**
- * Applies the retention rules (rows first, then their files) and removes photo
- * folders that never got a row. Runs on every submission, whenever staff open
- * the inbox, and from `npm run inquiries:purge` (for a daily cron job), so the
- * promised deadlines hold even when nobody submits anything.
+ * Applies the retention rules (rows first, then their files) and removes old
+ * photo folders that never got a row. Runs after submissions, when staff open
+ * the inbox (both throttled, see maintainInquiryRetention) and from
+ * `npm run inquiries:purge` (for a daily cron job), so the promised deadlines
+ * hold even when nobody submits anything.
  */
 export async function applyInquiryRetention(
   db: Database,
@@ -17,15 +21,39 @@ export async function applyInquiryRetention(
 ): Promise<{ purged: number; orphans: number }> {
   const purged = await db.transaction((tx) => purgeExpiredInquiries(tx, now));
   await removeInquiryFiles(root, purged);
-  const folders = await photoFolderIds(root);
-  const existing = folders.length
-    ? await db
-        .select({ id: inquiries.id })
-        .from(inquiries)
-        .where(inArray(inquiries.id, folders))
-    : [];
-  const orphans = await sweepOrphanFolders(root, new Set(existing.map((r) => r.id)), {
-    now: now.getTime(),
-  });
+
+  const stale = await staleFolderIds(root, { now: now.getTime() });
+  const existing = new Set<string>();
+  for (let i = 0; i < stale.length; i += LOOKUP_CHUNK) {
+    const rows = await db
+      .select({ id: inquiries.id })
+      .from(inquiries)
+      .where(inArray(inquiries.id, stale.slice(i, i + LOOKUP_CHUNK)));
+    for (const row of rows) existing.add(row.id);
+  }
+  const orphans = stale.filter((id) => !existing.has(id));
+  await removeInquiryFiles(root, orphans);
   return { purged: purged.length, orphans: orphans.length };
+}
+
+const MAINTENANCE_INTERVAL_MS = 10 * 60 * 1000;
+let lastMaintenance = 0;
+
+/**
+ * For request paths (submissions, inbox page): runs retention at most every
+ * ten minutes per process and never throws — housekeeping must not break a
+ * page or turn a stored inquiry into an error. Failures are logged.
+ */
+export async function maintainInquiryRetention(
+  db: Database,
+  root: string,
+): Promise<void> {
+  const now = Date.now();
+  if (now - lastMaintenance < MAINTENANCE_INTERVAL_MS) return;
+  lastMaintenance = now;
+  try {
+    await applyInquiryRetention(db, root, new Date(now));
+  } catch (error) {
+    console.error("Inquiry retention failed", error);
+  }
 }

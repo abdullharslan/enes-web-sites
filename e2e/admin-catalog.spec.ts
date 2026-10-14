@@ -178,6 +178,23 @@ test.describe("admin catalog", () => {
 
     await page.goto(`/de/collection/${slug}`);
     const cover = await page.locator("article img").first().getAttribute("src");
+    const want =
+      decodeURIComponent(after[0] ?? "")
+        .split("url=")[1]
+        ?.split("&")[0] ?? "";
+    if (!decodeURIComponent(cover ?? "").includes(want)) {
+      // Evidence for an intermittent stale cover (ACTIONS-TAKEN #138): does the
+      // public page heal on later requests, and what does the page cache report?
+      const seen: string[] = [];
+      for (let i = 0; i < 5; i++) {
+        await page.waitForTimeout(500);
+        const r = await page.request.get(`/de/collection/${slug}`);
+        const html = await r.text();
+        const m = html.match(/_v(\d)_[0-9a-f]{8}\.webp/);
+        seen.push(`${r.headers()["x-nextjs-cache"] ?? "-"}:${m?.[0]}`);
+      }
+      console.log("Stale cover; later requests:", seen.join(" | "), "wanted", want);
+    }
     expect(decodeURIComponent(cover ?? "")).toContain(
       decodeURIComponent(after[0] ?? "")
         .split("url=")[1]

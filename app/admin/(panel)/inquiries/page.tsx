@@ -10,7 +10,7 @@ import { inquirySubject } from "@/lib/inquiries/present";
 import { requireUser } from "@/lib/server/auth/current";
 import { can } from "@/lib/server/auth/permissions";
 import { PRIVATE_ROOT } from "@/lib/server/inquiries/photos";
-import { applyInquiryRetention } from "@/lib/server/inquiries/retention";
+import { maintainInquiryRetention } from "@/lib/server/inquiries/retention";
 import {
   LIST_LIMIT,
   countInquiries,
@@ -44,7 +44,7 @@ export default async function InquiriesPage({
   const params = await searchParams;
   const view = parseView(params.status);
   // Deadlines must hold even when nobody submits a form: opening the inbox applies them too.
-  await applyInquiryRetention(db, PRIVATE_ROOT);
+  await maintainInquiryRetention(db, PRIVATE_ROOT);
   const status = view === "all" ? undefined : view;
   const [rows, total] = await Promise.all([
     listInquiries(db, status),

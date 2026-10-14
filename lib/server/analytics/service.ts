@@ -23,9 +23,10 @@ export async function recordView(
   // Old counters only need removing once a day, not on every view.
   const today = isoDay(now);
   if (lastPurgeDay === today) return;
-  lastPurgeDay = today;
   const cutoff = isoDay(new Date(now.getTime() - ANALYTICS_RETENTION_DAYS * DAY_MS));
   await db.delete(pageViewsDaily).where(lt(pageViewsDaily.day, cutoff));
+  // Only after success: a failed delete is retried with the next view.
+  lastPurgeDay = today;
 }
 
 let lastPurgeDay: string | null = null;

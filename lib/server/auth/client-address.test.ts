@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { addressBucket, clientAddress, parseProxyHops } from "./client-address";
+import {
+  addressBucket,
+  clientAddress,
+  parseProxyHops,
+  requireProxyHops,
+} from "./client-address";
 
 describe("clientAddress", () => {
   it("uses the rightmost hop (added by the server or the nearest trusted proxy)", () => {
@@ -56,5 +61,17 @@ describe("addressBucket", () => {
 
   it("passes the unknown marker through", () => {
     expect(addressBucket("unknown")).toBe("unknown");
+  });
+});
+
+describe("requireProxyHops", () => {
+  it("fails loudly in production when the proxy setup is not stated", () => {
+    expect(() => requireProxyHops(undefined, true)).toThrow(/TRUSTED_PROXY_HOPS/);
+    expect(() => requireProxyHops("", true)).toThrow(/TRUSTED_PROXY_HOPS/);
+    expect(requireProxyHops("0", true)).toBe(0);
+  });
+
+  it("defaults to 0 outside production", () => {
+    expect(requireProxyHops(undefined, false)).toBe(0);
   });
 });

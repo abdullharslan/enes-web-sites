@@ -1,7 +1,8 @@
 /*
  * In-memory guards for anonymous traffic, applied before any expensive work.
- * They are per process (the app runs as one instance); the database limits
- * remain the source of truth.
+ * They are per process: the app is deployed as ONE instance (README). Several
+ * instances would multiply these limits (and use different address-hash keys);
+ * the database limits remain the source of truth.
  */
 
 /** Caps simultaneous operations per key and overall; callers that do not get a slot answer "busy". */

@@ -16,14 +16,26 @@ export function formDataToRecord(
 
 const MAX_ARRAY_ITEMS = 20;
 
-/** Caps every value (and array) so that echoing input back stays small. */
-export function boundRecord(record: FormRecord, maxLength: number): FormRecord {
+/**
+ * A safe copy for echoing input back: only the listed fields, each value (and
+ * array) capped, so an oversized or padded request is not mirrored to the sender.
+ */
+export function boundRecord(
+  record: FormRecord,
+  fields: readonly string[],
+  maxLength: number,
+): FormRecord {
   return Object.fromEntries(
-    Object.entries(record).map(([key, value]) => [
-      key,
-      Array.isArray(value)
-        ? value.slice(0, MAX_ARRAY_ITEMS).map((item) => item.slice(0, maxLength))
-        : value.slice(0, maxLength),
-    ]),
+    fields
+      .filter((key) => Object.hasOwn(record, key))
+      .map((key) => {
+        const value = record[key]!;
+        return [
+          key,
+          Array.isArray(value)
+            ? value.slice(0, MAX_ARRAY_ITEMS).map((item) => item.slice(0, maxLength))
+            : value.slice(0, maxLength),
+        ];
+      }),
   );
 }

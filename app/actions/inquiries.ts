@@ -22,7 +22,7 @@ import {
   removeInquiryFiles,
   writeInquiryPhotos,
 } from "@/lib/server/inquiries/photos";
-import { applyInquiryRetention } from "@/lib/server/inquiries/retention";
+import { maintainInquiryRetention } from "@/lib/server/inquiries/retention";
 import {
   hashAddress,
   isRateLimited,
@@ -35,6 +35,20 @@ import { MediaRejectedError, type PreparedImage } from "@/lib/server/media/store
 import { requestAddressBucket } from "@/lib/server/request-address";
 
 const ARRAY_FIELDS = ["setItems"] as const;
+/** The visible fields of the public forms: the only ones ever echoed back. */
+const ECHO_FIELDS = [
+  "name",
+  "email",
+  "phone",
+  "message",
+  "brand",
+  "category",
+  "model",
+  "condition",
+  "year",
+  "askingPrice",
+  "setItems",
+] as const;
 
 const meta = z.object({
   kind: z.enum(INQUIRY_KINDS),
@@ -78,13 +92,11 @@ export async function submitInquiryAction(
   _prev: PublicFormState,
   fd: FormData,
 ): Promise<PublicFormState> {
-  // Echoed back on failure: bounded, so an oversized field is not mirrored to the sender.
-  const values = boundRecord(
-    formDataToRecord(fd, ARRAY_FIELDS),
-    FIELD_LIMITS.message + 1,
-  );
+  // Validation sees the full input; only a bounded copy of the form's own fields is echoed.
+  const input = formDataToRecord(fd, ARRAY_FIELDS);
+  const values = boundRecord(input, ECHO_FIELDS, FIELD_LIMITS.message + 1);
   try {
-    return await receive(fd, values);
+    return await receive(fd, input, values);
   } catch (error) {
     // Visitors get a calm message and the phone number; the cause goes to the server log.
     console.error("Inquiry submission failed", error);
@@ -92,7 +104,11 @@ export async function submitInquiryAction(
   }
 }
 
-async function receive(fd: FormData, values: FormRecord): Promise<PublicFormState> {
+async function receive(
+  fd: FormData,
+  input: FormRecord,
+  values: FormRecord,
+): Promise<PublicFormState> {
   // Bots get the same answer as people, so they cannot learn to avoid the trap.
   if (field(fd, HONEYPOT_FIELD)) return { status: "sent" };
 
@@ -106,7 +122,7 @@ async function receive(fd: FormData, values: FormRecord): Promise<PublicFormStat
   const localeValue = field(fd, "locale") ?? "";
   const locale = isLocale(localeValue) ? localeValue : DEFAULT_LOCALE;
 
-  const validated = validatePayload(kind, values, await getCatalog(), productSlug);
+  const validated = validatePayload(kind, input, await getCatalog(), productSlug);
   if (!validated) return { status: "failed", values };
   const photos = kind === "sell" ? photosOf(fd) : [];
   const photoError = photoProblem(photos);
@@ -127,7 +143,7 @@ async function receive(fd: FormData, values: FormRecord): Promise<PublicFormStat
     return { status: "rateLimited", values };
   }
   const id = randomUUID();
-  const input = {
+  const inquiry = {
     id,
     kind,
     locale,
@@ -136,7 +152,7 @@ async function receive(fd: FormData, values: FormRecord): Promise<PublicFormStat
     submissionKey: submissionKey ?? null,
     addressHash,
   };
-  if (!withPhotos) return store({ ...input, photos: [] }, values);
+  if (!withPhotos) return store({ ...inquiry, photos: [] }, values);
 
   // Parallel uploads would all pass the check above: at most one upload per
   // address and a few overall are processed; the rest are turned away at once.
@@ -162,7 +178,7 @@ async function receive(fd: FormData, values: FormRecord): Promise<PublicFormStat
       await removeQuietly([id]);
       throw error;
     }
-    return await store({ ...input, photos: stored }, values);
+    return await store({ ...inquiry, photos: stored }, values);
   } finally {
     release();
   }
@@ -185,9 +201,7 @@ async function store(input: NewInquiry, values: FormRecord): Promise<PublicFormS
     throw error;
   }
   if (outcome !== "stored") await removeQuietly([input.id]);
-  await applyInquiryRetention(db, PRIVATE_ROOT).catch((error) =>
-    console.error("Inquiry retention failed", error),
-  );
+  await maintainInquiryRetention(db, PRIVATE_ROOT);
   return outcome === "rateLimited"
     ? { status: "rateLimited", values }
     : { status: "sent" };

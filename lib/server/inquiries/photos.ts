@@ -114,22 +114,22 @@ export async function photoFolderIds(root: string): Promise<string[]> {
 }
 
 /**
- * Removes photo folders that have no inquiry row (a write that failed half-way
- * or a crash before the commit). Folders younger than `graceMs` are skipped:
- * they may belong to a submission that is still being stored.
+ * Photo folders older than `graceMs` (a younger one may belong to a submission
+ * that is still being stored). Folders that vanish meanwhile (another cleanup
+ * run) are skipped, never an error.
  */
-export async function sweepOrphanFolders(
+export async function staleFolderIds(
   root: string,
-  existingIds: ReadonlySet<string>,
   { now = Date.now(), graceMs = 60 * 60 * 1000 } = {},
 ): Promise<string[]> {
-  const removed: string[] = [];
+  const stale: string[] = [];
   for (const id of await photoFolderIds(root)) {
-    if (existingIds.has(id)) continue;
-    const { mtimeMs } = await stat(folderOf(root, id));
-    if (now - mtimeMs < graceMs) continue;
-    await rm(folderOf(root, id), { recursive: true, force: true });
-    removed.push(id);
+    try {
+      const { mtimeMs } = await stat(folderOf(root, id));
+      if (now - mtimeMs >= graceMs) stale.push(id);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
   }
-  return removed;
+  return stale;
 }
