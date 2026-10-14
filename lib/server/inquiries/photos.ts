@@ -1,4 +1,13 @@
-import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  stat,
+  statfs,
+  writeFile,
+} from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 import { createSemaphore } from "@/lib/server/auth/semaphore";
@@ -28,8 +37,12 @@ const folderOf = (root: string, id: string) =>
 export async function preparePhotos(files: readonly File[]): Promise<PreparedImage[]> {
   const prepared: PreparedImage[] = [];
   for (const file of files) {
-    const input = Buffer.from(await file.arrayBuffer());
-    prepared.push(await limitImageWork(() => prepareImage(input)));
+    // The copy is made only once a slot is free, so waiting requests hold no extra memory.
+    prepared.push(
+      await limitImageWork(async () =>
+        prepareImage(Buffer.from(await file.arrayBuffer())),
+      ),
+    );
   }
   return prepared;
 }
@@ -77,4 +90,46 @@ export async function readInquiryPhoto(
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw error;
   }
+}
+
+/** Never fill the disk with visitor uploads: keep this much space free. */
+export const MIN_FREE_BYTES = 2 * 1024 * 1024 * 1024;
+
+export async function hasRoomFor(root: string, bytes: number): Promise<boolean> {
+  await mkdir(root, { recursive: true, mode: 0o700 });
+  const { bavail, bsize } = await statfs(root);
+  return bavail * bsize - bytes >= MIN_FREE_BYTES;
+}
+
+/** Inquiry ids that have a photo folder on disk. */
+export async function photoFolderIds(root: string): Promise<string[]> {
+  try {
+    return (await readdir(resolveInside(root, "inquiries"))).filter(
+      (name) => inquiryId.safeParse(name).success,
+    );
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
+  }
+}
+
+/**
+ * Removes photo folders that have no inquiry row (a write that failed half-way
+ * or a crash before the commit). Folders younger than `graceMs` are skipped:
+ * they may belong to a submission that is still being stored.
+ */
+export async function sweepOrphanFolders(
+  root: string,
+  existingIds: ReadonlySet<string>,
+  { now = Date.now(), graceMs = 60 * 60 * 1000 } = {},
+): Promise<string[]> {
+  const removed: string[] = [];
+  for (const id of await photoFolderIds(root)) {
+    if (existingIds.has(id)) continue;
+    const { mtimeMs } = await stat(folderOf(root, id));
+    if (now - mtimeMs < graceMs) continue;
+    await rm(folderOf(root, id), { recursive: true, force: true });
+    removed.push(id);
+  }
+  return removed;
 }

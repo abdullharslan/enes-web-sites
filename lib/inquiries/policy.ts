@@ -15,25 +15,13 @@ export type InquiryStatus = (typeof INQUIRY_STATUSES)[number];
 
 export const INQUIRY_LIMITS = {
   perAddress: 5,
-  /** Across all visitors: caps the damage of a distributed flood. */
+  /** Submissions WITH photos across all visitors (CPU/disk); text inquiries are never capped globally. */
   global: 200,
   windowMs: HOUR,
   maxPhotos: 4,
   maxPhotoBytes: 10 * MB,
   maxTotalPhotoBytes: 20 * MB,
 } as const;
-
-/**
- * Optional override of the per-address limit (e.g. for automated tests that all
- * come from one address). Fails fast on typos rather than silently disabling it.
- */
-export function parseAddressLimit(value: string | undefined): number {
-  if (value === undefined || value === "") return INQUIRY_LIMITS.perAddress;
-  if (!/^[1-9]\d{0,4}$/.test(value)) {
-    throw new Error(`INQUIRY_LIMIT_PER_ADDRESS must be 1–99999, got "${value}"`);
-  }
-  return Number(value);
-}
 
 export const INQUIRY_RETENTION = {
   /** The hashed client address is only needed for the rate limit window. */

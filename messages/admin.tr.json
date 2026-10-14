@@ -303,7 +303,8 @@
     "deleted": "Talep silindi.",
     "notFound": "Talep bulunamadı.",
     "retention": "Tamamlanan talepler 6 ay sonra, diğerleri en geç 1 yıl sonra otomatik silinir.",
-    "filter": "Durum filtresi"
+    "filter": "Durum filtresi",
+    "truncated": "En yeni {shown} talep gösteriliyor (toplam {total}). Durum sekmeleriyle daraltın."
   },
   "analytics": {
     "title": "Analiz",

@@ -161,15 +161,17 @@ E2E testleri kendi izole veritabanını (`maison_vault_e2e`) her çalıştırmad
 
 - Sitedeki formlar (ürün sorusu, iletişim, satış) talepleri **sunucuda saklar**; JavaScript kapalıyken de çalışır, kişisel veri asla URL'ye girmez.
 - Satış formunda en fazla 4 fotoğraf (her biri ≤ 10 MB, toplam ≤ 20 MB); fotoğraflar yeniden kodlanır (EXIF/GPS silinir) ve **herkese açık değildir** (`storage/private`, yalnızca oturum açmış yetkili personel görür).
-- Kötüye kullanım koruması: adres başına saatte 5, toplamda saatte 200 talep; botlar için gizli alan (honeypot). Ham IP adresi saklanmaz, yalnızca 24 saat tutulan bir özet (hash).
-- Saklama süresi: tamamlanan talepler 6 ay sonra, diğerleri en geç 1 yıl sonra **otomatik silinir** (fotoğraflarıyla birlikte).
+- Kötüye kullanım koruması: adres başına (IPv6'da /64 blok başına) saatte 5 talep; fotoğraflı talepler için ayrıca tüm ziyaretçiler toplamında saatte 200 sınır (fotoğrafsız sorular hiçbir zaman toplam sınırla engellenmez); aynı anda adres başına 1, toplam 4 fotoğraf yüklemesi işlenir; disk boşluğu 2 GB'ın altına inerse fotoğraf kabul edilmez; botlar için gizli alan (honeypot).
+- Ham IP adresi saklanmaz. Sınır için kullanılan değer, her gün değişen ve yalnızca sunucu belleğinde duran gizli bir anahtarla üretilen HMAC'tir (geri çözülemez, günler arasında ilişkilendirilemez) ve 24 saat sonra silinir. Yan etkisi: sayaç gece yarısı (UTC) ve sunucu yeniden başlayınca sıfırlanır; uygulama tek sunucu örneği olarak çalışmalıdır.
+- Saklama süresi: tamamlanan talepler 6 ay sonra, diğerleri en geç 1 yıl sonra **otomatik silinir** (fotoğraflarıyla birlikte). Kurallar her talepte ve gelen kutusu her açıldığında uygulanır; yayında ayrıca günlük bir zamanlanmış görev önerilir: `npm run inquiries:purge` (ör. cron `15 3 * * *`).
+- Bilinen sınır: oturumu çalınan biri 5 yanlış denemeyle gerçek kullanıcının kendi parola değişikliğini 15 dakika engelleyebilir; sahip (owner) parolayı her zaman sıfırlayabilir.
 - **Yayından önce:** Datenschutzerklärung (gizlilik politikası) bu işleme, saklama süresine ve silme hakkına göre bir hukukçuyla güncellenmelidir. Yeni talep için e-posta bildirimi henüz yok (SMTP gerektirir); panelde "Talepler" yanında yeni talep sayısı görünür.
 
 ### Analiz (çerezsiz)
 
 - Ziyaretçi tarafında çerez, IP adresi, tarayıcı bilgisi **saklanmaz**; yalnızca "hangi sayfa, hangi gün, kaç kez" sayılır (400 gün tutulur).
 - "Do Not Track" / "Global Privacy Control" gönderen ziyaretçiler, botlar, başka sitelerden gelen istekler ve var olmayan sayfalar sayılmaz.
-- Sayaçlar kasıtlı sahte isteklerle şişirilebilir (kimlik tutulmadığı için ayırt edilemez); sayılar eğilim göstergesidir, kesin ölçüm değildir.
+- Sayaçlar kasıtlı sahte isteklerle şişirilebilir (kimlik tutulmadığı için ayırt edilemez; adres başına dakikada 60 ile sınırlıdır); sayılar eğilim göstergesidir, kesin ölçüm değildir.
 - Yayından önce gizlilik politikasında kısaca belirtilmelidir (hukukçu onayı).
 
 ### Yedekleme ve geri yükleme
@@ -186,6 +188,7 @@ npm run db:restore -- backups/<dosya>.dump
 
 ### Yayına alırken (güvenlik)
 
-- Uygulamayı doğrudan internete açmayın; önüne `X-Forwarded-For` başlığını **kendisi ekleyen/üzerine yazan** bir ters proxy (ör. nginx, Caddy, platform yük dengeleyicisi) koyun. Proxy'nin arkasında başka güvenilir proxy varsa sayısını `TRUSTED_PROXY_HOPS` ile belirtin (varsayılan `0`).
+- Uygulamayı doğrudan internete açmayın; önüne `X-Forwarded-For` başlığını **kendisi ekleyen/üzerine yazan** bir ters proxy (ör. nginx, Caddy, platform yük dengeleyicisi) koyun. **Zorunludur:** Next.js bu başlığa gerçek adresi eklemez (yalnızca başlık hiç yoksa doldurur); proxy olmadan ziyaretçi kendi adresini seçebilir ve giriş/talep/analiz sınırlarını aşabilir. Proxy'nin arkasında başka güvenilir proxy varsa sayısını `TRUSTED_PROXY_HOPS` ile belirtin (varsayılan `0`).
+- Sunucu eylemlerinin gövde sınırı 21 MB'tır (satış formundaki fotoğraflar için); bu sınır tüm formlar için geçerlidir. Proxy'de de makul bir istek boyutu sınırı (ör. nginx `client_max_body_size 21m`) ayarlayın.
 - Giriş koruması: aynı e-posta + adres için 15 dakikada 5, aynı adres için 20, bir e-posta için tüm adreslerden 50 hatalı deneme sınırı. Daha önce başarıyla giriş yapılmış tarayıcılar ("güvenilir cihaz", 90 gün) e-posta sınırından etkilenmez — saldırgan sahibi kilitleyemez.
 - HTTPS zorunludur (çerezler `__Host-` önekli ve `Secure`, HSTS açık).

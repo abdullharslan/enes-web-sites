@@ -1,15 +1,28 @@
-import { createHash } from "node:crypto";
-import { and, asc, count, desc, eq, gt, isNotNull, lt, or, sql } from "drizzle-orm";
+import { createHmac, randomBytes } from "node:crypto";
+import {
+  and,
+  asc,
+  count,
+  countDistinct,
+  desc,
+  eq,
+  gt,
+  isNotNull,
+  lt,
+  or,
+  sql,
+} from "drizzle-orm";
 import type { Executor } from "@/db/connection";
 import { inquiries, inquiryPhotos } from "@/db/schema";
 import {
   INQUIRY_LIMITS,
-  parseAddressLimit,
   retentionCutoffs,
   type InquiryKind,
   type InquiryStatus,
 } from "@/lib/inquiries/policy";
+import { isoDay } from "@/lib/analytics/track";
 import { recordAudit } from "@/lib/server/audit";
+import { parseLimitEnv } from "@/lib/server/limits";
 
 export interface StoredPhoto {
   position: number;
@@ -33,36 +46,58 @@ export interface NewInquiry {
 export type InquiryRow = typeof inquiries.$inferSelect;
 export type InquiryPhotoRow = typeof inquiryPhotos.$inferSelect;
 
-/** The raw client address is never stored; the hash only serves the rate limit and is cleared after a day. */
-export const hashAddress = (address: string) =>
-  createHash("sha256").update(`inquiry:${address}`).digest("hex");
+/*
+ * The raw client address is never stored. The rate-limit key is an HMAC with a
+ * random key that lives only in this process and changes every UTC day, so a
+ * stored value cannot be reversed (no dictionary of all IPv4 addresses helps)
+ * and values from different days cannot be linked. Side effect, accepted: the
+ * per-address window restarts at midnight UTC and after a server restart.
+ */
+let addressKey: { day: string; key: Buffer } | null = null;
 
-async function submissionsSince(tx: Executor, since: Date, addressHash?: string) {
+export function hashAddress(addressBucket: string, now = new Date()): string {
+  const day = isoDay(now);
+  if (addressKey?.day !== day) addressKey = { day, key: randomBytes(32) };
+  return createHmac("sha256", addressKey.key).update(addressBucket).digest("hex");
+}
+
+async function submissionsSince(tx: Executor, since: Date, addressHash: string) {
   const [row] = await tx
     .select({ n: count() })
     .from(inquiries)
-    .where(
-      and(
-        gt(inquiries.createdAt, since),
-        addressHash ? eq(inquiries.addressHash, addressHash) : undefined,
-      ),
-    );
+    .where(and(gt(inquiries.createdAt, since), eq(inquiries.addressHash, addressHash)));
   return row?.n ?? 0;
 }
 
-const PER_ADDRESS = parseAddressLimit(process.env.INQUIRY_LIMIT_PER_ADDRESS);
+/** Recent submissions that carried photos (the expensive kind: CPU and disk). */
+async function photoSubmissionsSince(tx: Executor, since: Date) {
+  const [row] = await tx
+    .select({ n: countDistinct(inquiryPhotos.inquiryId) })
+    .from(inquiryPhotos)
+    .innerJoin(inquiries, eq(inquiries.id, inquiryPhotos.inquiryId))
+    .where(gt(inquiries.createdAt, since));
+  return row?.n ?? 0;
+}
 
-/** Read-only check, cheap enough to run before any upload is decoded. */
+const PER_ADDRESS = parseLimitEnv(
+  "INQUIRY_LIMIT_PER_ADDRESS",
+  process.env.INQUIRY_LIMIT_PER_ADDRESS,
+  INQUIRY_LIMITS.perAddress,
+);
+
+/**
+ * Read-only check, cheap enough to run before any upload is decoded. The global
+ * cap only applies to submissions with photos: a flood can then at worst delay
+ * photo uploads, never stop customers from sending a question.
+ */
 export async function isRateLimited(
   db: Executor,
   addressHash: string,
-  now = new Date(),
+  { withPhotos, now = new Date() }: { withPhotos: boolean; now?: Date },
 ): Promise<boolean> {
   const since = new Date(now.getTime() - INQUIRY_LIMITS.windowMs);
-  return (
-    (await submissionsSince(db, since, addressHash)) >= PER_ADDRESS ||
-    (await submissionsSince(db, since)) >= INQUIRY_LIMITS.global
-  );
+  if ((await submissionsSince(db, since, addressHash)) >= PER_ADDRESS) return true;
+  return withPhotos && (await photoSubmissionsSince(db, since)) >= INQUIRY_LIMITS.global;
 }
 
 /**
@@ -82,7 +117,10 @@ export async function recordInquiry(
       .where(eq(inquiries.submissionKey, input.submissionKey));
     if (previous) return { outcome: "duplicate" };
   }
-  if (await isRateLimited(tx, input.addressHash, now)) return { outcome: "rateLimited" };
+  const withPhotos = input.photos.length > 0;
+  if (await isRateLimited(tx, input.addressHash, { withPhotos, now })) {
+    return { outcome: "rateLimited" };
+  }
 
   await tx.insert(inquiries).values({
     id: input.id,
@@ -132,7 +170,18 @@ export async function purgeExpiredInquiries(tx: Executor, now = new Date()) {
 
 // ── Admin inbox ──────────────────────────────────────────────────────────────
 
-const LIST_LIMIT = 500;
+export const LIST_LIMIT = 500;
+
+export async function countInquiries(
+  db: Executor,
+  status?: InquiryStatus,
+): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(inquiries)
+    .where(status ? eq(inquiries.status, status) : undefined);
+  return row?.n ?? 0;
+}
 
 export function listInquiries(db: Executor, status?: InquiryStatus) {
   return db

@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   INQUIRY_LIMITS,
   INQUIRY_RETENTION,
-  parseAddressLimit,
   photoProblem,
   retentionCutoffs,
 } from "./policy";
@@ -72,19 +71,5 @@ describe("retentionCutoffs", () => {
   it("keeps finished inquiries for less time than open ones", () => {
     expect(INQUIRY_RETENTION.doneMs).toBeLessThan(INQUIRY_RETENTION.anyMs);
     expect(INQUIRY_RETENTION.addressHashMs).toBeLessThanOrEqual(INQUIRY_RETENTION.doneMs);
-  });
-});
-
-describe("parseAddressLimit", () => {
-  it("defaults to the policy and accepts positive whole numbers", () => {
-    expect(parseAddressLimit(undefined)).toBe(INQUIRY_LIMITS.perAddress);
-    expect(parseAddressLimit("")).toBe(INQUIRY_LIMITS.perAddress);
-    expect(parseAddressLimit("1000")).toBe(1000);
-  });
-
-  it("fails fast on values that would weaken or break the limit", () => {
-    for (const bad of ["0", "-1", "1e3", " 5", "five", "100000"]) {
-      expect(() => parseAddressLimit(bad)).toThrow(/INQUIRY_LIMIT_PER_ADDRESS/);
-    }
   });
 });

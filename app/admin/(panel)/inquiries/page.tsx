@@ -4,11 +4,18 @@ import { AccessDenied, AdminPageTitle } from "@/components/admin/admin-shell";
 import { AdminTable } from "@/components/admin/table";
 import { db } from "@/db/client";
 import { T } from "@/lib/admin/text";
+import { interpolate } from "@/lib/i18n/interpolate";
 import { INQUIRY_STATUSES, type InquiryStatus } from "@/lib/inquiries/policy";
 import { inquirySubject } from "@/lib/inquiries/present";
 import { requireUser } from "@/lib/server/auth/current";
 import { can } from "@/lib/server/auth/permissions";
-import { listInquiries } from "@/lib/server/inquiries/service";
+import { PRIVATE_ROOT } from "@/lib/server/inquiries/photos";
+import { applyInquiryRetention } from "@/lib/server/inquiries/retention";
+import {
+  LIST_LIMIT,
+  countInquiries,
+  listInquiries,
+} from "@/lib/server/inquiries/service";
 
 export const metadata: Metadata = { title: T.inquiries.title };
 
@@ -36,7 +43,13 @@ export default async function InquiriesPage({
   if (!can(user.role, "inquiries:manage")) return <AccessDenied />;
   const params = await searchParams;
   const view = parseView(params.status);
-  const rows = await listInquiries(db, view === "all" ? undefined : view);
+  // Deadlines must hold even when nobody submits a form: opening the inbox applies them too.
+  await applyInquiryRetention(db, PRIVATE_ROOT);
+  const status = view === "all" ? undefined : view;
+  const [rows, total] = await Promise.all([
+    listInquiries(db, status),
+    countInquiries(db, status),
+  ]);
 
   return (
     <>
@@ -94,6 +107,11 @@ export default async function InquiriesPage({
             </tr>
           ))}
         </AdminTable>
+      )}
+      {total > LIST_LIMIT && (
+        <p role="status" className="mt-4 text-sm text-mist">
+          {interpolate(T.inquiries.truncated, { shown: LIST_LIMIT, total })}
+        </p>
       )}
       <p className="mt-8 text-xs text-mist">{T.inquiries.retention}</p>
     </>

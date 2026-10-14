@@ -1,11 +1,9 @@
 "use server";
 
-import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db/client";
-import { users } from "@/db/schema";
 import {
   ForbiddenError,
   SESSION_COOKIE,
@@ -13,12 +11,12 @@ import {
   requireUser,
 } from "@/lib/server/auth/current";
 import { ROLES } from "@/lib/server/auth/permissions";
-import { createUser } from "@/lib/server/auth/service";
 import { passwordProblems } from "@/lib/server/auth/password";
 import {
   UserRuleError,
   changeOwnPassword,
   changeUserRole,
+  createUserAsOwner,
   resetUserPassword,
   setUserActive,
   type UserRuleCode,
@@ -36,7 +34,7 @@ export type UserActionState =
   | { status: "ok" }
   | {
       status: "error";
-      error: UserRuleCode | "invalid" | "duplicate" | "wrongPassword" | "mismatch";
+      error: UserRuleCode | "invalid" | "wrongPassword" | "mismatch";
       values?: UserFormValues;
     };
 
@@ -75,13 +73,12 @@ export async function createUserAction(
     return { status: "error", error: "weakPassword", values };
   }
 
-  const [existing] = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.email, parsed.data.email.toLowerCase()));
-  if (existing) return { status: "error", error: "duplicate", values };
-
-  await db.transaction((tx) => createUser(tx, parsed.data, actor.id));
+  try {
+    await db.transaction((tx) => createUserAsOwner(tx, actor.id, parsed.data));
+  } catch (error) {
+    const state = asFormError(error);
+    return state.status === "error" ? { ...state, values } : state;
+  }
   revalidatePath("/admin/users");
   return { status: "ok" };
 }

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { DEVICE_COOKIE, SESSION_COOKIE } from "@/lib/server/auth/current";
 import { recordAudit } from "@/lib/server/audit";
-import { requestAddress } from "@/lib/server/request-address";
+import { requestAddressBucket } from "@/lib/server/request-address";
 import {
   TRUSTED_DEVICE_TTL_MS,
   authenticate,
@@ -35,7 +35,7 @@ export async function login(
   if (!parsed.success) return { error: "invalid" };
 
   const store = await cookies();
-  const ip = await requestAddress();
+  const ip = await requestAddressBucket();
   const result = await authenticate(db, {
     ...parsed.data,
     ip,

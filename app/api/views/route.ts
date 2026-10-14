@@ -3,8 +3,19 @@ import { db } from "@/db/client";
 import { isCountable, parseViewPath } from "@/lib/analytics/track";
 import { recordView } from "@/lib/server/analytics/service";
 import { getCatalog } from "@/lib/server/catalog";
+import { createRateWindow, parseLimitEnv } from "@/lib/server/limits";
+import { readLimitedText } from "@/lib/server/read-limited";
+import { requestAddressBucket } from "@/lib/server/request-address";
 
 const MAX_BODY = 512;
+const perAddress = createRateWindow({
+  limit: parseLimitEnv(
+    "ANALYTICS_LIMIT_PER_ADDRESS",
+    process.env.ANALYTICS_LIMIT_PER_ADDRESS,
+    60,
+  ),
+  windowMs: 60_000,
+});
 const body = z.object({ path: z.string().max(300) });
 /** Always the same empty answer: callers learn nothing about what was counted. */
 const done = () => new Response(null, { status: 204 });
@@ -20,8 +31,10 @@ export async function POST(request: Request): Promise<Response> {
   });
   if (!countable) return done();
 
-  const text = await request.text();
-  if (text.length > MAX_BODY) return done();
+  // Spam cannot grow the counters faster than a person browses (per address, per minute).
+  if (!perAddress.allow(await requestAddressBucket())) return done();
+  const text = await readLimitedText(request, MAX_BODY);
+  if (text === null) return done();
   let json: unknown;
   try {
     json = JSON.parse(text);

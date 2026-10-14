@@ -20,9 +20,15 @@ export async function recordView(
       target: [pageViewsDaily.day, pageViewsDaily.locale, pageViewsDaily.page],
       set: { views: sql`${pageViewsDaily.views} + 1` },
     });
+  // Old counters only need removing once a day, not on every view.
+  const today = isoDay(now);
+  if (lastPurgeDay === today) return;
+  lastPurgeDay = today;
   const cutoff = isoDay(new Date(now.getTime() - ANALYTICS_RETENTION_DAYS * DAY_MS));
   await db.delete(pageViewsDaily).where(lt(pageViewsDaily.day, cutoff));
 }
+
+let lastPurgeDay: string | null = null;
 
 const viewCount = sql<number>`cast(${sum(pageViewsDaily.views)} as integer)`;
 

@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import type { Executor } from "@/db/connection";
@@ -23,7 +23,7 @@ afterAll(closeTestDb);
 
 const now = new Date("2026-10-14T12:00:00Z");
 const later = (ms: number) => new Date(now.getTime() + ms);
-const address = hashAddress("203.0.113.7");
+const address = hashAddress("203.0.113.7", now);
 
 const inquiry = (overrides: Partial<NewInquiry> = {}): NewInquiry => ({
   id: randomUUID(),
@@ -87,10 +87,10 @@ describe("recordInquiry", () => {
   it("limits submissions per address within the window (boundary)", () =>
     withRollback(async (tx) => {
       for (let i = 0; i < INQUIRY_LIMITS.perAddress; i++) {
-        expect(await isRateLimited(tx, address, now)).toBe(false);
+        expect(await isRateLimited(tx, address, { withPhotos: false, now })).toBe(false);
         expect((await recordInquiry(tx, inquiry(), now)).outcome).toBe("stored");
       }
-      expect(await isRateLimited(tx, address, now)).toBe(true);
+      expect(await isRateLimited(tx, address, { withPhotos: false, now })).toBe(true);
       expect((await recordInquiry(tx, inquiry(), now)).outcome).toBe("rateLimited");
       // Another visitor is not affected …
       const other = inquiry({ addressHash: hashAddress("198.51.100.1") });
@@ -101,21 +101,45 @@ describe("recordInquiry", () => {
       ).toBe("stored");
     }));
 
-  it("caps the total across all addresses", () =>
+  it("caps photo submissions across all addresses, never plain questions", () =>
     withRollback(async (tx) => {
       for (let i = 0; i < INQUIRY_LIMITS.global; i++) {
+        const id = randomUUID();
         await tx.insert(inquiries).values({
-          id: randomUUID(),
-          kind: "contact",
+          id,
+          kind: "sell",
           locale: "de",
           data: {},
           addressHash: hashAddress(`10.0.${Math.floor(i / 250)}.${i % 250}`),
           createdAt: now,
         });
+        await tx.insert(inquiryPhotos).values({
+          inquiryId: id,
+          position: 0,
+          key: `inquiries/${id}/0_x.webp`,
+          width: 1,
+          height: 1,
+          bytes: 1,
+        });
       }
-      const fresh = inquiry({ addressHash: hashAddress("192.0.2.99") });
-      expect(await isRateLimited(tx, fresh.addressHash, now)).toBe(true);
-      expect((await recordInquiry(tx, fresh, now)).outcome).toBe("rateLimited");
+      const fresh = hashAddress("192.0.2.99");
+      expect(await isRateLimited(tx, fresh, { withPhotos: true, now })).toBe(true);
+      const photo = {
+        position: 0,
+        key: "inquiries/y/0_y.webp",
+        width: 1,
+        height: 1,
+        bytes: 1,
+      };
+      expect(
+        (await recordInquiry(tx, inquiry({ addressHash: fresh, photos: [photo] }), now))
+          .outcome,
+      ).toBe("rateLimited");
+      // A question without photos still gets through during such a flood.
+      expect(await isRateLimited(tx, fresh, { withPhotos: false, now })).toBe(false);
+      expect(
+        (await recordInquiry(tx, inquiry({ addressHash: fresh }), now)).outcome,
+      ).toBe("stored");
     }));
 
   it("never stores the raw client address", () =>
@@ -126,6 +150,20 @@ describe("recordInquiry", () => {
       expect(JSON.stringify(row)).not.toContain("203.0.113.7");
       expect(row?.addressHash).toMatch(/^[0-9a-f]{64}$/);
     }));
+
+  it("keys the address hash with a secret that changes every day", () => {
+    const plain = createHash("sha256").update("203.0.113.7").digest("hex");
+    const salted = createHash("sha256").update("inquiry:203.0.113.7").digest("hex");
+    const today = hashAddress("203.0.113.7", now);
+    // Not reproducible without the in-memory key …
+    expect([plain, salted]).not.toContain(today);
+    // … stable within a day (the rate limit works) …
+    expect(hashAddress("203.0.113.7", later(60_000))).toBe(today);
+    // … and unlinkable across days.
+    expect(hashAddress("203.0.113.7", later(INQUIRY_RETENTION.addressHashMs))).not.toBe(
+      today,
+    );
+  });
 });
 
 describe("purgeExpiredInquiries", () => {

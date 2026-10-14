@@ -13,3 +13,17 @@ export function formDataToRecord(
   }
   return record;
 }
+
+const MAX_ARRAY_ITEMS = 20;
+
+/** Caps every value (and array) so that echoing input back stays small. */
+export function boundRecord(record: FormRecord, maxLength: number): FormRecord {
+  return Object.fromEntries(
+    Object.entries(record).map(([key, value]) => [
+      key,
+      Array.isArray(value)
+        ? value.slice(0, MAX_ARRAY_ITEMS).map((item) => item.slice(0, maxLength))
+        : value.slice(0, maxLength),
+    ]),
+  );
+}

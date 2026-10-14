@@ -66,6 +66,7 @@ export default defineConfig({
       PRIVATE_STORAGE_ROOT: "storage/e2e-private",
       // Every test submits from 127.0.0.1; the real limit is covered by integration tests.
       INQUIRY_LIMIT_PER_ADDRESS: "1000",
+      ANALYTICS_LIMIT_PER_ADDRESS: "10000",
     },
     url: `${baseURL}/de`,
     reuseExistingServer: false,

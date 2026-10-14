@@ -4,6 +4,7 @@ import { auditEvents, sessions, trustedDevices, users } from "@/db/schema";
 import { recordAudit } from "@/lib/server/audit";
 import { hashPassword, passwordProblems, verifyPassword } from "./password";
 import type { Role } from "./permissions";
+import { createUser, type NewUser, type SessionUser } from "./service";
 import { hashSessionToken } from "./token";
 
 /*
@@ -14,7 +15,13 @@ import { hashSessionToken } from "./token";
  */
 
 export type UserRuleCode =
-  "forbidden" | "notFound" | "self" | "weakPassword" | "unchanged" | "tooManyAttempts";
+  | "forbidden"
+  | "notFound"
+  | "self"
+  | "weakPassword"
+  | "unchanged"
+  | "tooManyAttempts"
+  | "duplicate";
 
 export class UserRuleError extends Error {
   override readonly name = "UserRuleError";
@@ -59,6 +66,23 @@ async function signOutEverywhere(tx: Executor, userId: string): Promise<void> {
 
 function assertStrong(password: string): void {
   if (passwordProblems(password).length) throw new UserRuleError("weakPassword");
+}
+
+/** Creates a user on behalf of an owner, under the same lock and re-check as every other change. */
+export async function createUserAsOwner(
+  tx: Executor,
+  actorId: string,
+  input: NewUser,
+): Promise<SessionUser> {
+  assertStrong(input.password);
+  await lockUserManagement(tx);
+  await requireActiveOwner(tx, actorId);
+  const [existing] = await tx
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, input.email.trim().toLowerCase()));
+  if (existing) throw new UserRuleError("duplicate");
+  return createUser(tx, input, actorId);
 }
 
 export async function changeUserRole(
