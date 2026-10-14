@@ -7,3 +7,4 @@ package-lock.json
 public
 e2e/**/*-snapshots
 .claude
+.next-e2e

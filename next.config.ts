@@ -42,6 +42,8 @@ const nextConfig: NextConfig = {
     // plus form fields. Every action re-checks its own, smaller limits.
     serverActions: { bodySizeLimit: "21mb" },
   },
+  // E2E runs build into their own directory, so they never replace the real build.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   cacheComponents: true,
   // Partial Prefetching stays off: without it, routes that await params outside
   // <Suspense> block until rendered, so unknown slugs return a real HTTP 404.

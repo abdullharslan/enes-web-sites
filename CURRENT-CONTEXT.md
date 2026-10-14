@@ -34,7 +34,8 @@ _Last updated: 2026-10-14 by Claude Opus 5.5_
 - [x] Gap step 3: user management (own password change, owner reset, role change, last-owner protection)
 - [x] Gap step 4: inquiries inbox (forms stored server-side, rate limit, honeypot, private sell photos, status, retention)
 - [x] Gap step 5: cookieless analytics dashboard
-- [ ] Gap step 6: CI (GitHub Actions), full verify, independent review → fixes → re-review
+- [x] Gap step 6: CI workflow written (not yet run on GitHub — needs a push), full verify green, independent review (7 Important) → fixes → re-review (1 new Important) → fixed
+- [ ] Push the local commits — **only after explicit user approval**
 - Demo: `next start -p 1113` + Cloudflare quick tunnel run in the background (temporary; a rebuild/restart is needed to show new code)
 
 ## Known risks / open items
@@ -49,4 +50,6 @@ _Last updated: 2026-10-14 by Claude Opus 5.5_
 - Dev-only `npm audit` findings in the `eslint-config-next` chain (no production impact).
 - Privacy policy must describe inquiry storage/retention before going live (README). No e-mail notification for new inquiries yet (needs SMTP).
 - E2E flakiness root cause found: parallel repeats of tests that toggle site-wide state raced each other → `admin-serial` project (1 worker).
+- Open intermittent E2E issue: stale cover on the public page right after a cover change (ACTIONS-TAKEN #140), diagnostic in place.
+- Production deployment requires: reverse proxy, explicit TRUSTED_PROXY_HOPS, one instance, absolute PRIVATE_STORAGE_ROOT for the daily purge cron.
 - Legal pages are placeholders; demo data/photos must be replaced with real stock and own photos via the admin panel.
