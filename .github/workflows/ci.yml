@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      # Throw-away database for this run only; the credentials are the public
+      # placeholders from .env.example, never real secrets.
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_USER: maison
+          POSTGRES_PASSWORD: change-me
+          POSTGRES_DB: maison_vault
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U maison -d maison_vault"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Local environment from the template
+        run: cp .env.example .env.local
+      - name: Integration test database (docker-compose does this via db/init locally)
+        run: PGPASSWORD=change-me psql -h 127.0.0.1 -p 5433 -U maison -d maison_vault -c "CREATE DATABASE maison_vault_test OWNER maison"
+      - name: Schema and demo data (the build prerenders pages from the database)
+        run: npm run db:migrate && npm run db:seed
+      - run: npx playwright install --with-deps chromium
+      - run: npm run verify
+      - name: Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

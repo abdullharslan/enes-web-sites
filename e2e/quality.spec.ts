@@ -98,6 +98,9 @@ test("skip link becomes a visible 44px target on focus", async ({ page }) => {
 });
 
 test.describe("visual regression", () => {
+  // Baselines are macOS renders; Linux fonts and anti-aliasing differ by far more
+  // than the threshold, so pixel comparison only runs where the baselines were made.
+  test.skip(process.platform !== "darwin", "visual baselines are macOS (darwin) renders");
   const SNAPSHOT_PAGES = [
     "/de",
     "/de/collection",
