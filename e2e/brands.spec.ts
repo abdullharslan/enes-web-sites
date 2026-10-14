@@ -48,6 +48,20 @@ test.describe("brand pages", () => {
     ]);
   });
 
+  test("sorting and filtering work without JavaScript", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto("/en/brands/rolex?sort=price-desc");
+    expect(await productNames(page)).toEqual([
+      "Datejust 41",
+      "Submariner Date",
+      "Explorer 40",
+    ]);
+    await page.goto("/fr/collection?category=shoes");
+    await expect(page.getByRole("status")).toHaveText("2 pièces");
+    await context.close();
+  });
+
   test("sorts A–Z, Z–A, price ascending and descending", async ({ page }) => {
     await page.goto("/en/brands/rolex");
 

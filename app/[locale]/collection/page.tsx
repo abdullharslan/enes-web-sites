@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import { CatalogBrowser, CatalogSkeleton } from "@/components/catalog/catalog-browser";
+import { CatalogBrowser } from "@/components/catalog/catalog-browser";
 import { PageHeader } from "@/components/ui/page-header";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { pageMetadata } from "@/lib/seo";
 import { getCatalog } from "@/lib/server/catalog";
+
+/*
+ * Filters and sorting are rendered on the server before the response is sent
+ * (no streamed <Suspense> hole), so they work without JavaScript.
+ */
+export const instant = false;
 
 export async function generateMetadata(): Promise<Metadata> {
   const { locale, dict } = await getDictionary();
@@ -26,15 +31,13 @@ export default async function CollectionPage({
         intro={dict.catalog.intro}
       />
       <div className="mx-auto max-w-screen-2xl px-4 py-16 sm:px-8">
-        <Suspense fallback={<CatalogSkeleton />}>
-          <CatalogBrowser
-            catalog={catalog}
-            searchParams={searchParams}
-            locale={locale}
-            dict={dict}
-            basePath="/collection"
-          />
-        </Suspense>
+        <CatalogBrowser
+          catalog={catalog}
+          searchParams={searchParams}
+          locale={locale}
+          dict={dict}
+          basePath="/collection"
+        />
       </div>
     </>
   );

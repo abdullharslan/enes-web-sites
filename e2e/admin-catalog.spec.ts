@@ -159,6 +159,41 @@ test.describe("admin catalog", () => {
     await expect(page.getByText("Görsel yüklenemedi.", { exact: false })).toBeVisible();
   });
 
+  test("product images can be reordered and a cover chosen", async ({ page }) => {
+    const slug = `rolex-order-${unique()}`;
+    await signIn(page, accounts().editor);
+    await createProduct(page, slug, `Reihenfolge ${unique()}`, "8000");
+    // Each change bumps the product version; waiting for the exact number avoids
+    // matching the previous confirmation that is still on screen.
+    for (const [index, color] of ["#111111", "#eeeeee"].entries()) {
+      await page
+        .getByLabel("Görsel", { exact: true })
+        .setInputFiles(await pngFile(color));
+      await page.getByRole("button", { name: "Yükle" }).click();
+      await expect(page.getByText(`Kaydedildi (sürüm ${index + 2}).`)).toBeVisible();
+    }
+    const images = page.locator(
+      "#product-images ~ ul li img, section[aria-labelledby=product-images] li img",
+    );
+    const before = await images.evaluateAll((els) =>
+      els.map((e) => e.getAttribute("src")),
+    );
+    await page.getByRole("button", { name: "Kapak yap" }).first().click();
+    await expect(page.getByText("Kaydedildi (sürüm 4).")).toBeVisible();
+    const after = await images.evaluateAll((els) =>
+      els.map((e) => e.getAttribute("src")),
+    );
+    expect(after).toEqual([before[1], before[0]]);
+
+    await page.goto(`/de/collection/${slug}`);
+    const cover = await page.locator("article img").first().getAttribute("src");
+    expect(decodeURIComponent(cover ?? "")).toContain(
+      decodeURIComponent(after[0] ?? "")
+        .split("url=")[1]
+        ?.split("&")[0] ?? "",
+    );
+  });
+
   test("admin catalog pages are accessible", async ({ page }) => {
     const AxeBuilder = (await import("@axe-core/playwright")).default;
     await signIn(page, accounts().editor);

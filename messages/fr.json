@@ -7,6 +7,7 @@
     "home": "Accueil",
     "collection": "Collection",
     "brands": "Maisons",
+    "search": "Recherche",
     "about": "À propos",
     "sell": "Vendre",
     "journal": "Journal",
@@ -284,5 +285,17 @@
     },
     "back": "Toutes les maisons",
     "collectionTitle": "La collection"
+  },
+  "search": {
+    "title": "Recherche",
+    "label": "Terme recherché",
+    "placeholder": "Maison, modèle ou référence",
+    "submit": "Rechercher",
+    "results": {
+      "one": "{count} résultat pour « {query} »",
+      "other": "{count} résultats pour « {query} »"
+    },
+    "empty": "Aucun résultat pour « {query} ». Nous serions ravis de trouver la pièce pour vous.",
+    "hint": "Par exemple : Rolex Submariner, Kelly, 126610"
   }
 }

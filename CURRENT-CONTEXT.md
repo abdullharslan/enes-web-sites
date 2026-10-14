@@ -28,7 +28,14 @@ _Last updated: 2026-10-14 by Claude Opus 5.5_
 - [x] Step 4: catalog CRUD, versioned image uploads, history + restore, optimistic concurrency
 - [x] Step 5: home-page content editor (hero image etc.) with versions, journal, media library, audit view
 - [x] Step 6: full verify, independent security review (2 Important) → fixes → re-review (2 new Important) → fixes → re-review: all Important resolved; backup/restore with verified recovery
-- [ ] Push to GitHub — **only after explicit user approval**
+- [x] Pushed to GitHub (user approved); later commits stay local until the next approval
+- [x] Gap step 1: about/sell/contact/legal pages, footer, SEO editable (`65f7b3a`)
+- [x] Gap step 2: product image ordering/cover + site search; catalog/search pages work without JavaScript
+- [ ] Gap step 3: user management (own password change, owner reset, role change, last-owner protection)
+- [ ] Gap step 4: inquiries inbox (forms stored server-side, rate limit, honeypot, private sell photos, status, retention)
+- [ ] Gap step 5: cookieless analytics dashboard
+- [ ] Gap step 6: CI (GitHub Actions), full verify, independent review → fixes → re-review
+- Demo: `next start -p 1113` + Cloudflare quick tunnel run in the background (temporary; a rebuild/restart is needed to show new code)
 
 ## Known risks / open items
 

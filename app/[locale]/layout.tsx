@@ -58,9 +58,11 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
         <SiteHeader
           locale={locale}
           homeHref={localePath(locale, "/")}
+          searchHref={localePath(locale, "/search")}
           links={links}
           labels={{
             menu: dict.nav.menu,
+            search: dict.nav.search,
             openMenu: dict.nav.openMenu,
             closeMenu: dict.nav.closeMenu,
             language: dict.nav.language,

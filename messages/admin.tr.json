@@ -164,7 +164,11 @@
       "certificate": "Sertifika",
       "warranty-card": "Garanti kartı"
     },
-    "onRequest": "Fiyat sorunuz"
+    "onRequest": "Fiyat sorunuz",
+    "cover": "Kapak",
+    "makeCover": "Kapak yap",
+    "moveUp": "Yukarı taşı",
+    "moveDown": "Aşağı taşı"
   },
   "history": {
     "title": "Sürüm geçmişi",

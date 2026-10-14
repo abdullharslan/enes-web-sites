@@ -13,6 +13,7 @@ import {
 import { CATALOG_TAG } from "@/lib/server/catalog";
 import {
   addProductImage,
+  moveProductImage,
   catalogSlug,
   removeProductImage,
   saveBrand,
@@ -191,6 +192,21 @@ export async function removeProductImageAction(fd: FormData): Promise<void> {
     ["catalog:write", "media:write"],
     TAGS,
     (tx, actorId) => removeProductImage(tx, actorId, productId, mediaId),
+  );
+  if ("result" in outcome)
+    redirect(`/admin/products/${productId}?saved=${outcome.result.version}`);
+}
+
+export async function moveProductImageAction(fd: FormData): Promise<void> {
+  const productId = uuid(text(fd, "productId"));
+  const mediaId = uuid(text(fd, "mediaId"));
+  const direction = z.enum(["up", "down", "first"]).safeParse(text(fd, "direction")).data;
+  if (!productId || !mediaId || !direction) return;
+  const outcome = await runAdminChange(
+    fd,
+    ["catalog:write", "media:write"],
+    TAGS,
+    (tx, actorId) => moveProductImage(tx, actorId, productId, mediaId, direction),
   );
   if ("result" in outcome)
     redirect(`/admin/products/${productId}?saved=${outcome.result.version}`);

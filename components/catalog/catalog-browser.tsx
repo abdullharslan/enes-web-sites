@@ -103,7 +103,3 @@ export async function CatalogBrowser({
     </>
   );
 }
-
-export function CatalogSkeleton() {
-  return <div aria-hidden="true" className="h-96 animate-pulse bg-coal" />;
-}

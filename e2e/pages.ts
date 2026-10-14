@@ -4,6 +4,7 @@ export const PAGES = [
   "/fr",
   "/en/brands",
   "/fr/brands/rolex?sort=price-desc",
+  "/fr/search?q=rolex",
   "/en/collection",
   "/tr/collection?category=watches&availability=all",
   "/de/collection/rolex-submariner-date-126610ln",

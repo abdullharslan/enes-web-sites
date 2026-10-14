@@ -7,6 +7,7 @@
     "home": "Startseite",
     "collection": "Kollektion",
     "brands": "Marken",
+    "search": "Suche",
     "about": "Über uns",
     "sell": "Verkaufen",
     "journal": "Journal",
@@ -284,5 +285,17 @@
     },
     "back": "Alle Marken",
     "collectionTitle": "Die Kollektion"
+  },
+  "search": {
+    "title": "Suche",
+    "label": "Suchbegriff",
+    "placeholder": "Marke, Modell oder Referenz",
+    "submit": "Suchen",
+    "results": {
+      "one": "{count} Ergebnis für „{query}“",
+      "other": "{count} Ergebnisse für „{query}“"
+    },
+    "empty": "Keine Treffer für „{query}“. Gerne suchen wir das Stück für Sie.",
+    "hint": "Zum Beispiel: Rolex Submariner, Kelly, 126610"
   }
 }

@@ -5,6 +5,7 @@ import { seedCatalog } from "@/db/seed";
 import type { BrandInput, ProductInput } from "@/lib/admin/schemas";
 import {
   addProductImage,
+  moveProductImage,
   removeProductImage,
   restoreRevision,
   saveBrand,
@@ -288,5 +289,47 @@ describe("idempotency key scope (per record)", () => {
         { idempotencyKey: "k-1" },
       );
       await expect(result).rejects.toThrow();
+    }));
+});
+
+describe("moveProductImage", () => {
+  it("reorders images (incl. choosing a cover) as new versions", () =>
+    withRollback(async (tx) => {
+      await seedCatalog(tx, { mediaRoot: media.root });
+      const [product] = await tx
+        .select()
+        .from(products)
+        .where(eq(products.slug, "rolex-explorer-224270"));
+      const id = product!.id;
+      const make = async (color: string) =>
+        (
+          await storeImage(tx, media.root, {
+            input: await sampleJpeg(color),
+            kind: "product",
+            entitySlug: "rolex-explorer-224270",
+            alt: { de: color },
+          })
+        ).id;
+      const b = await make("#101010");
+      const c = await make("#202020");
+      await addProductImage(tx, null, id, b);
+      await addProductImage(tx, null, id, c);
+      const linked = async () =>
+        (
+          await tx
+            .select()
+            .from(productMedia)
+            .where(eq(productMedia.productId, id))
+            .orderBy(productMedia.position)
+        ).map((l) => l.mediaId);
+      const [a] = await linked();
+
+      await moveProductImage(tx, null, id, c, "first");
+      expect(await linked()).toEqual([c, a, b]);
+      await moveProductImage(tx, null, id, a, "down");
+      expect(await linked()).toEqual([c, b, a]);
+      const result = await moveProductImage(tx, null, id, b, "up");
+      expect(await linked()).toEqual([b, c, a]);
+      expect(result.version).toBe(product!.currentVersion + 5);
     }));
 });

@@ -72,3 +72,10 @@ export const InstagramIcon = (p: IconProps) => (
     <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" />
   </Icon>
 );
+
+export const SearchIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4.5 4.5" />
+  </Icon>
+);

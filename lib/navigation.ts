@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   ["home", "/"],
   ["collection", "/collection"],
   ["brands", "/brands"],
+  ["search", "/search"],
   ["about", "/about"],
   ["sell", "/sell"],
   ["journal", "/journal"],

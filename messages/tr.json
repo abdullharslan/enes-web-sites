@@ -7,6 +7,7 @@
     "home": "Ana sayfa",
     "collection": "Koleksiyon",
     "brands": "Markalar",
+    "search": "Ara",
     "about": "Hakkımızda",
     "sell": "Sat",
     "journal": "Journal",
@@ -284,5 +285,17 @@
     },
     "back": "Tüm markalar",
     "collectionTitle": "Koleksiyon"
+  },
+  "search": {
+    "title": "Arama",
+    "label": "Aranacak ifade",
+    "placeholder": "Marka, model veya referans",
+    "submit": "Ara",
+    "results": {
+      "one": "“{query}” için {count} sonuç",
+      "other": "“{query}” için {count} sonuç"
+    },
+    "empty": "“{query}” için sonuç bulunamadı. Bu parçayı sizin için bulmaktan memnuniyet duyarız.",
+    "hint": "Örneğin: Rolex Submariner, Kelly, 126610"
   }
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { CloseIcon, MenuIcon } from "@/components/ui/icons";
+import { CloseIcon, MenuIcon, SearchIcon } from "@/components/ui/icons";
 import { SITE } from "@/config/site";
 import type { Locale } from "@/lib/i18n/locales";
 import { LanguageSwitcher } from "./language-switcher";
@@ -15,9 +15,11 @@ export interface NavLink {
 interface SiteHeaderProps {
   locale: Locale;
   homeHref: string;
+  searchHref: string;
   links: readonly NavLink[];
   labels: {
     menu: string;
+    search: string;
     openMenu: string;
     closeMenu: string;
     language: string;
@@ -27,7 +29,13 @@ interface SiteHeaderProps {
 
 const SCROLL_THRESHOLD = 24;
 
-export function SiteHeader({ locale, homeHref, links, labels }: SiteHeaderProps) {
+export function SiteHeader({
+  locale,
+  homeHref,
+  searchHref,
+  links,
+  labels,
+}: SiteHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -88,7 +96,16 @@ export function SiteHeader({ locale, homeHref, links, labels }: SiteHeaderProps)
         </Link>
 
         {/* Four locales do not fit next to the logo on phones; there the switcher lives in the menu. */}
-        <div className="hidden justify-self-end sm:block">{switcher}</div>
+        <div className="flex items-center justify-self-end">
+          <Link
+            href={searchHref}
+            aria-label={labels.search}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center text-cream transition-colors hover:text-gold"
+          >
+            <SearchIcon width={20} height={20} />
+          </Link>
+          <div className="hidden sm:block">{switcher}</div>
+        </div>
       </div>
 
       <dialog

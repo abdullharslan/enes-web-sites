@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
-import { CatalogBrowser, CatalogSkeleton } from "@/components/catalog/catalog-browser";
+import { CatalogBrowser } from "@/components/catalog/catalog-browser";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { findBrand, summarizeBrands } from "@/lib/catalog/brands";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -11,6 +10,12 @@ import { localePath } from "@/lib/i18n/locales";
 import { pluralize } from "@/lib/i18n/plural";
 import { pageMetadata } from "@/lib/seo";
 import { getCatalog } from "@/lib/server/catalog";
+
+/*
+ * Filters and sorting are rendered on the server before the response is sent
+ * (no streamed <Suspense> hole), so they work without JavaScript.
+ */
+export const instant = false;
 
 export async function generateStaticParams() {
   const { brands } = await getCatalog();
@@ -107,17 +112,15 @@ export default async function BrandPage({
         >
           {b.collectionTitle}
         </h2>
-        <Suspense fallback={<CatalogSkeleton />}>
-          <CatalogBrowser
-            catalog={catalog}
-            searchParams={searchParams}
-            locale={locale}
-            dict={dict}
-            basePath={`/brands/${brand.slug}`}
-            fixedBrand={brand.slug}
-            cardHeadingLevel="h3"
-          />
-        </Suspense>
+        <CatalogBrowser
+          catalog={catalog}
+          searchParams={searchParams}
+          locale={locale}
+          dict={dict}
+          basePath={`/brands/${brand.slug}`}
+          fixedBrand={brand.slug}
+          cardHeadingLevel="h3"
+        />
       </section>
     </>
   );

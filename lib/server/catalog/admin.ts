@@ -1,4 +1,5 @@
 import { and, asc, eq, ne, sql } from "drizzle-orm";
+import { moveItem, type MoveDirection } from "@/lib/catalog/order";
 import type { Executor } from "@/db/connection";
 import { brands, categories, productMedia, products, revisions } from "@/db/schema";
 import {
@@ -443,4 +444,24 @@ export async function catalogSlug(
   const [row] = await tx.select({ slug: table.slug }).from(table).where(eq(table.id, id));
   if (!row) throw new RecordNotFoundError(`No ${entity} ${id}`);
   return row.slug;
+}
+
+/** Reorders a product's images (e.g. choose the cover with "first") as a new version. */
+export async function moveProductImage(
+  tx: Executor,
+  actorId: string | null,
+  productId: string,
+  mediaId: string,
+  direction: MoveDirection,
+): Promise<SaveResult> {
+  const row = await bumpProduct(tx, productId);
+  const mediaIds = moveItem(await productMediaIds(tx, productId), mediaId, direction);
+  await replaceProductMedia(tx, productId, mediaIds);
+  return finish(tx, {
+    entityType: "product",
+    row,
+    actorId,
+    action: "images-reordered",
+    extra: { mediaIds },
+  });
 }

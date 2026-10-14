@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { removeProductImageAction } from "@/app/admin/actions/catalog";
+import {
+  moveProductImageAction,
+  removeProductImageAction,
+} from "@/app/admin/actions/catalog";
 import { AccessDenied, AdminPageTitle } from "@/components/admin/admin-shell";
 import { ImageUploadForm, ProductForm } from "@/components/admin/catalog-forms";
 import { TextLink } from "@/components/admin/table";
@@ -57,7 +60,7 @@ export default async function EditProductPage({
           {T.products.images}
         </h2>
         <ul className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {product.images.map((image) => (
+          {product.images.map((image, index) => (
             <li key={image.mediaId} className="flex flex-col gap-2">
               <div className="relative aspect-[4/5] overflow-hidden border border-line bg-graphite">
                 <Image
@@ -67,17 +70,45 @@ export default async function EditProductPage({
                   sizes="12rem"
                   className="object-cover"
                 />
+                {index === 0 && (
+                  <span className="absolute top-2 left-2 bg-ink/85 px-2 py-1 text-2xs uppercase tracking-label text-gold">
+                    {T.products.cover}
+                  </span>
+                )}
               </div>
-              <form action={removeProductImageAction}>
-                <input type="hidden" name="productId" value={product.id} />
-                <input type="hidden" name="mediaId" value={image.mediaId} />
-                <button
-                  type="submit"
-                  className="min-h-11 text-sm text-danger underline-offset-4 hover:underline"
-                >
-                  {T.products.removeImage}
-                </button>
-              </form>
+              <div className="flex flex-wrap gap-x-3">
+                {(
+                  [
+                    ["first", T.products.makeCover, index > 0],
+                    ["up", T.products.moveUp, index > 0],
+                    ["down", T.products.moveDown, index < product.images.length - 1],
+                  ] as const
+                ).map(([direction, label, enabled]) =>
+                  enabled ? (
+                    <form key={direction} action={moveProductImageAction}>
+                      <input type="hidden" name="productId" value={product.id} />
+                      <input type="hidden" name="mediaId" value={image.mediaId} />
+                      <input type="hidden" name="direction" value={direction} />
+                      <button
+                        type="submit"
+                        className="min-h-11 text-sm text-gold underline-offset-4 hover:underline"
+                      >
+                        {label}
+                      </button>
+                    </form>
+                  ) : null,
+                )}
+                <form action={removeProductImageAction}>
+                  <input type="hidden" name="productId" value={product.id} />
+                  <input type="hidden" name="mediaId" value={image.mediaId} />
+                  <button
+                    type="submit"
+                    className="min-h-11 text-sm text-danger underline-offset-4 hover:underline"
+                  >
+                    {T.products.removeImage}
+                  </button>
+                </form>
+              </div>
             </li>
           ))}
         </ul>
