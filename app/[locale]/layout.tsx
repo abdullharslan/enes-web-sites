@@ -8,7 +8,7 @@ import { SITE } from "@/config/site";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { INTL_LOCALE, LOCALES, localePath } from "@/lib/i18n/locales";
 import { buildNavLinks } from "@/lib/navigation";
-import { getSiteContact } from "@/lib/server/content";
+import { getPages, getSiteContact } from "@/lib/server/content";
 import "../globals.css";
 
 const display = Cormorant_Garamond({
@@ -27,11 +27,12 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { locale, dict } = await getDictionary();
+  const { locale } = await getDictionary();
+  const { seo } = await getPages(locale);
   return {
     metadataBase: new URL(SITE.url),
-    title: { default: dict.meta.title, template: `%s | ${SITE.name}` },
-    description: dict.meta.description,
+    title: { default: seo.title, template: `%s | ${SITE.name}` },
+    description: seo.description,
     // Canonical/hreflang are page-specific (see pageMetadata); only site defaults here.
     openGraph: pageMetadata(locale, "/").openGraph,
   };
@@ -42,6 +43,7 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
     getDictionary(),
     getSiteContact(),
   ]);
+  const { footer } = await getPages(locale);
   const links = buildNavLinks(locale, dict.nav);
 
   return (
@@ -66,7 +68,13 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
           }}
         />
         <main id="content">{children}</main>
-        <SiteFooter contact={contact} locale={locale} links={links} dict={dict} />
+        <SiteFooter
+          contact={contact}
+          content={footer}
+          locale={locale}
+          links={links}
+          dict={dict}
+        />
         <FloatingContact
           contact={contact}
           label={dict.nav.contact}

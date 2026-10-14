@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CONTENT_BLOCKS, type FieldDef } from "@/lib/content/blocks";
-import { resolveHome } from "@/lib/content/home";
+import { resolveHome, resolvePages } from "@/lib/content/home";
 import de from "@/messages/de.json";
 
 /** Every home section must render exactly the texts it rendered from the dictionary before. */
@@ -40,5 +40,49 @@ describe("content blocks ↔ dictionary contract", () => {
           expect(field.source, field.key).toBeDefined();
       }
     }
+  });
+});
+
+describe("page blocks ↔ dictionary contract", () => {
+  const pages = resolvePages({ blocks: new Map(), images: new Map() }, "de");
+
+  it("about page defaults equal the dictionary", () => {
+    expect(pages.about).toMatchObject({
+      eyebrow: de.about.eyebrow,
+      title: de.about.title,
+      teaser: de.about.teaser,
+      body: de.about.body,
+      values: de.about.values,
+    });
+  });
+
+  it("sell page defaults equal the dictionary", () => {
+    expect(pages.sell).toMatchObject({
+      eyebrow: de.sell.eyebrow,
+      title: de.sell.title,
+      intro: de.sell.intro,
+      stepsTitle: de.sell.stepsTitle,
+      steps: de.sell.steps,
+      formTitle: de.sell.formTitle,
+    });
+  });
+
+  it("contact page, footer and SEO defaults equal the dictionary", () => {
+    expect(pages.contact).toEqual(de.contactPage);
+    expect(pages.footer).toMatchObject({
+      tagline: de.footer.tagline,
+      trademarkNotice: de.footer.trademarkNotice,
+      demoNotice: de.footer.demoNotice,
+      showDemoNotice: true,
+    });
+    expect(pages.seo).toEqual(de.meta);
+  });
+
+  it("legal pages default to their titles and the lawyer placeholder", () => {
+    expect(pages.legal.impressum).toEqual({
+      title: de.legal.titles.impressum,
+      body: de.legal.placeholder,
+    });
+    expect(pages.legal.widerruf.title).toBe(de.legal.titles.widerruf);
   });
 });

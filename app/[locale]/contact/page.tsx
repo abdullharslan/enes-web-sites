@@ -6,20 +6,24 @@ import { ChatIcon, MailIcon, PhoneIcon } from "@/components/ui/icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { SITE } from "@/config/site";
 import { buildWhatsAppUrl } from "@/lib/contact-links";
-import { getSiteContact } from "@/lib/server/content";
+import { getPages, getSiteContact } from "@/lib/server/content";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { locale, dict } = await getDictionary();
+  const { locale } = await getDictionary();
+  const { contact: c } = await getPages(locale);
   return pageMetadata(locale, "/contact", {
-    title: dict.contactPage.eyebrow,
-    description: dict.contactPage.text,
+    title: c.eyebrow,
+    description: c.text,
   });
 }
 
 export default async function ContactPage() {
-  const [{ dict }, contact] = await Promise.all([getDictionary(), getSiteContact()]);
-  const c = dict.contactPage;
+  const [{ locale, dict }, contact] = await Promise.all([
+    getDictionary(),
+    getSiteContact(),
+  ]);
+  const { contact: c } = await getPages(locale);
   return (
     <>
       <PageHeader eyebrow={c.eyebrow} title={c.title} intro={c.text} />

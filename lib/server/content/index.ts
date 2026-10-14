@@ -1,7 +1,13 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db/client";
-import { resolveSiteContact, type ContentSource } from "@/lib/content/home";
+import {
+  resolvePages,
+  resolveSiteContact,
+  type ContentSource,
+  type PagesContent,
+} from "@/lib/content/home";
+import type { Locale } from "@/lib/i18n/locales";
 import type { JournalEntry } from "@/lib/content/journal";
 import type { SiteContact } from "@/lib/content/resolve";
 import { loadContent } from "./load";
@@ -19,4 +25,9 @@ export async function getContent(): Promise<ContentSource & { journal: JournalEn
 
 export async function getSiteContact(): Promise<SiteContact> {
   return resolveSiteContact(await getContent());
+}
+
+/** Inner-page texts, footer and SEO for `locale`. */
+export async function getPages(locale: Locale): Promise<PagesContent> {
+  return resolvePages(await getContent(), locale);
 }

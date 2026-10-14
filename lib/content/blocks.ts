@@ -15,7 +15,16 @@ type Dictionary = typeof de;
 const DICTIONARIES: Record<Locale, Dictionary> = { de, en, fr, tr };
 
 export type FieldKind =
-  "text" | "multiline" | "image" | "email" | "phone" | "whatsapp" | "url" | "plain";
+  | "text"
+  | "multiline"
+  | "longtext"
+  | "image"
+  | "toggle"
+  | "email"
+  | "phone"
+  | "whatsapp"
+  | "url"
+  | "plain";
 
 export interface FieldDef {
   key: string;
@@ -24,6 +33,8 @@ export interface FieldDef {
   label: string;
   /** Where today's text lives in the UI dictionaries (translated kinds only). */
   source?: (dict: Dictionary) => string;
+  /** Initial value for non-translated kinds (e.g. a toggle). */
+  initial?: unknown;
 }
 
 export interface BlockDef {
@@ -45,6 +56,26 @@ const multiline = (key: string, label: string, source: FieldDef["source"]): Fiel
   source,
 });
 const image = (label = "Görsel"): FieldDef => ({ key: "image", kind: "image", label });
+const longtext = (key: string, label: string, source: FieldDef["source"]): FieldDef => ({
+  key,
+  kind: "longtext",
+  label,
+  source,
+});
+
+/** Numbered pairs for list sections (title + text), e.g. values, steps. */
+const pairs = (
+  count: number,
+  label: string,
+  title: (d: Dictionary, i: number) => string,
+  body: (d: Dictionary, i: number) => string,
+) =>
+  Array.from({ length: count }, (_, i) => [
+    text(`item${i + 1}Title`, `${label} ${i + 1} – başlık`, (d) => title(d, i)),
+    multiline(`item${i + 1}Text`, `${label} ${i + 1} – metin`, (d) => body(d, i)),
+  ]).flat();
+
+export const LEGAL_PAGE_KEYS = ["impressum", "datenschutz", "agb", "widerruf"] as const;
 
 const trustItems = [0, 1, 2, 3].flatMap((i) => [
   text(`item${i + 1}Title`, `Söz ${i + 1} – başlık`, (d) => d.trust.items[i]!.title),
@@ -139,6 +170,80 @@ export const CONTENT_BLOCKS = {
       text("overview", "Tümü butonu", (d) => d.journal.overview),
     ],
   },
+  "page.about": {
+    label: "Hakkımızda sayfası",
+    fields: [
+      text("eyebrow", "Üst etiket", (d) => d.about.eyebrow),
+      text("title", "Başlık", (d) => d.about.title),
+      multiline("teaser", "Giriş metni", (d) => d.about.teaser),
+      multiline("body", "Ana metin", (d) => d.about.body),
+      ...pairs(
+        3,
+        "Değer",
+        (d, i) => d.about.values[i]!.title,
+        (d, i) => d.about.values[i]!.text,
+      ),
+      image("Sayfa görseli"),
+    ],
+  },
+  "page.sell": {
+    label: "Sat (konsinye) sayfası",
+    fields: [
+      text("eyebrow", "Üst etiket", (d) => d.sell.eyebrow),
+      text("title", "Başlık", (d) => d.sell.title),
+      multiline("intro", "Giriş metni", (d) => d.sell.intro),
+      text("stepsTitle", "Adımlar başlığı", (d) => d.sell.stepsTitle),
+      ...pairs(
+        4,
+        "Adım",
+        (d, i) => d.sell.steps[i]!.title,
+        (d, i) => d.sell.steps[i]!.text,
+      ),
+      text("formTitle", "Form başlığı", (d) => d.sell.formTitle),
+    ],
+  },
+  "page.contact": {
+    label: "İletişim sayfası",
+    fields: [
+      text("eyebrow", "Üst etiket", (d) => d.contactPage.eyebrow),
+      text("title", "Başlık", (d) => d.contactPage.title),
+      multiline("text", "Metin", (d) => d.contactPage.text),
+      text("addressTitle", "Adres başlığı", (d) => d.contactPage.addressTitle),
+      text("formTitle", "Form başlığı", (d) => d.contactPage.formTitle),
+    ],
+  },
+  "page.legal": {
+    label: "Yasal metinler (Impressum, gizlilik, AGB, cayma)",
+    fields: LEGAL_PAGE_KEYS.flatMap((page) => [
+      text(`${page}Title`, `${page} – başlık`, (d) => d.legal.titles[page]),
+      longtext(
+        page,
+        `${page} – metin (paragraflar boş satırla, başlıklar "## " ile)`,
+        (d) => d.legal.placeholder,
+      ),
+    ]),
+  },
+  "site.footer": {
+    label: "Alt bilgi (footer)",
+    fields: [
+      text("tagline", "Slogan", (d) => d.footer.tagline),
+      multiline("trademarkNotice", "Marka hakları notu", (d) => d.footer.trademarkNotice),
+      text("demoNotice", "Demo uyarısı metni", (d) => d.footer.demoNotice),
+      {
+        key: "showDemoNotice",
+        kind: "toggle",
+        label: "Demo uyarısını göster",
+        initial: true,
+      },
+    ],
+  },
+  "site.seo": {
+    label: "SEO (arama motoru başlığı ve açıklaması)",
+    fields: [
+      text("title", "Site başlığı", (d) => d.meta.title),
+      multiline("description", "Site açıklaması", (d) => d.meta.description),
+    ],
+  },
   "site.contact": {
     label: "İletişim bilgileri",
     fields: [
@@ -164,7 +269,8 @@ export function isContentKey(value: string): value is ContentKey {
   return Object.hasOwn(CONTENT_BLOCKS, value);
 }
 
-export const isTranslated = (kind: FieldKind) => kind === "text" || kind === "multiline";
+export const isTranslated = (kind: FieldKind) =>
+  kind === "text" || kind === "multiline" || kind === "longtext";
 
 /** Storage slug for a block's images, e.g. `home.hero` → `home-hero`. */
 export const blockImageSlug = (key: ContentKey) =>
@@ -188,6 +294,8 @@ export function blockDefaults(key: ContentKey): Record<string, unknown> {
       result[field.key] = Object.fromEntries(
         LOCALES.map((l) => [l, field.source!(DICTIONARIES[l])]),
       );
+    } else if (field.kind === "toggle") {
+      result[field.key] = field.initial ?? false;
     } else if (field.kind !== "image") {
       result[field.key] = CONTACT_DEFAULTS[field.key] ?? "";
     }
@@ -210,6 +318,8 @@ const translations = (max: number) =>
 const FIELD_SCHEMAS: Record<FieldKind, z.ZodType> = {
   text: translations(200),
   multiline: translations(2000),
+  longtext: translations(50_000),
+  toggle: z.boolean(),
   image: z.uuid().nullable().optional(),
   email: z.email().max(254),
   phone: z

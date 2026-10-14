@@ -64,7 +64,22 @@ export function BlockForm({
             />
           );
         }
-        if (field.kind === "text" || field.kind === "multiline") {
+        if (field.kind === "toggle") {
+          return (
+            <CheckboxInput
+              key={field.key}
+              state={state}
+              name={field.key}
+              label={field.label}
+              defaultChecked={value === true}
+            />
+          );
+        }
+        if (
+          field.kind === "text" ||
+          field.kind === "multiline" ||
+          field.kind === "longtext"
+        ) {
           return (
             <LocalizedInput
               key={field.key}
@@ -72,7 +87,8 @@ export function BlockForm({
               name={field.key}
               label={field.label}
               defaults={(value ?? {}) as Translations}
-              multiline={field.kind === "multiline"}
+              multiline={field.kind !== "text"}
+              rows={field.kind === "longtext" ? 14 : 4}
             />
           );
         }

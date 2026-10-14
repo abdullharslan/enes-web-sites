@@ -25,6 +25,10 @@ const DEFAULT_IMAGES: Partial<Record<ContentKey, { src: string; alt: string }>> 
   "home.about": { src: "/images/jewel-portrait.jpg", alt: "Porträt mit Schmuck" },
   "home.story": { src: "/images/jewel-earrings-sapphire.jpg", alt: "Saphir-Ohrringe" },
   "home.sellCta": { src: "/images/watch-trio.jpg", alt: "Sportuhren auf dunklem Grund" },
+  "page.about": {
+    src: "/images/watch-two-tone.jpg",
+    alt: "Bicolor-Armbanduhr auf dunklem Holz",
+  },
 };
 
 export interface ContentSeedOptions {

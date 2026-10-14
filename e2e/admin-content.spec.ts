@@ -149,6 +149,51 @@ test.describe("admin content", () => {
     await ownerPage.close();
   });
 
+  test("legal texts are edited in the admin and rendered safely", async ({ page }) => {
+    const company = `Maison Vault GmbH ${unique()}`;
+    await signIn(page, accounts().editor);
+    await page.goto("/admin/home/page.legal");
+    await page
+      .getByRole("group", { name: /^impressum – metin/ })
+      .getByLabel("Almanca")
+      .fill(
+        `## Angaben gemäß § 5 DDG\n${company}\nMusterstraße 1\n\n<script>window.__pwned = true</script>`,
+      );
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await savedVersion(page);
+
+    await page.goto("/de/legal/impressum");
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Angaben gemäß § 5 DDG" }),
+    ).toBeVisible();
+    await expect(page.getByText(company)).toBeVisible();
+    await expect(page.getByText("<script>window.__pwned = true</script>")).toBeVisible();
+    expect(
+      await page.evaluate(() => (window as unknown as { __pwned?: boolean }).__pwned),
+    ).toBeUndefined();
+  });
+
+  test("the demo notice can be switched off and on", async ({ page }) => {
+    await signIn(page, accounts().editor);
+    const toggle = async (on: boolean) => {
+      await page.goto("/admin/home/site.footer");
+      const box = page.getByLabel("Demo uyarısını göster");
+      if ((await box.isChecked()) !== on) await box.click();
+      await page.getByRole("button", { name: "Kaydet" }).click();
+      await savedVersion(page);
+    };
+    await toggle(false);
+    await page.goto("/de");
+    await expect(
+      page.locator("footer").getByText("Demo-Version", { exact: false }),
+    ).toHaveCount(0);
+    await toggle(true);
+    await page.goto("/de");
+    await expect(
+      page.locator("footer").getByText("Demo-Version", { exact: false }),
+    ).toBeVisible();
+  });
+
   test("content admin pages are accessible", async ({ page }) => {
     const AxeBuilder = (await import("@axe-core/playwright")).default;
     await signIn(page, accounts().owner);

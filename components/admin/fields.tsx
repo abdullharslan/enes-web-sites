@@ -198,6 +198,7 @@ export function LocalizedInput({
   defaults,
   required = true,
   multiline = false,
+  rows = 4,
 }: {
   state: FormState;
   name: string;
@@ -205,6 +206,7 @@ export function LocalizedInput({
   defaults: Readonly<Record<string, string>>;
   required?: boolean;
   multiline?: boolean;
+  rows?: number;
 }) {
   const missing = LOCALES.filter((l) => l !== DEFAULT_LOCALE && !defaults[l]);
   return (
@@ -234,7 +236,7 @@ export function LocalizedInput({
             error={error}
             required={isRequired}
           >
-            {multiline ? <textarea rows={4} {...common} /> : <input {...common} />}
+            {multiline ? <textarea rows={rows} {...common} /> : <input {...common} />}
           </Field>
         );
       })}

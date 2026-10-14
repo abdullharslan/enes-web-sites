@@ -48,6 +48,7 @@ function blockFromForm(key: ContentKey, fd: FormData): Record<string, unknown> {
   for (const field of CONTENT_BLOCKS[key].fields as readonly FieldDef[]) {
     if (isTranslated(field.kind)) data[field.key] = translationsFromForm(fd, field.key);
     else if (field.kind === "image") data[field.key] = uuid(text(fd, field.key));
+    else if (field.kind === "toggle") data[field.key] = fd.get(field.key) === "on";
     else data[field.key] = text(fd, field.key).trim();
   }
   return data;

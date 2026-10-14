@@ -18,7 +18,11 @@ export interface ResolvedImage {
   alt: string;
 }
 
-export type ResolvedBlock = Record<string, string> & { image?: ResolvedImage };
+export type ResolvedBlock = Record<string, string> & {
+  image?: ResolvedImage;
+  /** Toggle fields, e.g. `showDemoNotice`. */
+  flags?: Record<string, boolean>;
+};
 
 const reportInvalid = (key: string) =>
   console.error(`[content] invalid stored block "${key}", using defaults`);
@@ -56,6 +60,11 @@ export function resolveBlock(
       if (image) result.image = { src: image.src, alt: pickLocale(image.alt, locale) };
     } else if (isTranslated(field.kind)) {
       result[field.key] = pickLocale(value, locale);
+    } else if (field.kind === "toggle") {
+      result.flags = {
+        ...result.flags,
+        [field.key]: typeof value === "boolean" ? value : Boolean(defaults[field.key]),
+      };
     } else {
       result[field.key] =
         typeof value === "string" ? value : String(defaults[field.key] ?? "");
@@ -70,13 +79,18 @@ export function resolveTrust(
   images: ReadonlyMap<string, StoredImage>,
 ) {
   const block = resolveBlock("home.trust", stored, locale, images);
-  return {
-    title: block.title ?? "",
-    items: [1, 2, 3, 4].map((i) => ({
-      title: block[`item${i}Title`] ?? "",
-      text: block[`item${i}Text`] ?? "",
-    })),
-  };
+  return { title: block.title ?? "", items: numberedItems(block, 4) };
+}
+
+/** Rebuilds a list section stored as `item1Title`, `item1Text`, … */
+export function numberedItems(
+  block: ResolvedBlock,
+  count: number,
+): { title: string; text: string }[] {
+  return Array.from({ length: count }, (_, i) => ({
+    title: block[`item${i + 1}Title`] ?? "",
+    text: block[`item${i + 1}Text`] ?? "",
+  }));
 }
 
 export interface SiteContact {

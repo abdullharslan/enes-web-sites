@@ -22,7 +22,13 @@ describe("content block definitions", () => {
         "home.sold",
         "home.story",
         "home.trust",
+        "page.about",
+        "page.contact",
+        "page.legal",
+        "page.sell",
         "site.contact",
+        "site.footer",
+        "site.seo",
       ].sort(),
     );
   });
@@ -88,6 +94,31 @@ describe("blockInputSchema", () => {
     const contact = blockDefaults("site.contact");
     expect(
       blockInputSchema("site.contact" as ContentKey).safeParse({ ...contact, ...patch })
+        .success,
+    ).toBe(false);
+  });
+});
+
+describe("new page blocks", () => {
+  it("long legal texts accept up to 50 000 characters", () => {
+    const legal = blockDefaults("page.legal");
+    const long = { de: "a".repeat(50_000) };
+    expect(
+      blockInputSchema("page.legal").safeParse({ ...legal, impressum: long }).success,
+    ).toBe(true);
+    expect(
+      blockInputSchema("page.legal").safeParse({
+        ...legal,
+        impressum: { de: "a".repeat(50_001) },
+      }).success,
+    ).toBe(false);
+  });
+
+  it("toggles are booleans and default to showing the demo notice", () => {
+    const footer = blockDefaults("site.footer");
+    expect(footer.showDemoNotice).toBe(true);
+    expect(
+      blockInputSchema("site.footer").safeParse({ ...footer, showDemoNotice: "yes" })
         .success,
     ).toBe(false);
   });
