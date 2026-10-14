@@ -24,7 +24,9 @@
     "users": "Kullanıcılar",
     "viewSite": "Siteyi görüntüle",
     "logout": "Çıkış yap",
-    "account": "Hesabım"
+    "account": "Hesabım",
+    "inquiries": "Talepler",
+    "newCount": "{n} yeni"
   },
   "roles": {
     "owner": "Sahip",
@@ -253,5 +255,53 @@
     "mismatch": "Yeni parolalar eşleşmiyor.",
     "unchanged": "Yeni parola eskisinden farklı olmalı.",
     "tooManyAttempts": "Çok fazla hatalı deneme. 15 dakika sonra tekrar deneyin."
+  },
+  "inquiries": {
+    "title": "Gelen talepler",
+    "empty": "Bu görünümde talep yok.",
+    "all": "Tümü",
+    "date": "Tarih",
+    "kind": "Tür",
+    "from": "Gönderen",
+    "subject": "Konu",
+    "status": "Durum",
+    "kinds": {
+      "product": "Ürün sorusu",
+      "contact": "İletişim",
+      "sell": "Satış (konsinye)"
+    },
+    "statuses": {
+      "new": "Yeni",
+      "in_progress": "İşlemde",
+      "done": "Tamamlandı"
+    },
+    "detailTitle": "Talep",
+    "fields": {
+      "name": "Ad",
+      "email": "E-posta",
+      "phone": "Telefon",
+      "message": "Mesaj",
+      "item": "Ürün",
+      "brand": "Marka",
+      "category": "Kategori",
+      "model": "Model",
+      "condition": "Durum (kondisyon)",
+      "year": "Yıl",
+      "askingPrice": "İstenen fiyat (EUR)",
+      "setItems": "Set içeriği",
+      "locale": "Dil"
+    },
+    "photos": "Fotoğraflar",
+    "photoAlt": "Gönderilen fotoğraf {n}",
+    "setStatus": "Durumu kaydet",
+    "statusSaved": "Durum güncellendi.",
+    "replyByMail": "E-posta ile yanıtla",
+    "viewProduct": "Ürünü sitede aç",
+    "delete": "Talebi kalıcı olarak sil",
+    "deleteConfirm": "Silmeyi onaylıyorum (geri alınamaz)",
+    "deleted": "Talep silindi.",
+    "notFound": "Talep bulunamadı.",
+    "retention": "Tamamlanan talepler 6 ay sonra, diğerleri en geç 1 yıl sonra otomatik silinir.",
+    "filter": "Durum filtresi"
   }
 }

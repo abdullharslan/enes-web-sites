@@ -8,12 +8,20 @@ export const PERMISSIONS = [
   "history:read",
   "audit:read",
   "users:manage",
+  "inquiries:manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
 const GRANTS: Record<Role, ReadonlySet<Permission>> = {
   owner: new Set(PERMISSIONS),
-  editor: new Set(["catalog:write", "content:write", "media:write", "history:read"]),
+  editor: new Set([
+    "catalog:write",
+    "content:write",
+    "media:write",
+    "history:read",
+    // Staff answer customers, so they read and handle inquiries (personal data).
+    "inquiries:manage",
+  ]),
 };
 
 /** Least privilege: anything not explicitly granted is denied. */

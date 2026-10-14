@@ -13,21 +13,3 @@ export function formDataToRecord(
   }
   return record;
 }
-
-type MessageValue = string | number | readonly string[] | undefined;
-
-/** Renders labelled values as a plain-text message body, skipping empty values. */
-export function composeMessage(
-  entries: ReadonlyArray<readonly [string, MessageValue]>,
-): string {
-  return entries
-    .map(
-      ([label, value]) =>
-        [label, Array.isArray(value) ? value.join(", ") : String(value ?? "")] as const,
-    )
-    .filter(([, text]) => text.trim() !== "")
-    .map(([label, text]) =>
-      text.includes("\n") ? `\n${label}:\n${text}` : `${label}: ${text}`,
-    )
-    .join("\n");
-}

@@ -9,12 +9,12 @@ export const ERROR_CODES = [
   "invalidYear",
   "invalidNumber",
   "invalid",
+  "tooManyPhotos",
+  "photoTooLarge",
+  "photoInvalid",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
-// Shorter messages keep encoded mailto URLs smaller. This reduces, but does not
-// guarantee against, truncation in clients with URL limits (non-ASCII letters
-// encode to 6 characters each); a server-side form backend removes the limit.
 export const FIELD_LIMITS = { short: 120, email: 254, message: 1000 } as const;
 
 const PHONE = /^\+?[0-9][0-9 ()/-]{5,24}$/;

@@ -51,6 +51,9 @@ export default defineConfig({
       DATABASE_URL_E2E: process.env.DATABASE_URL_E2E ?? "",
       DATABASE_URL_ADMIN: process.env.DATABASE_URL ?? "",
       MEDIA_ROOT: "storage/e2e-media",
+      PRIVATE_STORAGE_ROOT: "storage/e2e-private",
+      // Every test submits from 127.0.0.1; the real limit is covered by integration tests.
+      INQUIRY_LIMIT_PER_ADDRESS: "1000",
     },
     url: `${baseURL}/de`,
     reuseExistingServer: false,

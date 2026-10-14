@@ -23,25 +23,6 @@ test.describe("enquiry form", () => {
     );
     await expect(page).toHaveURL(/\/en\/contact$/);
   });
-
-  test("confirms the hand-off to the mail client on valid input", async ({ page }) => {
-    // The mailto: URL itself is asserted in tests/components/forms.test.tsx;
-    // headless Chromium cannot observe external-protocol navigations.
-    await page.goto("/de/collection/rolex-explorer-224270");
-    await page.getByLabel("Name", { exact: true }).fill("Ada Lovelace");
-    await page.getByLabel("E-Mail", { exact: true }).fill("ada@example.com");
-    await page
-      .getByLabel("Nachricht", { exact: true })
-      .fill("Ist die Uhr noch verfügbar?");
-    await page.getByRole("button", { name: "Absenden" }).click();
-
-    await expect(
-      page.getByText("Ihr E-Mail-Programm wurde geöffnet.", { exact: false }),
-    ).toBeVisible();
-    await expect(page.getByLabel("E-Mail", { exact: true })).not.toHaveAttribute(
-      "aria-invalid",
-    );
-  });
 });
 
 test.describe("consignment form", () => {

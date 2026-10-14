@@ -33,7 +33,7 @@ E-MAIL
 PHONE(optional)
 MESSAGE
 
-Submitting opens your e-mail app with a prepared message. No data is stored on this website.
+We store your details only to handle your request and delete them no later than six months after it is completed (see our privacy policy).
 
 SEND
 You may also like

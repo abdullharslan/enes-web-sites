@@ -203,9 +203,9 @@ export default async function ProductPage({
             {p.inquireForm}
           </h2>
           <InquiryForm
-            recipient={contact.email}
-            subject={interpolate(p.inquirySubject, { item })}
-            context={[[p.item, item]]}
+            kind="product"
+            locale={locale}
+            productSlug={product.slug}
             labels={dict.forms}
           />
         </div>

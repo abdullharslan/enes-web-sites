@@ -1,18 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import sharp from "sharp";
 import { accounts, signIn } from "./auth";
+import { pngFile } from "./files";
 
 const unique = () =>
   `${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
-
-async function pngFile(color: string) {
-  const buffer = await sharp({
-    create: { width: 120, height: 80, channels: 3, background: color },
-  })
-    .png()
-    .toBuffer();
-  return { name: "hero.png", mimeType: "image/png", buffer };
-}
 
 /** The version number shown in the "saved" message after a change. */
 async function savedVersion(page: Page): Promise<number> {
@@ -44,6 +35,9 @@ test.describe("admin content", () => {
         `#${Math.floor(Math.random() * 0xffffff)
           .toString(16)
           .padStart(6, "0")}`,
+        "hero.png",
+        120,
+        80,
       ),
     );
     await page.getByRole("button", { name: "Yükle" }).click();

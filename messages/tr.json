@@ -197,7 +197,6 @@
     "inquireWhatsapp": "WhatsApp ile sor",
     "inquireForm": "Talep gönder",
     "whatsappMessage": "Merhaba, {item} ile ilgileniyorum.",
-    "inquirySubject": "Talep: {item}",
     "related": "Bunlar da ilginizi çekebilir",
     "assurance": "Satıştan önce uzmanlarca incelenir. Takipli, sigortalı gönderim. Online alışverişlerde yasal cayma hakkı geçerlidir.",
     "soldNotice": "Bu ürün satılmıştır. Sizin için benzer bir parça bulmaktan memnuniyet duyarız."
@@ -210,8 +209,7 @@
     "optional": "isteğe bağlı",
     "submit": "Gönder",
     "select": "Lütfen seçin",
-    "handoffNote": "Gönder'e bastığınızda e-posta uygulamanız hazır bir mesajla açılır. Bu sitede hiçbir veri saklanmaz.",
-    "success": "E-posta uygulamanız açıldı. Lütfen hazırlanan mesajı oradan gönderin.",
+    "success": "Teşekkürler – talebiniz bize ulaştı. En kısa sürede size dönüş yapacağız.",
     "errorSummary": "Lütfen işaretli alanları kontrol edin.",
     "errors": {
       "required": "Bu alan zorunludur.",
@@ -220,8 +218,15 @@
       "invalidPhone": "Lütfen geçerli bir telefon numarası girin.",
       "invalidYear": "Lütfen geçerli bir yıl girin.",
       "invalidNumber": "Lütfen geçerli bir tutar girin.",
-      "invalid": "Geçersiz seçim."
-    }
+      "invalid": "Geçersiz seçim.",
+      "tooManyPhotos": "Lütfen en fazla {maxPhotos} fotoğraf seçin.",
+      "photoTooLarge": "Fotoğraflar çok büyük (fotoğraf başına en fazla {maxMb} MB, toplam {totalMb} MB).",
+      "photoInvalid": "Lütfen JPG, PNG veya WebP formatında fotoğraf seçin."
+    },
+    "privacyNote": "Bilgilerinizi yalnızca talebinizi yanıtlamak için saklarız ve talep tamamlandıktan en geç altı ay sonra sileriz (ayrıntılar gizlilik politikasında).",
+    "sending": "Gönderiliyor …",
+    "rateLimited": "Kısa sürede çok sayıda talep gönderdiniz. Lütfen daha sonra tekrar deneyin veya bizi arayın.",
+    "failed": "Talebiniz gönderilemedi. Lütfen tekrar deneyin veya bizi arayın."
   },
   "sell": {
     "eyebrow": "Konsinye satış",
@@ -247,8 +252,7 @@
       }
     ],
     "formTitle": "Ürün teklif edin",
-    "subject": "Konsinye satış: {item}",
-    "photoHint": "Fotoğrafları lütfen doğrudan e-posta eki veya WhatsApp ile gönderin.",
+    "photoHint": "En fazla {maxPhotos} fotoğraf (JPG, PNG veya WebP, her biri en fazla {maxMb} MB).",
     "fields": {
       "brand": "Marka",
       "category": "Kategori",
@@ -257,7 +261,8 @@
       "year": "Satın alma yılı",
       "askingPrice": "Beklenen fiyat (EUR)",
       "setItems": "Mevcut aksesuarlar",
-      "otherBrand": "Diğer marka"
+      "otherBrand": "Diğer marka",
+      "photos": "Fotoğraflar"
     }
   },
   "legal": {

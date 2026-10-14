@@ -197,7 +197,6 @@
     "inquireWhatsapp": "Demander via WhatsApp",
     "inquireForm": "Envoyer une demande",
     "whatsappMessage": "Bonjour, je suis intéressé(e) par {item}.",
-    "inquirySubject": "Demande : {item}",
     "related": "Vous aimerez aussi",
     "assurance": "Expertisé par des spécialistes avant la vente. Expédition assurée et suivie. Le droit de rétractation légal s'applique aux achats en ligne.",
     "soldNotice": "Cette pièce a déjà été vendue. Nous serions ravis de trouver une pièce comparable pour vous."
@@ -210,8 +209,7 @@
     "optional": "facultatif",
     "submit": "Envoyer",
     "select": "Veuillez choisir",
-    "handoffNote": "L'envoi ouvre votre messagerie avec un message pré-rempli. Aucune donnée n'est enregistrée sur ce site.",
-    "success": "Votre messagerie a été ouverte. Veuillez y envoyer le message préparé.",
+    "success": "Merci – nous avons bien reçu votre demande et reviendrons vers vous très vite.",
     "errorSummary": "Veuillez vérifier les champs signalés.",
     "errors": {
       "required": "Ce champ est obligatoire.",
@@ -220,8 +218,15 @@
       "invalidPhone": "Veuillez saisir un numéro de téléphone valide.",
       "invalidYear": "Veuillez saisir une année valide.",
       "invalidNumber": "Veuillez saisir un montant valide.",
-      "invalid": "Sélection non valide."
-    }
+      "invalid": "Sélection non valide.",
+      "tooManyPhotos": "Veuillez choisir au maximum {maxPhotos} photos.",
+      "photoTooLarge": "Les photos sont trop volumineuses ({maxMb} Mo max. par photo, {totalMb} Mo au total).",
+      "photoInvalid": "Veuillez choisir des photos au format JPG, PNG ou WebP."
+    },
+    "privacyNote": "Nous conservons vos données uniquement pour traiter votre demande et les supprimons au plus tard six mois après sa clôture (voir notre politique de confidentialité).",
+    "sending": "Envoi en cours …",
+    "rateLimited": "Vous avez envoyé plusieurs demandes en peu de temps. Veuillez réessayer plus tard ou nous appeler.",
+    "failed": "Votre demande n'a pas pu être envoyée. Veuillez réessayer ou nous appeler."
   },
   "sell": {
     "eyebrow": "Dépôt-vente",
@@ -247,8 +252,7 @@
       }
     ],
     "formTitle": "Proposer une pièce",
-    "subject": "Dépôt-vente : {item}",
-    "photoHint": "Merci d'envoyer les photos en pièce jointe par e-mail ou via WhatsApp.",
+    "photoHint": "Jusqu'à {maxPhotos} photos (JPG, PNG ou WebP, {maxMb} Mo max. chacune).",
     "fields": {
       "brand": "Maison",
       "category": "Catégorie",
@@ -257,7 +261,8 @@
       "year": "Année d'achat",
       "askingPrice": "Prix souhaité (EUR)",
       "setItems": "Accessoires présents",
-      "otherBrand": "Autre maison"
+      "otherBrand": "Autre maison",
+      "photos": "Photos"
     }
   },
   "legal": {

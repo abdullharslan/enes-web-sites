@@ -13,6 +13,10 @@ describe("role permission matrix", () => {
     expect(can("editor", "history:read")).toBe(true);
   });
 
+  it("lets editors handle inquiries", () => {
+    expect(can("editor", "inquiries:manage")).toBe(true);
+  });
+
   it("keeps user management and the audit log owner-only", () => {
     expect(can("editor", "users:manage")).toBe(false);
     expect(can("editor", "audit:read")).toBe(false);

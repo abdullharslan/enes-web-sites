@@ -1,12 +1,12 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db/client";
-import { clientAddress } from "@/lib/server/auth/client-address";
 import { DEVICE_COOKIE, SESSION_COOKIE } from "@/lib/server/auth/current";
 import { recordAudit } from "@/lib/server/audit";
+import { requestAddress } from "@/lib/server/request-address";
 import {
   TRUSTED_DEVICE_TTL_MS,
   authenticate,
@@ -17,17 +17,6 @@ import {
 
 export interface LoginState {
   error?: "invalid" | "locked";
-}
-
-/** Proxies in front of the app that append to X-Forwarded-For (0 = clients connect to Next directly). */
-const TRUSTED_PROXY_HOPS = parseProxyHops(process.env.TRUSTED_PROXY_HOPS);
-
-function parseProxyHops(value: string | undefined): number {
-  if (value === undefined || value === "") return 0;
-  // Fail fast: a typo here would silently put every client into one shared throttle bucket.
-  if (!/^\d$/.test(value))
-    throw new Error(`TRUSTED_PROXY_HOPS must be a single digit, got "${value}"`);
-  return Number(value);
 }
 
 const credentials = z.object({
@@ -46,7 +35,7 @@ export async function login(
   if (!parsed.success) return { error: "invalid" };
 
   const store = await cookies();
-  const ip = clientAddress((await headers()).get("x-forwarded-for"), TRUSTED_PROXY_HOPS);
+  const ip = await requestAddress();
   const result = await authenticate(db, {
     ...parsed.data,
     ip,

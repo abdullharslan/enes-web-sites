@@ -4,7 +4,7 @@ import { assertLocalDatabase } from "@/db/reset";
 
 /*
  * DESTRUCTIVE (local only): replaces the database contents with a backup and
- * unpacks the matching media archive. Usage: npm run db:restore -- backups/<file>.dump
+ * unpacks the matching media and private-file archives. Usage: npm run db:restore -- backups/<file>.dump
  */
 
 const dumpFile = process.argv[2];
@@ -40,16 +40,25 @@ if (restore.status !== 0) {
 }
 
 const stamp = dumpFile.match(/_(\d{8}-\d{6})\.dump$/)?.[1];
-const mediaFile = stamp ? `backups/media_${stamp}.tar.gz` : undefined;
-if (mediaFile && existsSync(mediaFile)) {
-  const mediaRoot = process.env.MEDIA_ROOT ?? "storage/media";
-  mkdirSync(mediaRoot, { recursive: true });
-  const tar = spawnSync("tar", ["-xzf", mediaFile, "-C", mediaRoot]);
+const ARCHIVES = [
+  {
+    root: process.env.MEDIA_ROOT ?? "storage/media",
+    file: `backups/media_${stamp}.tar.gz`,
+  },
+  {
+    root: process.env.PRIVATE_STORAGE_ROOT ?? "storage/private",
+    file: `backups/private_${stamp}.tar.gz`,
+  },
+];
+const restored = [dumpFile];
+for (const { root, file } of stamp ? ARCHIVES : []) {
+  if (!existsSync(file)) continue;
+  mkdirSync(root, { recursive: true, mode: 0o700 });
+  const tar = spawnSync("tar", ["-xzf", file, "-C", root]);
   if (tar.status !== 0) {
     console.error(tar.stderr.toString());
     process.exit(1);
   }
+  restored.push(file);
 }
-console.log(
-  `restored ${database} from ${dumpFile}${mediaFile && existsSync(mediaFile) ? ` + ${mediaFile}` : ""}`,
-);
+console.log(`restored ${database} from ${restored.join(" + ")}`);

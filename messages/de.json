@@ -197,7 +197,6 @@
     "inquireWhatsapp": "Per WhatsApp anfragen",
     "inquireForm": "Anfrage senden",
     "whatsappMessage": "Guten Tag, ich interessiere mich für {item}.",
-    "inquirySubject": "Anfrage: {item}",
     "related": "Das könnte Ihnen auch gefallen",
     "assurance": "Vor dem Verkauf von Spezialisten geprüft. Versicherter Versand mit Sendungsverfolgung. Bei Online-Käufen gilt das gesetzliche Widerrufsrecht.",
     "soldNotice": "Dieses Objekt wurde bereits verkauft. Gerne suchen wir ein vergleichbares Stück für Sie."
@@ -210,8 +209,7 @@
     "optional": "optional",
     "submit": "Absenden",
     "select": "Bitte wählen",
-    "handoffNote": "Beim Absenden öffnet sich Ihr E-Mail-Programm mit einer vorbereiteten Nachricht. Es werden keine Daten auf dieser Website gespeichert.",
-    "success": "Ihr E-Mail-Programm wurde geöffnet. Bitte senden Sie die vorbereitete Nachricht dort ab.",
+    "success": "Vielen Dank – Ihre Anfrage ist bei uns eingegangen. Wir melden uns in Kürze.",
     "errorSummary": "Bitte prüfen Sie die markierten Felder.",
     "errors": {
       "required": "Dieses Feld ist erforderlich.",
@@ -220,8 +218,15 @@
       "invalidPhone": "Bitte geben Sie eine gültige Telefonnummer ein.",
       "invalidYear": "Bitte geben Sie ein gültiges Jahr ein.",
       "invalidNumber": "Bitte geben Sie einen gültigen Betrag ein.",
-      "invalid": "Ungültige Auswahl."
-    }
+      "invalid": "Ungültige Auswahl.",
+      "tooManyPhotos": "Bitte wählen Sie höchstens {maxPhotos} Fotos.",
+      "photoTooLarge": "Die Fotos sind zu groß (je Foto max. {maxMb} MB, insgesamt {totalMb} MB).",
+      "photoInvalid": "Bitte wählen Sie Fotos im Format JPG, PNG oder WebP."
+    },
+    "privacyNote": "Wir speichern Ihre Angaben ausschließlich zur Bearbeitung Ihrer Anfrage und löschen sie spätestens sechs Monate nach Abschluss (Details in der Datenschutzerklärung).",
+    "sending": "Wird gesendet …",
+    "rateLimited": "Sie haben in kurzer Zeit viele Anfragen gesendet. Bitte versuchen Sie es später erneut oder rufen Sie uns an.",
+    "failed": "Ihre Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut oder rufen Sie uns an."
   },
   "sell": {
     "eyebrow": "Kommissionsverkauf",
@@ -247,8 +252,7 @@
       }
     ],
     "formTitle": "Objekt anbieten",
-    "subject": "Kommissionsverkauf: {item}",
-    "photoHint": "Fotos senden Sie uns bitte direkt per E-Mail-Anhang oder WhatsApp.",
+    "photoHint": "Bis zu {maxPhotos} Fotos (JPG, PNG oder WebP, je max. {maxMb} MB).",
     "fields": {
       "brand": "Marke",
       "category": "Kategorie",
@@ -257,7 +261,8 @@
       "year": "Kaufjahr",
       "askingPrice": "Preisvorstellung (EUR)",
       "setItems": "Vorhandenes Zubehör",
-      "otherBrand": "Andere Marke"
+      "otherBrand": "Andere Marke",
+      "photos": "Fotos"
     }
   },
   "legal": {

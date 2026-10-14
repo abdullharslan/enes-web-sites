@@ -266,3 +266,49 @@ export const auditEvents = pgTable(
   },
   (t) => [index("audit_events_time_idx").on(t.createdAt)],
 );
+
+// ── Inquiries (personal data: minimal, private, deleted on a schedule) ───────
+
+export const inquiryKindEnum = pgEnum("inquiry_kind", ["product", "contact", "sell"]);
+export const inquiryStatusEnum = pgEnum("inquiry_status", ["new", "in_progress", "done"]);
+
+export const inquiries = pgTable(
+  "inquiries",
+  {
+    id: uuid("id").primaryKey(),
+    kind: inquiryKindEnum("kind").notNull(),
+    status: inquiryStatusEnum("status").notNull().default("new"),
+    locale: text("locale").notNull(),
+    /** Product the visitor asked about (kept as text: products may be renamed or removed). */
+    productSlug: text("product_slug"),
+    /** The validated form payload (see lib/inquiries). */
+    data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+    /** Client generated; a retried submission never creates a second inquiry. */
+    submissionKey: uuid("submission_key").unique(),
+    /** SHA-256 of the client address, only for rate limiting; cleared after a day. */
+    addressHash: text("address_hash"),
+    handledBy: uuid("handled_by").references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (t) => [
+    index("inquiries_status_time_idx").on(t.status, t.createdAt),
+    index("inquiries_address_time_idx").on(t.addressHash, t.createdAt),
+  ],
+);
+
+/** Photos sent with a consignment request. Private files: never served by /media. */
+export const inquiryPhotos = pgTable(
+  "inquiry_photos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    inquiryId: uuid("inquiry_id")
+      .notNull()
+      .references(() => inquiries.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    key: text("key").notNull().unique(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    bytes: integer("bytes").notNull(),
+  },
+  (t) => [unique("inquiry_photos_position_uq").on(t.inquiryId, t.position)],
+);

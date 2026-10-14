@@ -1,55 +1,46 @@
 "use client";
 
 import { useId } from "react";
-import { buildMailtoUrl } from "@/lib/contact-links";
-import { composeMessage } from "@/lib/forms/compose";
 import { inquirySchema } from "@/lib/forms/schemas";
+import { echoedText } from "@/lib/forms/state";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-import { SubmitButton, TextField } from "./fields";
+import type { Locale } from "@/lib/i18n/locales";
+import { InquiryHiddenFields, SubmitButton, TextField } from "./fields";
 import { FormStatus } from "./form-status";
-import { useValidatedForm } from "./use-validated-form";
+import { useInquiryForm } from "./use-inquiry-form";
 
 interface InquiryFormProps {
-  recipient: string;
-  subject: string;
-  /** Extra labelled lines placed at the top of the message (e.g. the product). */
-  context?: ReadonlyArray<readonly [string, string]>;
+  kind: "product" | "contact";
+  locale: Locale;
+  /** The product asked about (product inquiries only). */
+  productSlug?: string;
   labels: Dictionary["forms"];
 }
 
-export function InquiryForm({
-  recipient,
-  subject,
-  context = [],
-  labels,
-}: InquiryFormProps) {
+export function InquiryForm({ kind, locale, productSlug, labels }: InquiryFormProps) {
   const uid = useId();
-  const { errors, status, handleSubmit } = useValidatedForm(inquirySchema, [], (data) => {
-    const body = composeMessage([
-      ...context,
-      [labels.name, data.name],
-      [labels.email, data.email],
-      [labels.phone, data.phone],
-      [labels.message, data.message],
-    ]);
-    window.location.assign(buildMailtoUrl(recipient, subject, body));
-  });
+  const { formAction, handleSubmit, errors, status, values } = useInquiryForm(
+    inquirySchema,
+    [],
+  );
   const error = (field: string) =>
     errors[field] ? labels.errors[errors[field]] : undefined;
 
   return (
     <form
-      method="post"
+      action={formAction}
       noValidate
       onSubmit={handleSubmit}
       className="flex flex-col gap-6"
     >
+      <InquiryHiddenFields kind={kind} locale={locale} productSlug={productSlug} />
       <div className="grid gap-6 sm:grid-cols-2">
         <TextField
           id={`${uid}-name`}
           name="name"
           label={labels.name}
           autoComplete="name"
+          defaultValue={echoedText(values?.name)}
           error={error("name")}
         />
         <TextField
@@ -58,6 +49,7 @@ export function InquiryForm({
           type="email"
           label={labels.email}
           autoComplete="email"
+          defaultValue={echoedText(values?.email)}
           error={error("email")}
         />
       </div>
@@ -68,6 +60,7 @@ export function InquiryForm({
         label={labels.phone}
         optionalLabel={labels.optional}
         autoComplete="tel"
+        defaultValue={echoedText(values?.phone)}
         error={error("phone")}
       />
       <TextField
@@ -75,11 +68,12 @@ export function InquiryForm({
         name="message"
         label={labels.message}
         multiline
+        defaultValue={echoedText(values?.message)}
         error={error("message")}
       />
-      <p className="text-xs leading-relaxed text-mist">{labels.handoffNote}</p>
+      <p className="text-xs leading-relaxed text-mist">{labels.privacyNote}</p>
       <FormStatus status={status} messages={labels} />
-      <SubmitButton>{labels.submit}</SubmitButton>
+      <SubmitButton pendingLabel={labels.sending}>{labels.submit}</SubmitButton>
     </form>
   );
 }

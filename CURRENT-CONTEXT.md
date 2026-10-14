@@ -32,7 +32,7 @@ _Last updated: 2026-10-14 by Claude Opus 5.5_
 - [x] Gap step 1: about/sell/contact/legal pages, footer, SEO editable (`65f7b3a`)
 - [x] Gap step 2: product image ordering/cover + site search; catalog/search pages work without JavaScript
 - [x] Gap step 3: user management (own password change, owner reset, role change, last-owner protection)
-- [ ] Gap step 4: inquiries inbox (forms stored server-side, rate limit, honeypot, private sell photos, status, retention)
+- [x] Gap step 4: inquiries inbox (forms stored server-side, rate limit, honeypot, private sell photos, status, retention)
 - [ ] Gap step 5: cookieless analytics dashboard
 - [ ] Gap step 6: CI (GitHub Actions), full verify, independent review → fixes → re-review
 - Demo: `next start -p 1113` + Cloudflare quick tunnel run in the background (temporary; a rebuild/restart is needed to show new code)
@@ -47,4 +47,6 @@ _Last updated: 2026-10-14 by Claude Opus 5.5_
 - Next.js will make Partial Prefetching always-on in its next major; the real-404 strategy for unknown slugs must be revisited then.
 - Uploaded files are written before the DB transaction commits; a rolled-back upload leaves an unreferenced (immutable, harmless) file — a cleanup job can be added later.
 - Dev-only `npm audit` findings in the `eslint-config-next` chain (no production impact).
+- Privacy policy must describe inquiry storage/retention before going live (README). No e-mail notification for new inquiries yet (needs SMTP).
+- One unidentified E2E failure in a single full run (not reproduced in 544 repeats) — watch.
 - Legal pages are placeholders; demo data/photos must be replaced with real stock and own photos via the admin panel.

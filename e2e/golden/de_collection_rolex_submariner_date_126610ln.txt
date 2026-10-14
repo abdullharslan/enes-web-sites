@@ -35,7 +35,7 @@ E-MAIL
 TELEFON(optional)
 NACHRICHT
 
-Beim Absenden öffnet sich Ihr E-Mail-Programm mit einer vorbereiteten Nachricht. Es werden keine Daten auf dieser Website gespeichert.
+Wir speichern Ihre Angaben ausschließlich zur Bearbeitung Ihrer Anfrage und löschen sie spätestens sechs Monate nach Abschluss (Details in der Datenschutzerklärung).
 
 ABSENDEN
 Das könnte Ihnen auch gefallen

@@ -1,21 +1,36 @@
 "use client";
 
 import { useId, useMemo } from "react";
-import { buildMailtoUrl } from "@/lib/contact-links";
 import { CONDITIONS, SET_ITEMS, type Brand, type Category } from "@/lib/catalog/schema";
-import { composeMessage } from "@/lib/forms/compose";
 import { createSellSchema } from "@/lib/forms/schemas";
+import { echoedText } from "@/lib/forms/state";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import { interpolate } from "@/lib/i18n/interpolate";
 import type { Locale } from "@/lib/i18n/locales";
-import { CheckboxGroup, SelectField, SubmitButton, TextField } from "./fields";
+import { INQUIRY_LIMITS } from "@/lib/inquiries/policy";
+import {
+  CheckboxGroup,
+  FileField,
+  InquiryHiddenFields,
+  SelectField,
+  SubmitButton,
+  TextField,
+} from "./fields";
 import { FormStatus } from "./form-status";
-import { useValidatedForm } from "./use-validated-form";
+import { useInquiryForm } from "./use-inquiry-form";
 
 const OTHER_BRAND = "other";
 
+const MB = 1024 * 1024;
+/** Numbers shown in photo hints and errors come from the same policy the server enforces. */
+const PHOTO_LIMITS = {
+  maxPhotos: String(INQUIRY_LIMITS.maxPhotos),
+  maxMb: String(INQUIRY_LIMITS.maxPhotoBytes / MB),
+  totalMb: String(INQUIRY_LIMITS.maxTotalPhotoBytes / MB),
+};
+const PHOTO_TYPES = "image/jpeg,image/png,image/webp";
+
 interface SellFormProps {
-  recipient: string;
   brands: readonly Pick<Brand, "slug" | "name">[];
   categories: readonly Pick<Category, "slug" | "name">[];
   locale: Locale;
@@ -26,55 +41,26 @@ interface SellFormProps {
   };
 }
 
-export function SellForm({
-  recipient,
-  brands,
-  categories,
-  locale,
-  labels,
-}: SellFormProps) {
+export function SellForm({ brands, categories, locale, labels }: SellFormProps) {
   const uid = useId();
   const { forms, sell, catalog } = labels;
   const f = sell.fields;
 
-  const categoryName = (slug: string) =>
-    categories.find((c) => c.slug === slug)?.name[locale] ?? slug;
-  const brandName = (slug: string) =>
-    brands.find((b) => b.slug === slug)?.name ?? f.otherBrand;
-
-  const { errors, status, handleSubmit } = useValidatedForm(
+  const { formAction, handleSubmit, errors, status, values } = useInquiryForm(
     useMemo(() => createSellSchema(categories.map((c) => c.slug)), [categories]),
     ["setItems"],
-    (data) => {
-      const item = `${brandName(data.brand)} ${data.model}`;
-      const body = composeMessage([
-        [f.brand, brandName(data.brand)],
-        [f.category, categoryName(data.category)],
-        [f.model, data.model],
-        [f.condition, catalog.conditions[data.condition]],
-        [f.year, data.year],
-        [f.askingPrice, data.askingPrice],
-        [f.setItems, data.setItems.map((s) => catalog.setItems[s])],
-        [forms.name, data.name],
-        [forms.email, data.email],
-        [forms.phone, data.phone],
-        [forms.message, data.message],
-      ]);
-      window.location.assign(
-        buildMailtoUrl(recipient, interpolate(sell.subject, { item }), body),
-      );
-    },
   );
   const error = (field: string) =>
-    errors[field] ? forms.errors[errors[field]] : undefined;
+    errors[field] ? interpolate(forms.errors[errors[field]], PHOTO_LIMITS) : undefined;
 
   return (
     <form
-      method="post"
+      action={formAction}
       noValidate
       onSubmit={handleSubmit}
       className="flex flex-col gap-6"
     >
+      <InquiryHiddenFields kind="sell" locale={locale} />
       <div className="grid gap-6 sm:grid-cols-2">
         <SelectField
           id={`${uid}-brand`}
@@ -85,6 +71,7 @@ export function SellForm({
             ...brands.map((b) => ({ value: b.slug, label: b.name })),
             { value: OTHER_BRAND, label: f.otherBrand },
           ]}
+          defaultValue={echoedText(values?.brand)}
           error={error("brand")}
         />
         <SelectField
@@ -93,12 +80,14 @@ export function SellForm({
           label={f.category}
           placeholder={forms.select}
           options={categories.map((c) => ({ value: c.slug, label: c.name[locale] }))}
+          defaultValue={echoedText(values?.category)}
           error={error("category")}
         />
         <TextField
           id={`${uid}-model`}
           name="model"
           label={f.model}
+          defaultValue={echoedText(values?.model)}
           error={error("model")}
         />
         <SelectField
@@ -107,6 +96,7 @@ export function SellForm({
           label={f.condition}
           placeholder={forms.select}
           options={CONDITIONS.map((c) => ({ value: c, label: catalog.conditions[c] }))}
+          defaultValue={echoedText(values?.condition)}
           error={error("condition")}
         />
         <TextField
@@ -115,6 +105,7 @@ export function SellForm({
           label={f.year}
           optionalLabel={forms.optional}
           inputMode="numeric"
+          defaultValue={echoedText(values?.year)}
           error={error("year")}
         />
         <TextField
@@ -123,6 +114,7 @@ export function SellForm({
           label={f.askingPrice}
           optionalLabel={forms.optional}
           inputMode="numeric"
+          defaultValue={echoedText(values?.askingPrice)}
           error={error("askingPrice")}
         />
       </div>
@@ -130,6 +122,7 @@ export function SellForm({
         name="setItems"
         legend={f.setItems}
         options={SET_ITEMS.map((s) => ({ value: s, label: catalog.setItems[s] }))}
+        defaultValues={Array.isArray(values?.setItems) ? values.setItems : []}
         error={error("setItems")}
       />
       <div className="grid gap-6 border-t border-line pt-6 sm:grid-cols-2">
@@ -138,6 +131,7 @@ export function SellForm({
           name="name"
           label={forms.name}
           autoComplete="name"
+          defaultValue={echoedText(values?.name)}
           error={error("name")}
         />
         <TextField
@@ -146,6 +140,7 @@ export function SellForm({
           type="email"
           label={forms.email}
           autoComplete="email"
+          defaultValue={echoedText(values?.email)}
           error={error("email")}
         />
         <TextField
@@ -155,6 +150,7 @@ export function SellForm({
           label={forms.phone}
           optionalLabel={forms.optional}
           autoComplete="tel"
+          defaultValue={echoedText(values?.phone)}
           error={error("phone")}
         />
       </div>
@@ -164,13 +160,21 @@ export function SellForm({
         label={forms.message}
         optionalLabel={forms.optional}
         multiline
+        defaultValue={echoedText(values?.message)}
         error={error("message")}
       />
-      <p className="text-xs leading-relaxed text-mist">
-        {sell.photoHint} {forms.handoffNote}
-      </p>
+      <FileField
+        id={`${uid}-photos`}
+        name="photos"
+        label={f.photos}
+        optionalLabel={forms.optional}
+        hint={interpolate(sell.photoHint, PHOTO_LIMITS)}
+        accept={PHOTO_TYPES}
+        error={error("photos")}
+      />
+      <p className="text-xs leading-relaxed text-mist">{forms.privacyNote}</p>
       <FormStatus status={status} messages={forms} />
-      <SubmitButton>{forms.submit}</SubmitButton>
+      <SubmitButton pendingLabel={forms.sending}>{forms.submit}</SubmitButton>
     </form>
   );
 }

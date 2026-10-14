@@ -157,9 +157,17 @@ E2E testleri kendi izole veritabanını (`maison_vault_e2e`) her çalıştırmad
 
 **Değişiklikler sitede anında görünür** (önbellek her kayıtta yenilenir).
 
+### Gelen talepler ve kişisel veriler
+
+- Sitedeki formlar (ürün sorusu, iletişim, satış) talepleri **sunucuda saklar**; JavaScript kapalıyken de çalışır, kişisel veri asla URL'ye girmez.
+- Satış formunda en fazla 4 fotoğraf (her biri ≤ 10 MB, toplam ≤ 20 MB); fotoğraflar yeniden kodlanır (EXIF/GPS silinir) ve **herkese açık değildir** (`storage/private`, yalnızca oturum açmış yetkili personel görür).
+- Kötüye kullanım koruması: adres başına saatte 5, toplamda saatte 200 talep; botlar için gizli alan (honeypot). Ham IP adresi saklanmaz, yalnızca 24 saat tutulan bir özet (hash).
+- Saklama süresi: tamamlanan talepler 6 ay sonra, diğerleri en geç 1 yıl sonra **otomatik silinir** (fotoğraflarıyla birlikte).
+- **Yayından önce:** Datenschutzerklärung (gizlilik politikası) bu işleme, saklama süresine ve silme hakkına göre bir hukukçuyla güncellenmelidir. Yeni talep için e-posta bildirimi henüz yok (SMTP gerektirir); panelde "Talepler" yanında yeni talep sayısı görünür.
+
 ### Yedekleme ve geri yükleme
 
-Veritabanı ve görseller birlikte yedeklenmelidir:
+Veritabanı, görseller ve gizli dosyalar (talep fotoğrafları) birlikte yedeklenir:
 
 ```bash
 npm run db:backup

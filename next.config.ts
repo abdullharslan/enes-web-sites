@@ -38,8 +38,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   experimental: {
-    // Admin image uploads (≤ 10 MB, enforced again in lib/server/media/store.ts) plus form fields.
-    serverActions: { bodySizeLimit: "11mb" },
+    // Largest legitimate body: consignment photos (≤ 20 MB in total, lib/inquiries/policy.ts)
+    // plus form fields. Every action re-checks its own, smaller limits.
+    serverActions: { bodySizeLimit: "21mb" },
   },
   cacheComponents: true,
   // Partial Prefetching stays off: without it, routes that await params outside

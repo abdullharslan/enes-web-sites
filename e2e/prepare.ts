@@ -10,6 +10,7 @@ import { seedContent } from "@/db/seed-content";
 import { createUser } from "@/lib/server/auth/service";
 
 export const E2E_MEDIA_ROOT = "storage/e2e-media";
+const E2E_PRIVATE_ROOT = "storage/e2e-private";
 export const CREDENTIALS_FILE = "e2e/.auth/credentials.json";
 
 /**
@@ -53,6 +54,7 @@ async function prepare(): Promise<void> {
   await runMigrations(url);
 
   rmSync(E2E_MEDIA_ROOT, { recursive: true, force: true });
+  rmSync(E2E_PRIVATE_ROOT, { recursive: true, force: true });
   const { db, close } = connect(url, { max: 1 });
   try {
     await seedCatalog(db, { mediaRoot: E2E_MEDIA_ROOT });

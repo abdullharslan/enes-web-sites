@@ -17,3 +17,12 @@ export function clientAddress(
   const candidate = hops[hops.length - 1 - trustedProxyHops];
   return candidate && isIP(candidate) ? candidate : "unknown";
 }
+
+/** Proxies in front of the app that append to X-Forwarded-For (0 = clients connect to Next directly). */
+export function parseProxyHops(value: string | undefined): number {
+  if (value === undefined || value === "") return 0;
+  // Fail fast: a typo here would silently put every client into one shared throttle bucket.
+  if (!/^\d$/.test(value))
+    throw new Error(`TRUSTED_PROXY_HOPS must be a single digit, got "${value}"`);
+  return Number(value);
+}

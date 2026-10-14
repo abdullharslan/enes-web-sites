@@ -1,18 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import sharp from "sharp";
 import { accounts, signIn } from "./auth";
+import { pngFile } from "./files";
 
 const unique = () =>
   `${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
-
-async function pngFile(color: string) {
-  const buffer = await sharp({
-    create: { width: 64, height: 80, channels: 3, background: color },
-  })
-    .png()
-    .toBuffer();
-  return { name: "photo.png", mimeType: "image/png", buffer };
-}
 
 async function createProduct(page: Page, slug: string, model: string, price: string) {
   await page.goto("/admin/products/new");

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clientAddress } from "./client-address";
+import { clientAddress, parseProxyHops } from "./client-address";
 
 describe("clientAddress", () => {
   it("uses the rightmost hop (added by the server or the nearest trusted proxy)", () => {
@@ -22,5 +22,19 @@ describe("clientAddress", () => {
     expect(clientAddress("", 0)).toBe("unknown");
     expect(clientAddress("203.0.113.9", 3)).toBe("unknown");
     expect(clientAddress("not an ip; DROP TABLE", 0)).toBe("unknown");
+  });
+});
+
+describe("parseProxyHops", () => {
+  it("defaults to 0 and accepts a single digit", () => {
+    expect(parseProxyHops(undefined)).toBe(0);
+    expect(parseProxyHops("")).toBe(0);
+    expect(parseProxyHops("2")).toBe(2);
+  });
+
+  it("fails fast on anything else (a typo would merge all clients into one bucket)", () => {
+    for (const bad of ["-1", "10", "1.5", " 1", "one"]) {
+      expect(() => parseProxyHops(bad)).toThrow(/TRUSTED_PROXY_HOPS/);
+    }
   });
 });

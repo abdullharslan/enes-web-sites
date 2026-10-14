@@ -33,7 +33,7 @@ E-POSTA
 TELEFON(isteğe bağlı)
 MESAJ
 
-Gönder'e bastığınızda e-posta uygulamanız hazır bir mesajla açılır. Bu sitede hiçbir veri saklanmaz.
+Bilgilerinizi yalnızca talebinizi yanıtlamak için saklarız ve talep tamamlandıktan en geç altı ay sonra sileriz (ayrıntılar gizlilik politikasında).
 
 GÖNDER
 Bunlar da ilginizi çekebilir

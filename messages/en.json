@@ -197,7 +197,6 @@
     "inquireWhatsapp": "Enquire via WhatsApp",
     "inquireForm": "Send an enquiry",
     "whatsappMessage": "Hello, I am interested in {item}.",
-    "inquirySubject": "Enquiry: {item}",
     "related": "You may also like",
     "assurance": "Inspected by specialists before sale. Insured shipping with tracking. Statutory right of withdrawal applies to online purchases.",
     "soldNotice": "This item has already been sold. We would be glad to find a comparable piece for you."
@@ -210,8 +209,7 @@
     "optional": "optional",
     "submit": "Send",
     "select": "Please choose",
-    "handoffNote": "Submitting opens your e-mail app with a prepared message. No data is stored on this website.",
-    "success": "Your e-mail app has been opened. Please send the prepared message from there.",
+    "success": "Thank you – we have received your request and will get back to you shortly.",
     "errorSummary": "Please check the highlighted fields.",
     "errors": {
       "required": "This field is required.",
@@ -220,8 +218,15 @@
       "invalidPhone": "Please enter a valid phone number.",
       "invalidYear": "Please enter a valid year.",
       "invalidNumber": "Please enter a valid amount.",
-      "invalid": "Invalid selection."
-    }
+      "invalid": "Invalid selection.",
+      "tooManyPhotos": "Please choose at most {maxPhotos} photos.",
+      "photoTooLarge": "The photos are too large (max. {maxMb} MB each, {totalMb} MB in total).",
+      "photoInvalid": "Please choose JPG, PNG or WebP photos."
+    },
+    "privacyNote": "We store your details only to handle your request and delete them no later than six months after it is completed (see our privacy policy).",
+    "sending": "Sending …",
+    "rateLimited": "You have sent several requests in a short time. Please try again later or give us a call.",
+    "failed": "Your request could not be sent. Please try again or give us a call."
   },
   "sell": {
     "eyebrow": "Consignment",
@@ -247,8 +252,7 @@
       }
     ],
     "formTitle": "Offer an item",
-    "subject": "Consignment: {item}",
-    "photoHint": "Please send photos directly as an e-mail attachment or via WhatsApp.",
+    "photoHint": "Up to {maxPhotos} photos (JPG, PNG or WebP, max. {maxMb} MB each).",
     "fields": {
       "brand": "Brand",
       "category": "Category",
@@ -257,7 +261,8 @@
       "year": "Year of purchase",
       "askingPrice": "Asking price (EUR)",
       "setItems": "Accessories included",
-      "otherBrand": "Other brand"
+      "otherBrand": "Other brand",
+      "photos": "Photos"
     }
   },
   "legal": {

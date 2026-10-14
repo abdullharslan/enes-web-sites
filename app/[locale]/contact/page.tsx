@@ -68,11 +68,7 @@ export default async function ContactPage() {
           >
             {c.formTitle}
           </h2>
-          <InquiryForm
-            recipient={contact.email}
-            subject={`${SITE.name} – ${c.formTitle}`}
-            labels={dict.forms}
-          />
+          <InquiryForm kind="contact" locale={locale} labels={dict.forms} />
         </section>
       </div>
     </>

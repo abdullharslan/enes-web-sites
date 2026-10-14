@@ -1,0 +1,148 @@
+"use server";
+
+import { randomUUID } from "node:crypto";
+import { z } from "zod";
+import { db } from "@/db/client";
+import type { Catalog } from "@/lib/catalog/schema";
+import { formDataToRecord, type FormRecord } from "@/lib/forms/compose";
+import { createSellSchema, inquirySchema, validateForm } from "@/lib/forms/schemas";
+import { HONEYPOT_FIELD, type PublicFormState } from "@/lib/forms/state";
+import { DEFAULT_LOCALE, isLocale } from "@/lib/i18n/locales";
+import { INQUIRY_KINDS, photoProblem, type InquiryKind } from "@/lib/inquiries/policy";
+import { getCatalog } from "@/lib/server/catalog";
+import {
+  PRIVATE_ROOT,
+  preparePhotos,
+  removeInquiryFiles,
+  writeInquiryPhotos,
+} from "@/lib/server/inquiries/photos";
+import {
+  hashAddress,
+  isRateLimited,
+  purgeExpiredInquiries,
+  recordInquiry,
+} from "@/lib/server/inquiries/service";
+import { MediaRejectedError, type PreparedImage } from "@/lib/server/media/store";
+import { requestAddress } from "@/lib/server/request-address";
+
+const ARRAY_FIELDS = ["setItems"] as const;
+
+const meta = z.object({
+  kind: z.enum(INQUIRY_KINDS),
+  submissionKey: z.uuid().optional(),
+  productSlug: z.string().max(200).optional(),
+});
+
+const field = (fd: FormData, key: string) => {
+  const value = fd.get(key);
+  return typeof value === "string" && value !== "" ? value : undefined;
+};
+
+const photosOf = (fd: FormData) =>
+  fd.getAll("photos").filter((v): v is File => v instanceof File && v.size > 0);
+
+/** Validates the payload for its kind; product inquiries must name a visible product. */
+function validatePayload(
+  kind: InquiryKind,
+  values: Record<string, unknown>,
+  catalog: Catalog,
+  productSlug: string | undefined,
+) {
+  if (kind === "sell") {
+    return validateForm(createSellSchema(catalog.categories.map((c) => c.slug)), values);
+  }
+  const result = validateForm(inquirySchema, values);
+  if (kind !== "product" || !result.ok) return result;
+  const product = catalog.products.find((p) => p.slug === productSlug);
+  if (!product) return null;
+  const brand = catalog.brands.find((b) => b.slug === product.brand)?.name;
+  const item = [brand, product.model, product.reference].filter(Boolean).join(" ");
+  return { ok: true as const, data: { ...result.data, item } };
+}
+
+/**
+ * Receives every public form (product, contact, consignment). Works with and
+ * without JavaScript: the browser posts the form to this action; nothing
+ * personal ever goes into a URL.
+ */
+export async function submitInquiryAction(
+  _prev: PublicFormState,
+  fd: FormData,
+): Promise<PublicFormState> {
+  const values = formDataToRecord(fd, ARRAY_FIELDS);
+  try {
+    return await receive(fd, values);
+  } catch (error) {
+    // Visitors get a calm message and the phone number; the cause goes to the server log.
+    console.error("Inquiry submission failed", error);
+    return { status: "failed", values };
+  }
+}
+
+async function receive(fd: FormData, values: FormRecord): Promise<PublicFormState> {
+  // Bots get the same answer as people, so they cannot learn to avoid the trap.
+  if (field(fd, HONEYPOT_FIELD)) return { status: "sent" };
+
+  const parsedMeta = meta.safeParse({
+    kind: field(fd, "kind"),
+    submissionKey: field(fd, "submissionKey"),
+    productSlug: field(fd, "productSlug"),
+  });
+  if (!parsedMeta.success) return { status: "failed", values };
+  const { kind, submissionKey, productSlug } = parsedMeta.data;
+  const localeValue = field(fd, "locale") ?? "";
+  const locale = isLocale(localeValue) ? localeValue : DEFAULT_LOCALE;
+
+  const validated = validatePayload(kind, values, await getCatalog(), productSlug);
+  if (!validated) return { status: "failed", values };
+  const photos = kind === "sell" ? photosOf(fd) : [];
+  const photoError = photoProblem(photos);
+  if (!validated.ok || photoError) {
+    const errors = validated.ok ? {} : validated.errors;
+    return {
+      status: "invalid",
+      errors: photoError ? { ...errors, photos: photoError } : errors,
+      values,
+    };
+  }
+
+  const addressHash = hashAddress(await requestAddress());
+  // Checked before any image is decoded, so a flood cannot burn CPU on uploads.
+  if (await isRateLimited(db, addressHash)) return { status: "rateLimited", values };
+
+  let prepared: PreparedImage[];
+  try {
+    prepared = await preparePhotos(photos);
+  } catch (error) {
+    if (!(error instanceof MediaRejectedError)) throw error;
+    return { status: "invalid", errors: { photos: "photoInvalid" }, values };
+  }
+
+  const id = randomUUID();
+  const stored = await writeInquiryPhotos(PRIVATE_ROOT, id, prepared);
+  let outcome: "stored" | "duplicate" | "rateLimited";
+  let purged: string[];
+  try {
+    ({ outcome, purged } = await db.transaction(async (tx) => {
+      const result = await recordInquiry(tx, {
+        id,
+        kind,
+        locale,
+        productSlug: kind === "product" ? (productSlug ?? null) : null,
+        data: validated.data,
+        submissionKey: submissionKey ?? null,
+        addressHash,
+        photos: stored,
+      });
+      return { outcome: result.outcome, purged: await purgeExpiredInquiries(tx) };
+    }));
+  } catch (error) {
+    await removeInquiryFiles(PRIVATE_ROOT, [id]);
+    throw error;
+  }
+  if (outcome !== "stored") await removeInquiryFiles(PRIVATE_ROOT, [id]);
+  await removeInquiryFiles(PRIVATE_ROOT, purged);
+  return outcome === "rateLimited"
+    ? { status: "rateLimited", values }
+    : { status: "sent" };
+}

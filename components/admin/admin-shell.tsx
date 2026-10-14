@@ -4,6 +4,7 @@ import { logout } from "@/app/admin/actions/auth";
 import { SITE } from "@/config/site";
 import { adminNavFor } from "@/lib/admin/navigation";
 import { T } from "@/lib/admin/text";
+import { interpolate } from "@/lib/i18n/interpolate";
 import type { SessionUser } from "@/lib/server/auth/service";
 
 const LINK =
@@ -11,9 +12,12 @@ const LINK =
 
 export function AdminShell({
   user,
+  badges = {},
   children,
 }: {
   user: SessionUser;
+  /** Counts shown next to menu entries, keyed by href (e.g. new inquiries). */
+  badges?: Readonly<Record<string, number>>;
   children: ReactNode;
 }) {
   return (
@@ -37,6 +41,14 @@ export function AdminShell({
               <li key={item.href}>
                 <Link href={item.href} className={LINK}>
                   {item.label}
+                  {(badges[item.href] ?? 0) > 0 && (
+                    <span className="ml-2 min-w-6 rounded-full bg-gold px-2 text-center text-xs font-semibold text-ink">
+                      <span aria-hidden="true">{badges[item.href]}</span>
+                      <span className="sr-only">
+                        {interpolate(T.nav.newCount, { n: String(badges[item.href]) })}
+                      </span>
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}

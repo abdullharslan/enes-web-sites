@@ -30,15 +30,22 @@ test.describe("SEO", () => {
 test.describe("privacy without JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 
-  test("the enquiry form cannot be submitted natively, so no data reaches the URL", async ({
+  test("a native submission posts to the server, never puts data in the URL", async ({
     page,
   }) => {
+    // Deliberately incomplete (no message): the server validates and nothing is stored.
     await page.goto("/en/contact");
-    await expect(page.getByRole("button", { name: "Send" })).toBeDisabled();
     await page.getByLabel("Name", { exact: true }).fill("Ada");
     await page.getByLabel("E-mail", { exact: true }).fill("ada@example.com");
     await page.getByLabel("E-mail", { exact: true }).press("Enter");
-    await expect(page).toHaveURL(/\/en\/contact$/);
+    await expect(page.getByLabel("Message", { exact: true })).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(new URL(page.url()).search).toBe("");
+    await expect(page.getByLabel("E-mail", { exact: true })).toHaveValue(
+      "ada@example.com",
+    );
   });
 });
 
