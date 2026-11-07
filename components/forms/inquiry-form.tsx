@@ -19,10 +19,8 @@ interface InquiryFormProps {
 
 export function InquiryForm({ kind, locale, productSlug, labels }: InquiryFormProps) {
   const uid = useId();
-  const { formAction, handleSubmit, errors, status, values } = useInquiryForm(
-    inquirySchema,
-    [],
-  );
+  const { formAction, handleSubmit, errors, status, values, submissionKey } =
+    useInquiryForm(inquirySchema, []);
   const error = (field: string) =>
     errors[field] ? labels.errors[errors[field]] : undefined;
 
@@ -33,7 +31,12 @@ export function InquiryForm({ kind, locale, productSlug, labels }: InquiryFormPr
       onSubmit={handleSubmit}
       className="flex flex-col gap-6"
     >
-      <InquiryHiddenFields kind={kind} locale={locale} productSlug={productSlug} />
+      <InquiryHiddenFields
+        kind={kind}
+        locale={locale}
+        productSlug={productSlug}
+        submissionKey={submissionKey}
+      />
       <div className="grid gap-6 sm:grid-cols-2">
         <TextField
           id={`${uid}-name`}

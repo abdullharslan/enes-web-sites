@@ -46,10 +46,11 @@ export function SellForm({ brands, categories, locale, labels }: SellFormProps) 
   const { forms, sell, catalog } = labels;
   const f = sell.fields;
 
-  const { formAction, handleSubmit, errors, status, values } = useInquiryForm(
-    useMemo(() => createSellSchema(categories.map((c) => c.slug)), [categories]),
-    ["setItems"],
-  );
+  const { formAction, handleSubmit, errors, status, values, submissionKey } =
+    useInquiryForm(
+      useMemo(() => createSellSchema(categories.map((c) => c.slug)), [categories]),
+      ["setItems"],
+    );
   const error = (field: string) =>
     errors[field] ? interpolate(forms.errors[errors[field]], PHOTO_LIMITS) : undefined;
 
@@ -60,7 +61,7 @@ export function SellForm({ brands, categories, locale, labels }: SellFormProps) 
       onSubmit={handleSubmit}
       className="flex flex-col gap-6"
     >
-      <InquiryHiddenFields kind="sell" locale={locale} />
+      <InquiryHiddenFields kind="sell" locale={locale} submissionKey={submissionKey} />
       <div className="grid gap-6 sm:grid-cols-2">
         <SelectField
           id={`${uid}-brand`}

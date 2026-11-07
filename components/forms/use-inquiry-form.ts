@@ -8,6 +8,9 @@ import { validateForm, type FormErrors } from "@/lib/forms/schemas";
 import { IDLE_FORM, type PublicFormStatus } from "@/lib/forms/state";
 import { photoProblem } from "@/lib/inquiries/policy";
 
+/** Empty where randomUUID is unavailable (insecure context): the server then derives a key. */
+const newSubmissionKey = () => globalThis.crypto?.randomUUID?.() ?? "";
+
 const selectedFiles = (form: HTMLFormElement) =>
   [...form.querySelectorAll<HTMLInputElement>('input[type="file"]')].flatMap((input) => [
     ...(input.files ?? []),
@@ -24,6 +27,7 @@ export function useInquiryForm<S extends z.ZodType>(
 ) {
   const [state, formAction] = useActionState(submitInquiryAction, IDLE_FORM);
   const [clientErrors, setClientErrors] = useState<FormErrors | null>(null);
+  const [submissionKey, setSubmissionKey] = useState("");
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     const form = event.currentTarget;
@@ -44,15 +48,20 @@ export function useInquiryForm<S extends z.ZodType>(
       return;
     }
     setClientErrors(null);
-    // One key per filled-in form: a double submit or retry is stored only once.
-    const key = form.elements.namedItem("submissionKey");
-    if (key instanceof HTMLInputElement && !key.value) {
-      key.value = globalThis.crypto?.randomUUID?.() ?? "";
-    }
+    // One key per inquiry: every retry of it (failed, rate-limited, double click)
+    // carries the same key, so the server stores it once; the next inquiry after
+    // a stored one gets a new key. Kept in state because React resets the form
+    // (and with it the hidden input) after every action.
+    const key =
+      submissionKey && state.status !== "sent" ? submissionKey : newSubmissionKey();
+    if (key !== submissionKey) setSubmissionKey(key);
+    // The FormData is built right after this handler, before React re-renders.
+    const input = form.elements.namedItem("submissionKey");
+    if (input instanceof HTMLInputElement) input.value = key;
   };
 
   const errors = clientErrors ?? (state.status === "invalid" ? state.errors : {});
   const status: PublicFormStatus = clientErrors ? "invalid" : state.status;
   const values = "values" in state ? state.values : undefined;
-  return { formAction, handleSubmit, errors, status, values };
+  return { formAction, handleSubmit, errors, status, values, submissionKey };
 }

@@ -137,10 +137,14 @@ test.describe("inquiries", () => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const visitor = await context.newPage();
     await visitor.goto("/de/contact");
-    await fillContact(visitor, name, "Gesendet ohne JavaScript");
-    await visitor.getByRole("button", { name: "Absenden" }).click();
-    await expect(visitor.getByText(SUCCESS_DE, { exact: false })).toBeVisible();
-    expect(new URL(visitor.url()).search).toBe("");
+    // Sent twice (a re-sent form, a double click before the page answers): stored once.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await visitor.goto("/de/contact");
+      await fillContact(visitor, name, "Gesendet ohne JavaScript");
+      await visitor.getByRole("button", { name: "Absenden" }).click();
+      await expect(visitor.getByText(SUCCESS_DE, { exact: false })).toBeVisible();
+      expect(new URL(visitor.url()).search).toBe("");
+    }
 
     // Server-side validation answers too, and keeps what was typed.
     await visitor.goto("/de/contact");
@@ -154,6 +158,8 @@ test.describe("inquiries", () => {
     await context.close();
 
     await signIn(page, accounts().editor);
+    await page.goto("/admin/inquiries?status=all");
+    await expect(page.getByRole("link", { name, exact: true })).toHaveCount(1);
     await openInquiry(page, name);
     await expect(
       page.getByRole("definition").filter({ hasText: "Gesendet ohne JavaScript" }),

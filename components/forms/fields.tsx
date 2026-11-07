@@ -235,16 +235,23 @@ interface HiddenFieldsProps {
   kind: "product" | "contact" | "sell";
   locale: string;
   productSlug?: string;
+  /** Controlled, so React's form reset after an action cannot clear it. */
+  submissionKey: string;
 }
 
 /** What the server needs besides the visible fields, plus the bot trap. */
-export function InquiryHiddenFields({ kind, locale, productSlug }: HiddenFieldsProps) {
+export function InquiryHiddenFields({
+  kind,
+  locale,
+  productSlug,
+  submissionKey,
+}: HiddenFieldsProps) {
   return (
     <>
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="locale" value={locale} />
       {productSlug && <input type="hidden" name="productSlug" value={productSlug} />}
-      <input type="hidden" name="submissionKey" defaultValue="" />
+      <input type="hidden" name="submissionKey" value={submissionKey} readOnly />
       {/* display:none hides it from people and assistive technology; bots still fill it in. */}
       <div className="hidden">
         <label>

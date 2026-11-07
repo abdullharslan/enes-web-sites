@@ -1,4 +1,4 @@
-import { createHmac, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import {
   and,
   asc,
@@ -98,6 +98,50 @@ export async function isRateLimited(
   const since = new Date(now.getTime() - INQUIRY_LIMITS.windowMs);
   if ((await submissionsSince(db, since, addressHash)) >= PER_ADDRESS) return true;
   return withPhotos && (await photoSubmissionsSince(db, since)) >= INQUIRY_LIMITS.global;
+}
+
+/**
+ * The first gate of a submission, before any image work: a retry of an inquiry
+ * that is already stored is recognised first (so it is never answered with
+ * "rate limited"), then the limits apply. recordInquiry re-checks both under
+ * its lock; this read-only pass only avoids wasted work and wrong answers.
+ */
+export async function admitSubmission(
+  db: Executor,
+  {
+    submissionKey,
+    addressHash,
+    withPhotos,
+    now = new Date(),
+  }: { submissionKey: string; addressHash: string; withPhotos: boolean; now?: Date },
+): Promise<"ok" | "duplicate" | "rateLimited"> {
+  const [stored] = await db
+    .select({ id: inquiries.id })
+    .from(inquiries)
+    .where(eq(inquiries.submissionKey, submissionKey));
+  if (stored) return "duplicate";
+  return (await isRateLimited(db, addressHash, { withPhotos, now }))
+    ? "rateLimited"
+    : "ok";
+}
+
+/**
+ * A stable key for a post that brought none (no JavaScript, or an insecure
+ * context without crypto.randomUUID): the same inquiry from the same address
+ * bucket on the same day maps to the same key, so a re-sent form is stored once.
+ * The address hash already changes daily, so identical text on another day is new.
+ */
+export function deriveSubmissionKey(
+  addressHash: string,
+  kind: InquiryKind,
+  productSlug: string | null,
+  data: Record<string, unknown>,
+): string {
+  const hex = createHash("sha256")
+    .update(JSON.stringify([addressHash, kind, productSlug, data]))
+    .digest("hex");
+  // Formatted as a version-4-shaped UUID so it fits the submission_key column.
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
 /**

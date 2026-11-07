@@ -32,10 +32,14 @@ describe("InquiryForm", () => {
       />,
     );
 
+  const fill = async (label: string, value: string) => {
+    await userEvent.clear(screen.getByLabelText(label));
+    await userEvent.type(screen.getByLabelText(label), value);
+  };
   const fillValid = async () => {
-    await userEvent.type(screen.getByLabelText(dict.forms.name), "Ada Lovelace");
-    await userEvent.type(screen.getByLabelText(dict.forms.email), "ada@example.com");
-    await userEvent.type(screen.getByLabelText(dict.forms.message), "Noch verfügbar?");
+    await fill(dict.forms.name, "Ada Lovelace");
+    await fill(dict.forms.email, "ada@example.com");
+    await fill(dict.forms.message, "Noch verfügbar?");
   };
 
   it("blocks submission, flags fields and focuses the first invalid one", async () => {
@@ -94,6 +98,57 @@ describe("InquiryForm", () => {
     await waitFor(() => expect(screen.getByText(dict.forms.rateLimited)).toBeVisible());
     expect(screen.getByLabelText(dict.forms.name)).toHaveValue("Ada Lovelace");
     expect(screen.getByLabelText(dict.forms.message)).toHaveValue("Noch verfügbar?");
+  });
+
+  const echo = (fd: FormData) =>
+    Object.fromEntries(
+      [...fd.entries()].filter(([, v]) => typeof v === "string"),
+    ) as Record<string, string>;
+  const keyOf = (call: number) =>
+    String(submit.mock.calls[call]?.[1].get("submissionKey"));
+
+  it("retries with the same submission key until the request is stored", async () => {
+    submit
+      .mockImplementationOnce(async (_prev, fd) => ({
+        status: "failed",
+        values: echo(fd),
+      }))
+      .mockImplementationOnce(async (_prev, fd) => ({
+        status: "rateLimited",
+        values: echo(fd),
+      }))
+      .mockResolvedValueOnce({ status: "sent" });
+    renderForm();
+    await fillValid();
+    const send = () =>
+      userEvent.click(screen.getByRole("button", { name: dict.forms.submit }));
+
+    await send();
+    await waitFor(() => expect(screen.getByText(dict.forms.failed)).toBeVisible());
+    await send();
+    await waitFor(() => expect(screen.getByText(dict.forms.rateLimited)).toBeVisible());
+    await send();
+    await waitFor(() => expect(screen.getByText(dict.forms.success)).toBeVisible());
+
+    expect(submit).toHaveBeenCalledTimes(3);
+    expect(keyOf(0)).toMatch(/^[0-9a-f-]{36}$/);
+    // The server deduplicates by this key: a retry must never look like a new inquiry.
+    expect(keyOf(1)).toBe(keyOf(0));
+    expect(keyOf(2)).toBe(keyOf(0));
+  });
+
+  it("uses a new key for the next inquiry after one was stored", async () => {
+    submit.mockResolvedValue({ status: "sent" });
+    renderForm();
+    await fillValid();
+    await userEvent.click(screen.getByRole("button", { name: dict.forms.submit }));
+    await waitFor(() => expect(screen.getByText(dict.forms.success)).toBeVisible());
+    await fillValid();
+    await userEvent.click(screen.getByRole("button", { name: dict.forms.submit }));
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(2));
+
+    expect(keyOf(1)).toMatch(/^[0-9a-f-]{36}$/);
+    expect(keyOf(1)).not.toBe(keyOf(0));
   });
 });
 

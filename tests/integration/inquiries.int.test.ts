@@ -6,7 +6,9 @@ import { auditEvents, inquiries, inquiryPhotos } from "@/db/schema";
 import { INQUIRY_LIMITS, INQUIRY_RETENTION } from "@/lib/inquiries/policy";
 import { createUser } from "@/lib/server/auth/service";
 import {
+  admitSubmission,
   countNewInquiries,
+  deriveSubmissionKey,
   deleteInquiry,
   getInquiry,
   hashAddress,
@@ -256,4 +258,60 @@ describe("admin inbox", () => {
       expect(event?.entityId).toBe(a.id);
       expect(JSON.stringify(event)).not.toContain("Anna");
     }));
+});
+
+describe("admitSubmission (before any expensive work)", () => {
+  it("answers a retry of a stored inquiry as a duplicate, even at the limit", () =>
+    withRollback(async (tx) => {
+      const stored = inquiry();
+      await recordInquiry(tx, stored, now);
+      for (let i = 1; i < INQUIRY_LIMITS.perAddress; i++) {
+        await recordInquiry(tx, inquiry(), now);
+      }
+      const check = (submissionKey: string) =>
+        admitSubmission(tx, {
+          submissionKey,
+          addressHash: address,
+          withPhotos: false,
+          now,
+        });
+      // The address is now at its limit: a new inquiry is refused …
+      expect(await check(randomUUID())).toBe("rateLimited");
+      // … but the retry of one that was stored must not be told it was refused.
+      expect(await check(stored.submissionKey!)).toBe("duplicate");
+    }));
+
+  it("admits new inquiries below the limit", () =>
+    withRollback(async (tx) => {
+      expect(
+        await admitSubmission(tx, {
+          submissionKey: randomUUID(),
+          addressHash: address,
+          withPhotos: true,
+          now,
+        }),
+      ).toBe("ok");
+    }));
+});
+
+describe("deriveSubmissionKey (posts without a client key, e.g. no JavaScript)", () => {
+  const data = { name: "Anna", email: "anna@example.com", phone: "", message: "Hallo" };
+
+  it("gives the same key for the same inquiry from the same address and day", () => {
+    const a = deriveSubmissionKey(address, "contact", null, data);
+    expect(a).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(deriveSubmissionKey(address, "contact", null, { ...data })).toBe(a);
+  });
+
+  it("differs for other content, another product, kind or address", () => {
+    const a = deriveSubmissionKey(address, "contact", null, data);
+    for (const other of [
+      deriveSubmissionKey(address, "contact", null, { ...data, message: "Hallo!" }),
+      deriveSubmissionKey(address, "product", "rolex-x", data),
+      deriveSubmissionKey(address, "sell", null, data),
+      deriveSubmissionKey(hashAddress("198.51.100.9", now), "contact", null, data),
+    ]) {
+      expect(other).not.toBe(a);
+    }
+  });
 });

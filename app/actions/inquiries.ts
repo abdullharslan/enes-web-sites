@@ -25,7 +25,8 @@ import {
 import { maintainInquiryRetention } from "@/lib/server/inquiries/retention";
 import {
   hashAddress,
-  isRateLimited,
+  admitSubmission,
+  deriveSubmissionKey,
   recordInquiry,
   type NewInquiry,
   type StoredPhoto,
@@ -138,18 +139,26 @@ async function receive(
   const bucket = await requestAddressBucket();
   const addressHash = hashAddress(bucket);
   const withPhotos = photos.length > 0;
-  // Checked before any image is decoded (the database limits are the source of truth).
-  if (await isRateLimited(db, addressHash, { withPhotos })) {
-    return { status: "rateLimited", values };
-  }
+  const storedSlug = kind === "product" ? (productSlug ?? null) : null;
+  // Without a client key (no JavaScript) the same inquiry still maps to one key.
+  const key =
+    submissionKey ?? deriveSubmissionKey(addressHash, kind, storedSlug, validated.data);
+  // Before any image is decoded: a retry of a stored inquiry is "sent", not "rate limited".
+  const admission = await admitSubmission(db, {
+    submissionKey: key,
+    addressHash,
+    withPhotos,
+  });
+  if (admission === "duplicate") return { status: "sent" };
+  if (admission === "rateLimited") return { status: "rateLimited", values };
   const id = randomUUID();
   const inquiry = {
     id,
     kind,
     locale,
-    productSlug: kind === "product" ? (productSlug ?? null) : null,
+    productSlug: storedSlug,
     data: validated.data,
-    submissionKey: submissionKey ?? null,
+    submissionKey: key,
     addressHash,
   };
   if (!withPhotos) return store({ ...inquiry, photos: [] }, values);
