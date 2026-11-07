@@ -6,6 +6,7 @@ import sharp from "sharp";
 import type { Executor } from "@/db/connection";
 import { media, type Translations } from "@/db/schema";
 import { buildMediaKey, type MediaKind } from "./naming";
+import { sniffImageFormat } from "./sniff";
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const MAX_EDGE = 2400;
@@ -52,6 +53,9 @@ export function resolveInside(root: string, key: string): string {
 export async function prepareImage(input: Buffer): Promise<PreparedImage> {
   if (input.length === 0) throw new MediaRejectedError("Empty file");
   if (input.length > MAX_UPLOAD_BYTES) throw new MediaRejectedError("File too large");
+  // Decided by the bytes, not the declared type: anything else never reaches a decoder.
+  const sniffed = sniffImageFormat(input);
+  if (!sniffed) throw new MediaRejectedError("Not a JPEG, PNG or WebP file");
 
   let format: string | undefined;
   try {
@@ -59,7 +63,7 @@ export async function prepareImage(input: Buffer): Promise<PreparedImage> {
   } catch {
     throw new MediaRejectedError("Not a readable image");
   }
-  if (!format || !ACCEPTED_FORMATS.has(format)) {
+  if (!format || !ACCEPTED_FORMATS.has(format) || format !== sniffed) {
     throw new MediaRejectedError(`Unsupported image format: ${format ?? "unknown"}`);
   }
 

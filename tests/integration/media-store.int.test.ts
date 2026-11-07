@@ -137,4 +137,22 @@ describe("serving only recorded media", () => {
       MediaRejectedError,
     );
   });
+
+  it("stops formats we never accept by their bytes, before any decoder runs", async () => {
+    const { prepareImage } = await import("@/lib/server/media/store");
+    // A real, decodable SVG and GIF: sharp could parse both, so the sniff must reject them first.
+    const svg = Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="4" height="4"/></svg>',
+    );
+    const gif = await sharp({
+      create: { width: 4, height: 4, channels: 3, background: "#000" },
+    })
+      .gif()
+      .toBuffer();
+    for (const input of [svg, gif]) {
+      await expect(prepareImage(input)).rejects.toThrow(/Not a JPEG, PNG or WebP file/);
+    }
+    // Real images still pass.
+    await expect(prepareImage(await sampleJpeg())).resolves.toMatchObject({ width: 40 });
+  });
 });
