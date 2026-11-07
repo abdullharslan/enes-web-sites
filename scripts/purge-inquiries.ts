@@ -6,12 +6,15 @@ import { applyInquiryRetention } from "@/lib/server/inquiries/retention";
  * any time; schedule it daily, e.g. cron: 15 3 * * * npm run inquiries:purge
  */
 const { db, close } = connect(process.env.DATABASE_URL, { max: 1 });
-try {
-  const root = process.env.PRIVATE_STORAGE_ROOT ?? "storage/private";
-  const { purged, orphans } = await applyInquiryRetention(db, root);
-  console.log(
-    `retention applied: ${purged} inquiries deleted, ${orphans} orphan folders removed`,
-  );
-} finally {
-  await close();
-}
+const root = process.env.PRIVATE_STORAGE_ROOT ?? "storage/private";
+applyInquiryRetention(db, root)
+  .then(({ purged, orphans }) =>
+    console.log(
+      `retention applied: ${purged} inquiries deleted, ${orphans} orphan folders removed`,
+    ),
+  )
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(close);

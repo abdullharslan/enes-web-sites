@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import { recordRevision } from "@/lib/server/revisions";
+import { PLACEHOLDER_IMAGE } from "@/lib/catalog/placeholder";
 import { storeImage } from "@/lib/server/media/store";
 import { toSnapshot } from "@/lib/server/snapshot";
 import { connect, type Database, type Executor } from "./connection";
@@ -139,7 +140,10 @@ export async function seedCatalog(
         .returning();
 
       const mediaIds: string[] = [];
-      for (const [position, image] of seed.images.entries()) {
+      // "Photo to follow" is no photo: the product keeps no media and the catalog
+      // shows the shared placeholder until a real photo is uploaded.
+      const photos = seed.images.filter((image) => image.src !== PLACEHOLDER_IMAGE.src);
+      for (const [position, image] of photos.entries()) {
         const record = await store(tx, image, "product", seed.slug);
         await tx
           .insert(productMedia)

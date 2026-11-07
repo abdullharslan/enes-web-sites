@@ -23,6 +23,12 @@ const now = new Date("2026-10-14T12:00:00Z");
 describe("seedCatalog + loadCatalog", () => {
   it("round-trips every seed product unchanged (characterization)", () =>
     withRollback(async (tx) => {
+      expect(
+        SEED_PRODUCTS.filter((p) =>
+          p.images.some((i) => i.src === PLACEHOLDER_IMAGE.src),
+        ),
+        "the demo data contains photo-to-follow products, so this branch is exercised",
+      ).not.toHaveLength(0);
       await seedCatalog(tx, { mediaRoot: media.root, now });
       const catalog = await loadCatalog(tx);
 
@@ -43,8 +49,14 @@ describe("seedCatalog + loadCatalog", () => {
           description: resolveTranslations(seed.description),
         });
         expect(brandName).toBe(SEED_BRANDS.find((b) => b.slug === seed.brand)?.name);
+        const photos = seedImages.filter((i) => i.src !== PLACEHOLDER_IMAGE.src);
+        if (photos.length === 0) {
+          // "Photo to follow": nothing is stored, the catalog shows the shared placeholder.
+          expect(images).toEqual([PLACEHOLDER_IMAGE]);
+          continue;
+        }
         expect(images.map((i) => i.alt)).toEqual(
-          seedImages.map((i) => resolveTranslations(i.alt)),
+          photos.map((i) => resolveTranslations(i.alt)),
         );
         for (const image of images)
           expect(image.src).toMatch(
