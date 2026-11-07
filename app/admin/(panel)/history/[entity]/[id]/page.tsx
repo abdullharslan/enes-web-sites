@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { restoreAction } from "@/app/admin/actions/content";
 import { AccessDenied, AdminPageTitle } from "@/components/admin/admin-shell";
+import { RestoreButton } from "@/components/admin/restore-button";
 import { TextLink } from "@/components/admin/table";
 import { describeChange, diffSnapshots } from "@/lib/admin/diff";
+import { ADMIN_ERROR_MESSAGES, errorFromQuery } from "@/lib/admin/error-messages";
+import { savedNotice } from "@/lib/admin/form-key";
+import { newRequestKey } from "@/lib/admin/request-key";
 import { T } from "@/lib/admin/text";
 import { isContentKey } from "@/lib/content/blocks";
 import { requireUser } from "@/lib/server/auth/current";
@@ -67,7 +71,17 @@ export default async function HistoryPage({
     imagesLabel: T.history.images,
   };
   const canRestore = can(user.role, WRITE_PERMISSION[entity]);
-  const restored = typeof query.restored === "string" ? query.restored : undefined;
+  const currentVersion = rows[0]!.revision.version;
+  // Shown only while the restored state is still the current version.
+  const restored =
+    typeof query.restored === "string" &&
+    savedNotice(query.saved, currentVersion) &&
+    rows.some(({ revision }) => String(revision.version) === query.restored)
+      ? query.restored
+      : undefined;
+  const restoreError = errorFromQuery(query.restoreError);
+  // One key per button: a double click restores once, a different version is a new request.
+  const requestKeys = await Promise.all(rows.map(() => newRequestKey()));
 
   return (
     <>
@@ -78,8 +92,21 @@ export default async function HistoryPage({
       >
         {T.history.title}
       </AdminPageTitle>
-      <div aria-live="polite" className="mb-6 min-h-6 text-sm text-gold">
-        {restored && T.history.restored.replace("{version}", restored)}
+      <p className="mb-4 text-sm text-mist">{T.history.restoreNote}</p>
+      <div aria-live="polite" className="mb-6 min-h-6 text-sm">
+        {restoreError ? (
+          <p role="alert" className="text-danger">
+            {restoreError === "conflict"
+              ? T.history.conflict
+              : ADMIN_ERROR_MESSAGES[restoreError]}
+          </p>
+        ) : (
+          restored && (
+            <p className="text-gold">
+              {T.history.restored.replace("{version}", restored)}
+            </p>
+          )
+        )}
       </div>
       <ol className="flex flex-col gap-6">
         {rows.map(({ revision, author }, index) => {
@@ -139,12 +166,9 @@ export default async function HistoryPage({
                   <input type="hidden" name="entityType" value={entity} />
                   <input type="hidden" name="entityId" value={entityId} />
                   <input type="hidden" name="version" value={revision.version} />
-                  <button
-                    type="submit"
-                    className="min-h-11 border border-gold/70 px-5 text-xs font-semibold uppercase tracking-label transition-colors hover:bg-gold hover:text-ink"
-                  >
-                    {T.history.restore}
-                  </button>
+                  <input type="hidden" name="expectedVersion" value={currentVersion} />
+                  <input type="hidden" name="idempotencyKey" value={requestKeys[index]} />
+                  <RestoreButton />
                 </form>
               )}
             </li>

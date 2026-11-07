@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AccessDenied, AdminPageTitle } from "@/components/admin/admin-shell";
 import { JournalForm, JournalImageForm } from "@/components/admin/content-forms";
 import { TextLink } from "@/components/admin/table";
+import { fieldsKey, savedNotice } from "@/lib/admin/form-key";
 import { newRequestKey } from "@/lib/admin/request-key";
 import { T } from "@/lib/admin/text";
 import { requireUser } from "@/lib/server/auth/current";
@@ -33,11 +34,11 @@ export default async function EditJournalPage({
         {entry.title.tr ?? entry.title.de}
       </AdminPageTitle>
       <JournalForm
-        key={entry.currentVersion}
+        key={fieldsKey(entry)}
         id={entry.id}
         version={entry.currentVersion}
         requestKey={await newRequestKey()}
-        savedVersion={typeof query.saved === "string" ? query.saved : undefined}
+        savedVersion={savedNotice(query.saved, entry.currentVersion)}
         values={entry}
       />
       <section aria-labelledby="journal-image" className="mt-12">
@@ -61,7 +62,11 @@ export default async function EditJournalPage({
               <p className="p-4 text-sm text-mist">{T.fields.noImage}</p>
             )}
           </div>
-          <JournalImageForm id={entry.id} slug={entry.slug} />
+          <JournalImageForm
+            id={entry.id}
+            slug={entry.slug}
+            version={entry.currentVersion}
+          />
         </div>
       </section>
     </>

@@ -202,6 +202,117 @@ test.describe("admin catalog", () => {
     );
   });
 
+  test("an image upload keeps unsaved edits, which then save without a conflict", async ({
+    page,
+  }) => {
+    const slug = `rolex-keep-${unique()}`;
+    await signIn(page, accounts().editor);
+    await createProduct(page, slug, `Keep ${unique()}`, "8000");
+    const price = page.getByRole("textbox", { name: "Fiyat (EUR, boş = fiyat sorunuz)" });
+    await price.fill("9100"); // typed, not saved yet
+    await page
+      .getByLabel("Görsel", { exact: true })
+      .setInputFiles(await pngFile("#445566"));
+    await page.getByRole("button", { name: "Yükle" }).click();
+    await expect(page.getByText("Kaydedildi (sürüm 2).")).toBeVisible();
+    await expect(page.locator("#product-images ~ ul img")).toHaveCount(1);
+    // The edit form was not reset by the upload …
+    await expect(price).toHaveValue("9100");
+    // … and saving it is not refused although the version moved on.
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await expect(page).toHaveURL(/\?saved=3$/);
+    await expect(price).toHaveValue("9100");
+    await expect(page.locator("#product-images ~ ul img")).toHaveCount(1);
+  });
+
+  test("an image move from an outdated page is refused with a message", async ({
+    page,
+  }) => {
+    const slug = `rolex-stale-${unique()}`;
+    await signIn(page, accounts().editor);
+    const id = await createProduct(page, slug, `Stale ${unique()}`, "8000");
+    for (const [index, color] of ["#111111", "#eeeeee"].entries()) {
+      await page
+        .getByLabel("Görsel", { exact: true })
+        .setInputFiles(await pngFile(color));
+      await page.getByRole("button", { name: "Yükle" }).click();
+      await expect(page.getByText(`Kaydedildi (sürüm ${index + 2}).`)).toBeVisible();
+    }
+    await expect(page.locator("#product-images ~ ul img")).toHaveCount(2);
+    // A second tab removes the cover in the meantime.
+    const other = await page.context().newPage();
+    await other.goto(`/admin/products/${id}`);
+    await other.getByRole("button", { name: "Kaldır", exact: true }).first().click();
+    // The removed image (and its controls) disappear: that is the confirmation.
+    await expect(other.locator("#product-images ~ ul img")).toHaveCount(1);
+    await other.close();
+
+    // This tab still shows both images, has an unsaved price edit,
+    // and tries to choose the second image as cover.
+    const price = page.getByRole("textbox", { name: "Fiyat (EUR, boş = fiyat sorunuz)" });
+    await price.fill("8800");
+    await page.getByRole("button", { name: "Kapak yap" }).click();
+    await expect(
+      page.getByText(
+        "Görseller bu arada başka biri tarafından değiştirildi; sayfa güncellendi.",
+        {
+          exact: false,
+        },
+      ),
+    ).toBeVisible();
+    // The page updated itself in place: the current list, and the edit is still there.
+    await expect(page.locator("#product-images ~ ul img")).toHaveCount(1);
+    await expect(price).toHaveValue("8800");
+  });
+
+  test("a restore never republishes a sold item and is refused from an outdated page", async ({
+    page,
+  }) => {
+    const slug = `rolex-restore-${unique()}`;
+    await signIn(page, accounts().editor);
+    const id = await createProduct(page, slug, `Restore ${unique()}`, "8000"); // v1
+    await page.getByRole("combobox", { name: "Durum" }).selectOption("sold");
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await expect(page).toHaveURL(/\?saved=2$/);
+
+    await page.goto(`/admin/history/product/${id}`);
+    await expect(
+      page.getByText("sitede görünürlük ve satış durumu değişmez", { exact: false }),
+    ).toBeVisible();
+    // Someone saves again after this history page was opened.
+    const other = await page.context().newPage();
+    await other.goto(`/admin/products/${id}`);
+    await other
+      .getByRole("textbox", { name: "Fiyat (EUR, boş = fiyat sorunuz)" })
+      .fill("7000");
+    await other.getByRole("button", { name: "Kaydet" }).click();
+    await expect(other).toHaveURL(/\?saved=3$/);
+    await other.close();
+
+    await page.getByRole("button", { name: "Bu sürüme dön" }).last().click();
+    await expect(page.getByText(/bu istek uygulanmadı/)).toBeVisible();
+
+    // From a fresh page the restore works, and the product stays sold.
+    await page.goto(`/admin/history/product/${id}`);
+    await page.getByRole("button", { name: "Bu sürüme dön" }).last().click();
+    await expect(page.getByText("v1 geri yüklendi", { exact: false })).toBeVisible();
+    const restoredUrl = page.url();
+    await page.goto(`/admin/products/${id}`);
+    await expect(page.getByRole("combobox", { name: "Durum" })).toHaveValue("sold");
+    await expect(
+      page.getByRole("textbox", { name: "Fiyat (EUR, boş = fiyat sorunuz)" }),
+    ).toHaveValue("8000");
+
+    // After a later change, the old "restored" link no longer claims it is current.
+    await page
+      .getByRole("textbox", { name: "Fiyat (EUR, boş = fiyat sorunuz)" })
+      .fill("8100");
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await expect(page).toHaveURL(/\?saved=\d+$/);
+    await page.goto(restoredUrl);
+    await expect(page.getByText("v1 geri yüklendi", { exact: false })).toHaveCount(0);
+  });
+
   test("admin catalog pages are accessible", async ({ page }) => {
     const AxeBuilder = (await import("@axe-core/playwright")).default;
     await signIn(page, accounts().editor);

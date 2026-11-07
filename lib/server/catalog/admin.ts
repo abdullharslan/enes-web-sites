@@ -12,8 +12,10 @@ import {
 } from "@/lib/admin/schemas";
 import {
   DuplicateSlugError,
+  NoChangeError,
   RecordNotFoundError,
   VersionConflictError,
+  assertScopeUnchanged,
   finishChange,
   replayedResult,
   restoreComment,
@@ -78,6 +80,37 @@ async function conflictOrMissing(
   throw exists ? new VersionConflictError() : new RecordNotFoundError(`No record ${id}`);
 }
 
+/** Locks the row for this transaction and returns its current version. */
+async function lockVersion(
+  tx: Executor,
+  table: typeof brands | typeof categories | typeof products,
+  id: string,
+): Promise<number> {
+  const [row] = await tx
+    .select({ version: table.currentVersion })
+    .from(table)
+    .where(eq(table.id, id))
+    .for("update");
+  if (!row) throw new RecordNotFoundError(`No record ${id}`);
+  return row.version;
+}
+
+/**
+ * The version an edit-form save may write on: the form's own version, or a
+ * newer one if only images changed since the form was loaded.
+ */
+async function fieldsBase(
+  tx: Executor,
+  table: typeof brands | typeof categories | typeof products,
+  type: CatalogEntity,
+  id: string,
+  expectedVersion: number,
+): Promise<number> {
+  const current = await lockVersion(tx, table, id);
+  await assertScopeUnchanged(tx, { type, id }, expectedVersion, current, "fields");
+  return current;
+}
+
 // ── Brands ───────────────────────────────────────────────────────────────────
 
 type BrandValues = Omit<BrandInput, "expectedVersion"> & { heroMediaId?: string | null };
@@ -96,6 +129,7 @@ async function writeBrand(
       .returning();
     return row!;
   }
+  const base = await fieldsBase(tx, brands, "brand", id, expectedVersion);
   const [row] = await tx
     .update(brands)
     .set({
@@ -103,7 +137,7 @@ async function writeBrand(
       currentVersion: nextVersion(brands.currentVersion),
       updatedAt: new Date(),
     })
-    .where(and(eq(brands.id, id), eq(brands.currentVersion, expectedVersion)))
+    .where(and(eq(brands.id, id), eq(brands.currentVersion, base)))
     .returning();
   return row ?? conflictOrMissing(tx, brands, id);
 }
@@ -115,6 +149,9 @@ export async function saveBrand(
   input: BrandInput,
   options: SaveOptions = {},
 ): Promise<SaveResult> {
+  // Fixed lock order: the row first, then replayedResult's key lock (which is
+  // where copies of a create, with no row yet, queue).
+  if (id) await lockVersion(tx, brands, id);
   const replay = await replayedResult(tx, options.idempotencyKey, "brand", id);
   if (replay) return replay;
   const { expectedVersion, ...values } = brandInput.parse(input);
@@ -133,7 +170,19 @@ export async function setBrandHero(
   actorId: string | null,
   brandId: string,
   mediaId: string | null,
+  expectedVersion: number,
 ): Promise<SaveResult> {
+  const current = await lockVersion(tx, brands, brandId);
+  await assertScopeUnchanged(
+    tx,
+    { type: "brand", id: brandId },
+    expectedVersion,
+    current,
+    "images",
+  );
+  const [existing] = await tx.select().from(brands).where(eq(brands.id, brandId));
+  if (existing!.heroMediaId === mediaId)
+    return { id: brandId, version: current, unchanged: true };
   const [row] = await tx
     .update(brands)
     .set({
@@ -143,8 +192,7 @@ export async function setBrandHero(
     })
     .where(eq(brands.id, brandId))
     .returning();
-  if (!row) throw new RecordNotFoundError(`No brand ${brandId}`);
-  return finish(tx, { entityType: "brand", row, actorId, action: "image-changed" });
+  return finish(tx, { entityType: "brand", row: row!, actorId, action: "image-changed" });
 }
 
 // ── Categories ───────────────────────────────────────────────────────────────
@@ -167,6 +215,7 @@ async function writeCategory(
       .returning();
     return row!;
   }
+  const base = await fieldsBase(tx, categories, "category", id, expectedVersion);
   const [row] = await tx
     .update(categories)
     .set({
@@ -174,7 +223,7 @@ async function writeCategory(
       currentVersion: nextVersion(categories.currentVersion),
       updatedAt: new Date(),
     })
-    .where(and(eq(categories.id, id), eq(categories.currentVersion, expectedVersion)))
+    .where(and(eq(categories.id, id), eq(categories.currentVersion, base)))
     .returning();
   return row ?? conflictOrMissing(tx, categories, id);
 }
@@ -186,6 +235,9 @@ export async function saveCategory(
   input: CategoryInput,
   options: SaveOptions = {},
 ): Promise<SaveResult> {
+  // Fixed lock order: the row first, then replayedResult's key lock (which is
+  // where copies of a create, with no row yet, queue).
+  if (id) await lockVersion(tx, categories, id);
   const replay = await replayedResult(tx, options.idempotencyKey, "category", id);
   if (replay) return replay;
   const { expectedVersion, ...values } = categoryInput.parse(input);
@@ -204,7 +256,22 @@ export async function setCategoryTile(
   actorId: string | null,
   categoryId: string,
   mediaId: string | null,
+  expectedVersion: number,
 ): Promise<SaveResult> {
+  const current = await lockVersion(tx, categories, categoryId);
+  await assertScopeUnchanged(
+    tx,
+    { type: "category", id: categoryId },
+    expectedVersion,
+    current,
+    "images",
+  );
+  const [existing] = await tx
+    .select()
+    .from(categories)
+    .where(eq(categories.id, categoryId));
+  if (existing!.tileMediaId === mediaId)
+    return { id: categoryId, version: current, unchanged: true };
   const [row] = await tx
     .update(categories)
     .set({
@@ -214,8 +281,12 @@ export async function setCategoryTile(
     })
     .where(eq(categories.id, categoryId))
     .returning();
-  if (!row) throw new RecordNotFoundError(`No category ${categoryId}`);
-  return finish(tx, { entityType: "category", row, actorId, action: "image-changed" });
+  return finish(tx, {
+    entityType: "category",
+    row: row!,
+    actorId,
+    action: "image-changed",
+  });
 }
 
 // ── Products ─────────────────────────────────────────────────────────────────
@@ -258,6 +329,7 @@ async function writeProduct(
       .returning();
     return row!;
   }
+  const base = await fieldsBase(tx, products, "product", id, expectedVersion);
   const [row] = await tx
     .update(products)
     .set({
@@ -265,7 +337,7 @@ async function writeProduct(
       currentVersion: nextVersion(products.currentVersion),
       updatedAt: new Date(),
     })
-    .where(and(eq(products.id, id), eq(products.currentVersion, expectedVersion)))
+    .where(and(eq(products.id, id), eq(products.currentVersion, base)))
     .returning();
   return row ?? conflictOrMissing(tx, products, id);
 }
@@ -277,6 +349,9 @@ export async function saveProduct(
   input: ProductInput,
   options: SaveOptions = {},
 ): Promise<SaveResult> {
+  // Fixed lock order: the row first, then replayedResult's key lock (which is
+  // where copies of a create, with no row yet, queue).
+  if (id) await lockVersion(tx, products, id);
   const replay = await replayedResult(tx, options.idempotencyKey, "product", id);
   if (replay) return replay;
   const { expectedVersion, ...values } = productInput.parse(input);
@@ -291,56 +366,78 @@ export async function saveProduct(
   });
 }
 
-async function bumpProduct(
+/**
+ * One change to a product's image list, made from a page that showed version
+ * `expectedVersion`. Refused if the list changed since (fields may have);
+ * a change that leaves the list as it is writes no new version.
+ */
+async function changeProductImages(
   tx: Executor,
+  actorId: string | null,
   productId: string,
-): Promise<typeof products.$inferSelect> {
+  expectedVersion: number,
+  action: "image-added" | "image-removed" | "images-reordered",
+  next: (mediaIds: string[]) => string[],
+): Promise<SaveResult> {
+  const current = await lockVersion(tx, products, productId);
+  await assertScopeUnchanged(
+    tx,
+    { type: "product", id: productId },
+    expectedVersion,
+    current,
+    "images",
+  );
+  const before = await productMediaIds(tx, productId);
+  const mediaIds = next(before);
+  if (mediaIds.join() === before.join())
+    return { id: productId, version: current, unchanged: true };
   const [row] = await tx
     .update(products)
     .set({ currentVersion: nextVersion(products.currentVersion), updatedAt: new Date() })
     .where(eq(products.id, productId))
     .returning();
-  if (!row) throw new RecordNotFoundError(`No product ${productId}`);
-  return row;
-}
-
-export async function addProductImage(
-  tx: Executor,
-  actorId: string | null,
-  productId: string,
-  mediaId: string,
-): Promise<SaveResult> {
-  const row = await bumpProduct(tx, productId);
-  const mediaIds = [
-    ...(await productMediaIds(tx, productId)).filter((m) => m !== mediaId),
-    mediaId,
-  ];
   await replaceProductMedia(tx, productId, mediaIds);
   return finish(tx, {
     entityType: "product",
-    row,
+    row: row!,
     actorId,
-    action: "image-added",
+    action,
     extra: { mediaIds },
   });
 }
 
-export async function removeProductImage(
+export function addProductImage(
   tx: Executor,
   actorId: string | null,
   productId: string,
   mediaId: string,
+  expectedVersion: number,
 ): Promise<SaveResult> {
-  const row = await bumpProduct(tx, productId);
-  const mediaIds = (await productMediaIds(tx, productId)).filter((m) => m !== mediaId);
-  await replaceProductMedia(tx, productId, mediaIds);
-  return finish(tx, {
-    entityType: "product",
-    row,
+  return changeProductImages(
+    tx,
     actorId,
-    action: "image-removed",
-    extra: { mediaIds },
-  });
+    productId,
+    expectedVersion,
+    "image-added",
+    (ids) => (ids.includes(mediaId) ? ids : [...ids, mediaId]),
+  );
+}
+
+export function removeProductImage(
+  tx: Executor,
+  actorId: string | null,
+  productId: string,
+  mediaId: string,
+  expectedVersion: number,
+): Promise<SaveResult> {
+  return changeProductImages(
+    tx,
+    actorId,
+    productId,
+    expectedVersion,
+    "image-removed",
+    (ids) => ids.filter((id) => id !== mediaId),
+  );
 }
 
 // ── Restore ──────────────────────────────────────────────────────────────────
@@ -348,8 +445,28 @@ export async function removeProductImage(
 const str = (v: unknown) => (typeof v === "string" ? v : null);
 
 /**
+ * A restore is made from a history page that showed version `expectedVersion`:
+ * it is refused if anything changed since (it replaces every field), and
+ * pointless for the version that is already current.
+ */
+async function restoreBase(
+  tx: Executor,
+  table: typeof brands | typeof categories | typeof products,
+  id: string,
+  version: number,
+  expectedVersion: number,
+): Promise<number> {
+  const current = await lockVersion(tx, table, id);
+  if (expectedVersion !== current) throw new VersionConflictError();
+  if (version === current) throw new NoChangeError();
+  return current;
+}
+
+/**
  * Re-applies an old snapshot as a new version. The snapshot is re-validated
- * (fail-closed) and the full history stays intact.
+ * (fail-closed) and the full history stays intact. Publication state — sale
+ * status and visibility — is never part of a restore: it stays as it is now
+ * and is changed only on purpose in the edit form.
  */
 export async function restoreRevision(
   tx: Executor,
@@ -357,7 +474,18 @@ export async function restoreRevision(
   entityType: CatalogEntity,
   entityId: string,
   version: number,
+  expectedVersion: number,
+  idempotencyKey?: string,
 ): Promise<SaveResult> {
+  // A repeated click on the same restore replays the first result.
+  const table =
+    entityType === "brand" ? brands : entityType === "category" ? categories : products;
+  const locked = await lockVersion(tx, table, entityId);
+  const replay = await replayedResult(tx, idempotencyKey, entityType, entityId);
+  // A replay is only an answer while nothing happened since; a page kept in
+  // the browser history with the same key is an outdated page.
+  if (replay && replay.version !== locked) throw new VersionConflictError();
+  if (replay) return replay;
   const [revision] = await tx
     .select()
     .from(revisions)
@@ -373,53 +501,54 @@ export async function restoreRevision(
       `Revision ${entityType}/${entityId}@v${version} not found`,
     );
   const data = revision.data;
-  const options = { comment: restoreComment(version) };
+  const options = { comment: restoreComment(version), idempotencyKey };
 
   switch (entityType) {
     case "brand": {
+      const base = await restoreBase(tx, brands, entityId, version, expectedVersion);
       const [current] = await tx.select().from(brands).where(eq(brands.id, entityId));
-      if (!current) throw new RecordNotFoundError(`No brand ${entityId}`);
-      const { expectedVersion, ...values } = brandInput.parse({
+      const values = brandInput.omit({ expectedVersion: true }).parse({
         ...data,
-        expectedVersion: current.currentVersion,
+        isVisible: current!.isVisible,
       });
       const row = await writeBrand(
         tx,
         entityId,
         { ...values, heroMediaId: str(data.heroMediaId) },
-        expectedVersion,
+        base,
       );
       return finish(tx, { entityType, row, actorId, action: "restored", options });
     }
     case "category": {
+      const base = await restoreBase(tx, categories, entityId, version, expectedVersion);
       const [current] = await tx
         .select()
         .from(categories)
         .where(eq(categories.id, entityId));
-      if (!current) throw new RecordNotFoundError(`No category ${entityId}`);
-      const { expectedVersion, ...values } = categoryInput.parse({
+      const values = categoryInput.omit({ expectedVersion: true }).parse({
         ...data,
-        expectedVersion: current.currentVersion,
+        isVisible: current!.isVisible,
       });
       const row = await writeCategory(
         tx,
         entityId,
         { ...values, tileMediaId: str(data.tileMediaId) },
-        expectedVersion,
+        base,
       );
       return finish(tx, { entityType, row, actorId, action: "restored", options });
     }
     case "product": {
+      const base = await restoreBase(tx, products, entityId, version, expectedVersion);
       const [current] = await tx.select().from(products).where(eq(products.id, entityId));
-      if (!current) throw new RecordNotFoundError(`No product ${entityId}`);
-      const { expectedVersion, ...values } = productInput.parse({
+      const values = productInput.omit({ expectedVersion: true }).parse({
         ...data,
-        expectedVersion: current.currentVersion,
+        status: current!.status,
+        isVisible: current!.isVisible,
       });
       const mediaIds = Array.isArray(data.mediaIds)
         ? data.mediaIds.filter((m): m is string => typeof m === "string")
         : [];
-      const row = await writeProduct(tx, entityId, values, expectedVersion);
+      const row = await writeProduct(tx, entityId, values, base);
       await replaceProductMedia(tx, entityId, mediaIds);
       return finish(tx, {
         entityType,
@@ -447,21 +576,20 @@ export async function catalogSlug(
 }
 
 /** Reorders a product's images (e.g. choose the cover with "first") as a new version. */
-export async function moveProductImage(
+export function moveProductImage(
   tx: Executor,
   actorId: string | null,
   productId: string,
   mediaId: string,
   direction: MoveDirection,
+  expectedVersion: number,
 ): Promise<SaveResult> {
-  const row = await bumpProduct(tx, productId);
-  const mediaIds = moveItem(await productMediaIds(tx, productId), mediaId, direction);
-  await replaceProductMedia(tx, productId, mediaIds);
-  return finish(tx, {
-    entityType: "product",
-    row,
+  return changeProductImages(
+    tx,
     actorId,
-    action: "images-reordered",
-    extra: { mediaIds },
-  });
+    productId,
+    expectedVersion,
+    "images-reordered",
+    (ids) => moveItem(ids, mediaId, direction),
+  );
 }

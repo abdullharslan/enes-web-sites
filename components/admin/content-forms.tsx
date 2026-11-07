@@ -54,16 +54,8 @@ export function BlockForm({
       <input type="hidden" name="idempotencyKey" value={requestKey} />
       {fields.map((field) => {
         const value = values[field.key];
-        if (field.kind === "image") {
-          return (
-            <input
-              key={field.key}
-              type="hidden"
-              name={field.key}
-              value={typeof value === "string" ? value : ""}
-            />
-          );
-        }
+        // Images are changed only through the upload form below; a text save keeps them.
+        if (field.kind === "image") return null;
         if (field.kind === "toggle") {
           return (
             <CheckboxInput
@@ -138,12 +130,21 @@ function UploadFields({ state, inputId }: { state: FormState; inputId: string })
         defaults={{}}
         required={false}
       />
-      <FormFeedback state={state} />
+      <FormFeedback state={state} conflictMessage={T.fields.imageConflict} />
     </>
   );
 }
 
-export function BlockImageForm({ blockKey, field }: { blockKey: string; field: string }) {
+export function BlockImageForm({
+  blockKey,
+  field,
+  version,
+}: {
+  blockKey: string;
+  field: string;
+  /** The version the page showed; an upload on an outdated image state is refused. */
+  version: number;
+}) {
   const [state, action, pending] = useActionState<FormState, FormData>(
     uploadBlockImageAction,
     IDLE,
@@ -152,6 +153,7 @@ export function BlockImageForm({ blockKey, field }: { blockKey: string; field: s
     <form action={action} className="flex flex-col gap-4 border border-line p-4">
       <input type="hidden" name="key" value={blockKey} />
       <input type="hidden" name="field" value={field} />
+      <input type="hidden" name="expectedVersion" value={version} />
       <UploadFields state={state} inputId={`upload-${field}`} />
       <div>
         <SubmitButton pending={pending} label={T.fields.upload} />
@@ -233,7 +235,16 @@ export function JournalForm({
   );
 }
 
-export function JournalImageForm({ id, slug }: { id: string; slug: string }) {
+export function JournalImageForm({
+  id,
+  slug,
+  version,
+}: {
+  id: string;
+  slug: string;
+  /** The version the page showed; an upload on an outdated image state is refused. */
+  version: number;
+}) {
   const [state, action, pending] = useActionState<FormState, FormData>(
     uploadJournalImageAction,
     IDLE,
@@ -242,6 +253,7 @@ export function JournalImageForm({ id, slug }: { id: string; slug: string }) {
     <form action={action} className="flex flex-col gap-4 border border-line p-4">
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="slug" value={slug} />
+      <input type="hidden" name="expectedVersion" value={version} />
       <UploadFields state={state} inputId="upload-journal" />
       <div>
         <SubmitButton pending={pending} label={T.fields.upload} />

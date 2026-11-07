@@ -114,7 +114,7 @@ describe("restoreRevision", () => {
         description: {},
         expectedVersion: 1,
       });
-      const restored = await restoreRevision(tx, actor, "brand", created.id, 1);
+      const restored = await restoreRevision(tx, actor, "brand", created.id, 1, 2);
       expect(restored.version).toBe(3);
 
       const [row] = await tx.select().from(brands).where(eq(brands.id, created.id));
@@ -142,9 +142,9 @@ describe("restoreRevision", () => {
         entitySlug: brand.slug,
         alt: { de: "B" },
       });
-      await setBrandHero(tx, actor, created.id, imageA.id); // v2
-      await setBrandHero(tx, actor, created.id, imageB.id); // v3
-      await restoreRevision(tx, actor, "brand", created.id, 2); // v4
+      await setBrandHero(tx, actor, created.id, imageA.id, 1); // v2
+      await setBrandHero(tx, actor, created.id, imageB.id, 2); // v3
+      await restoreRevision(tx, actor, "brand", created.id, 2, 3); // v4
       const [row] = await tx.select().from(brands).where(eq(brands.id, created.id));
       expect(row?.heroMediaId).toBe(imageA.id);
     }));
@@ -152,9 +152,9 @@ describe("restoreRevision", () => {
   it("fails for an unknown version", () =>
     withRollback(async (tx) => {
       const created = await saveBrand(tx, actor, null, brand);
-      await expect(restoreRevision(tx, actor, "brand", created.id, 99)).rejects.toThrow(
-        /not found/i,
-      );
+      await expect(
+        restoreRevision(tx, actor, "brand", created.id, 99, 1),
+      ).rejects.toThrow(/not found/i);
     }));
 });
 
@@ -196,9 +196,9 @@ describe("products", () => {
         entitySlug: input.slug,
         alt: { de: "2" },
       });
-      await addProductImage(tx, actor, created.id, one.id); // v2
-      await addProductImage(tx, actor, created.id, two.id); // v3
-      await removeProductImage(tx, actor, created.id, one.id); // v4
+      await addProductImage(tx, actor, created.id, one.id, 1); // v2
+      await addProductImage(tx, actor, created.id, two.id, 2); // v3
+      await removeProductImage(tx, actor, created.id, one.id, 3); // v4
 
       const linked = async () =>
         (
@@ -210,7 +210,7 @@ describe("products", () => {
         ).map((l) => l.mediaId);
       expect(await linked()).toEqual([two.id]);
 
-      await restoreRevision(tx, actor, "product", created.id, 3); // v5
+      await restoreRevision(tx, actor, "product", created.id, 3, 4); // v5
       expect(await linked()).toEqual([one.id, two.id]);
       expect(
         (await listRevisions(tx, "product", created.id)).map((r) => r.version),
@@ -312,8 +312,9 @@ describe("moveProductImage", () => {
         ).id;
       const b = await make("#101010");
       const c = await make("#202020");
-      await addProductImage(tx, null, id, b);
-      await addProductImage(tx, null, id, c);
+      const v = product!.currentVersion;
+      await addProductImage(tx, null, id, b, v);
+      await addProductImage(tx, null, id, c, v + 1);
       const linked = async () =>
         (
           await tx
@@ -324,11 +325,11 @@ describe("moveProductImage", () => {
         ).map((l) => l.mediaId);
       const [a] = await linked();
 
-      await moveProductImage(tx, null, id, c, "first");
+      await moveProductImage(tx, null, id, c, "first", v + 2);
       expect(await linked()).toEqual([c, a, b]);
-      await moveProductImage(tx, null, id, a, "down");
+      await moveProductImage(tx, null, id, a, "down", v + 3);
       expect(await linked()).toEqual([c, b, a]);
-      const result = await moveProductImage(tx, null, id, b, "up");
+      const result = await moveProductImage(tx, null, id, b, "up", v + 4);
       expect(await linked()).toEqual([b, c, a]);
       expect(result.version).toBe(product!.currentVersion + 5);
     }));

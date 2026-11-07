@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
-import { inquiries, users } from "@/db/schema";
+import { brands, inquiries, users } from "@/db/schema";
 import { INQUIRY_LIMITS } from "@/lib/inquiries/policy";
 import { createUser } from "@/lib/server/auth/service";
 import {
@@ -9,6 +9,9 @@ import {
   changeUserRole,
   createUserAsOwner,
 } from "@/lib/server/auth/users";
+import { saveBrand } from "@/lib/server/catalog/admin";
+import { restoreAny } from "@/lib/server/history";
+import { listRevisions } from "@/lib/server/revisions";
 import { hashAddress, recordInquiry } from "@/lib/server/inquiries/service";
 import { closeTestDb, testDb, withRollback } from "./helpers";
 
@@ -120,4 +123,100 @@ describe("createUserAsOwner", () => {
       const [row] = await tx.select().from(users).where(eq(users.id, created.id));
       expect(row?.email).toBe("new@example.com");
     }));
+});
+
+describe("duplicate admin saves under concurrency", () => {
+  it("two parallel copies of one save (same key) both get the first result", async () => {
+    const slug = `dup-${unique()}`;
+    const base = {
+      slug,
+      name: "Dup",
+      description: { de: "x" },
+      sortOrder: 0,
+      isVisible: true,
+    };
+    const { id } = await testDb.transaction((tx) =>
+      saveBrand(tx, null, null, { ...base, expectedVersion: 0 }),
+    );
+    try {
+      const key = randomUUID();
+      const save = () =>
+        testDb.transaction((tx) =>
+          saveBrand(
+            tx,
+            null,
+            id,
+            { ...base, expectedVersion: 1 },
+            { idempotencyKey: key },
+          ),
+        );
+      const [a, b] = await Promise.all([save(), save()]);
+      expect(a).toEqual(b);
+      expect(a.version).toBe(2);
+    } finally {
+      await testDb.delete(brands).where(eq(brands.id, id));
+    }
+  });
+});
+
+describe("duplicate admin creates under concurrency", () => {
+  it("two parallel copies of one create (same key) make one record", async () => {
+    const slug = `dup-create-${unique()}`;
+    const key = randomUUID();
+    const create = () =>
+      testDb.transaction((tx) =>
+        saveBrand(
+          tx,
+          null,
+          null,
+          {
+            slug,
+            name: "Dup create",
+            description: { de: "x" },
+            sortOrder: 0,
+            isVisible: true,
+            expectedVersion: 0,
+          },
+          { idempotencyKey: key },
+        ),
+      );
+    const results = await Promise.all([create(), create()]);
+    try {
+      expect(results[1]).toEqual(results[0]);
+      expect(
+        await testDb.select().from(brands).where(eq(brands.slug, slug)),
+      ).toHaveLength(1);
+    } finally {
+      await testDb.delete(brands).where(eq(brands.slug, slug));
+    }
+  });
+});
+
+describe("duplicate restores under concurrency", () => {
+  it("two parallel copies of one restore (same key) restore once", async () => {
+    const slug = `dup-restore-${unique()}`;
+    const base = {
+      slug,
+      name: "A",
+      description: { de: "x" },
+      sortOrder: 0,
+      isVisible: true,
+    };
+    const { id } = await testDb.transaction((tx) =>
+      saveBrand(tx, null, null, { ...base, expectedVersion: 0 }),
+    );
+    try {
+      await testDb.transaction((tx) =>
+        saveBrand(tx, null, id, { ...base, name: "B", expectedVersion: 1 }),
+      );
+      const key = randomUUID();
+      const restore = () =>
+        testDb.transaction((tx) => restoreAny(tx, null, "brand", id, 1, 2, key));
+      const [a, b] = await Promise.all([restore(), restore()]);
+      expect(a).toEqual(b);
+      expect(await listRevisions(testDb, "brand", id)).toHaveLength(3);
+    } finally {
+      await testDb.delete(brands).where(eq(brands.id, id));
+    }
+  });
 });

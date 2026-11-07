@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { pick, type FormState } from "@/lib/admin/form-state";
+import { ADMIN_ERROR_MESSAGES } from "@/lib/admin/error-messages";
 import { T } from "@/lib/admin/text";
 import { DEFAULT_LOCALE, LOCALES } from "@/lib/i18n/locales";
 
@@ -252,26 +253,29 @@ export function LocalizedInput({
   );
 }
 
-const MESSAGES: Record<string, string> = {
-  invalid: T.common.error,
-  conflict: T.fields.conflict,
-  duplicateSlug: T.fields.duplicateSlug,
-  forbidden: T.common.forbidden,
-  notFound: T.fields.notFound,
-  upload: T.fields.uploadFailed,
-};
-
 export function FormFeedback({
   state,
   savedVersion,
+  conflictMessage,
 }: {
   state: FormState;
   savedVersion?: string;
+  /** Wording for a conflict in this form's scope (e.g. images) instead of the record-wide one. */
+  conflictMessage?: string;
 }) {
   return (
     <div aria-live="polite" className="min-h-6 text-sm">
-      {state.status === "error" && <p className="text-danger">{MESSAGES[state.error]}</p>}
-      {state.status !== "error" && savedVersion && (
+      {state.status === "error" && (
+        <p className="text-danger">
+          {state.error === "conflict" && conflictMessage
+            ? conflictMessage
+            : ADMIN_ERROR_MESSAGES[state.error]}
+        </p>
+      )}
+      {state.status === "ok" && state.message && (
+        <p className="text-gold">{state.message}</p>
+      )}
+      {state.status !== "error" && state.status !== "ok" && savedVersion && (
         <p className="text-gold">
           {T.fields.savedVersion.replace("{version}", savedVersion)}
         </p>

@@ -117,7 +117,10 @@
     "imageAlt": "Görsel açıklaması (erişilebilirlik)",
     "upload": "Yükle",
     "currentImage": "Mevcut görsel",
-    "noImage": "Henüz görsel yok."
+    "noImage": "Henüz görsel yok.",
+    "noChange": "Bu zaten güncel sürüm; geri alınacak bir şey yok.",
+    "imageConflict": "Görseller bu arada başka biri tarafından değiştirildi; sayfa güncellendi. Lütfen güncel duruma göre tekrar deneyin.",
+    "unchanged": "Değişiklik yok; zaten bu haliyle kayıtlı."
   },
   "brands": {
     "title": "Markalar",
@@ -217,7 +220,9 @@
       "status": "Durum",
       "addedAt": "Eklenme tarihi",
       "mediaIds": "Görseller"
-    }
+    },
+    "restoreNote": "Geri alma alanları ve görselleri eski sürüme döndürür; sitede görünürlük ve satış durumu değişmez.",
+    "conflict": "Kayıt siz bu sayfayı açtıktan sonra değişti; bu istek uygulanmadı. Aynı geri alma daha önce yapılmış olabilir — aşağıdaki güncel geçmişe bakıp gerekirse tekrar deneyin."
   },
   "home": {
     "title": "Ana sayfa içeriği",

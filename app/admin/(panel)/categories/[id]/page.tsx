@@ -4,6 +4,7 @@ import { AccessDenied, AdminPageTitle } from "@/components/admin/admin-shell";
 import { CategoryForm } from "@/components/admin/catalog-forms";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { TextLink } from "@/components/admin/table";
+import { fieldsKey, savedNotice } from "@/lib/admin/form-key";
 import { newRequestKey } from "@/lib/admin/request-key";
 import { T } from "@/lib/admin/text";
 import { requireUser } from "@/lib/server/auth/current";
@@ -33,11 +34,11 @@ export default async function EditCategoryPage({
         {category.name.tr ?? category.name.de}
       </AdminPageTitle>
       <CategoryForm
-        key={category.currentVersion}
+        key={fieldsKey(category)}
         id={category.id}
         version={category.currentVersion}
         requestKey={await newRequestKey()}
-        savedVersion={typeof query.saved === "string" ? query.saved : undefined}
+        savedVersion={savedNotice(query.saved, category.currentVersion)}
         values={category}
       />
       <ImagePanel
@@ -46,6 +47,7 @@ export default async function EditCategoryPage({
         target="category"
         id={category.id}
         slug={category.slug}
+        version={category.currentVersion}
       />
     </>
   );

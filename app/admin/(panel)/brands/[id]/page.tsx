@@ -4,6 +4,7 @@ import { AccessDenied, AdminPageTitle } from "@/components/admin/admin-shell";
 import { BrandForm } from "@/components/admin/catalog-forms";
 import { ImagePanel } from "@/components/admin/image-panel";
 import { TextLink } from "@/components/admin/table";
+import { fieldsKey, savedNotice } from "@/lib/admin/form-key";
 import { newRequestKey } from "@/lib/admin/request-key";
 import { T } from "@/lib/admin/text";
 import { requireUser } from "@/lib/server/auth/current";
@@ -34,11 +35,11 @@ export default async function EditBrandPage({
         {brand.name}
       </AdminPageTitle>
       <BrandForm
-        key={brand.currentVersion}
+        key={fieldsKey(brand)}
         id={brand.id}
         version={brand.currentVersion}
         requestKey={await newRequestKey()}
-        savedVersion={typeof query.saved === "string" ? query.saved : undefined}
+        savedVersion={savedNotice(query.saved, brand.currentVersion)}
         values={brand}
       />
       <ImagePanel
@@ -47,6 +48,7 @@ export default async function EditBrandPage({
         target="brand"
         id={brand.id}
         slug={brand.slug}
+        version={brand.currentVersion}
       />
     </>
   );

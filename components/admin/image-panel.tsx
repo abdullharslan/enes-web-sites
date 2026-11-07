@@ -9,12 +9,14 @@ export function ImagePanel({
   target,
   id,
   slug,
+  version,
 }: {
   title: string;
   src: string | null;
   target: "brand" | "category";
   id: string;
   slug: string;
+  version: number;
 }) {
   return (
     <section aria-labelledby={`${target}-image`} className="mt-12">
@@ -38,7 +40,7 @@ export function ImagePanel({
             <p className="p-4 text-sm text-mist">{T.fields.noImage}</p>
           )}
         </div>
-        <ImageUploadForm target={target} id={id} slug={slug} />
+        <ImageUploadForm target={target} id={id} slug={slug} version={version} />
       </div>
     </section>
   );

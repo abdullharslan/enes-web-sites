@@ -14,9 +14,14 @@ export interface Connection {
 /** Opens a pooled connection. Used by the app (via db/client.ts), scripts and tests. */
 export function connect(
   url: string | undefined,
-  options: { max?: number } = {},
+  options: { max?: number; keepAlive?: boolean } = {},
 ): Connection {
   if (!url) throw new Error("Database URL is not set (see .env.example)");
-  const client = postgres(url, { max: options.max ?? 10, onnotice: () => {} });
+  const client = postgres(url, {
+    max: options.max ?? 10,
+    onnotice: () => {},
+    // A connection that holds a session lock must not be recycled under it.
+    ...(options.keepAlive ? { max_lifetime: null, idle_timeout: 0 } : {}),
+  });
   return { db: drizzle(client, { schema }), close: () => client.end({ timeout: 5 }) };
 }

@@ -361,10 +361,13 @@ export function ImageUploadForm({
   target,
   id,
   slug,
+  version,
 }: {
   target: "brand" | "category" | "product";
   id: string;
   slug: string;
+  /** The version the page showed; an upload on an outdated image state is refused. */
+  version: number;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(
     uploadImageAction,
@@ -375,6 +378,7 @@ export function ImageUploadForm({
       <input type="hidden" name="target" value={target} />
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="slug" value={slug} />
+      <input type="hidden" name="expectedVersion" value={version} />
       <div className="flex flex-col gap-2">
         <label
           htmlFor={`upload-${target}`}
@@ -399,7 +403,7 @@ export function ImageUploadForm({
         defaults={{}}
         required={false}
       />
-      <FormFeedback state={state} />
+      <FormFeedback state={state} conflictMessage={T.fields.imageConflict} />
       <div>
         <SubmitButton pending={pending} label={T.fields.upload} />
       </div>

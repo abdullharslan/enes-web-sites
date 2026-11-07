@@ -1,9 +1,10 @@
 import "server-only";
-import { updateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db/client";
 import type { Executor } from "@/db/connection";
 import { altInput, translationsFromForm } from "@/lib/admin/schemas";
+import { T } from "@/lib/admin/text";
 import { fieldErrors, formValues, type FormState } from "@/lib/admin/form-state";
 import { ForbiddenError, requirePermission } from "@/lib/server/auth/current";
 import type { Permission } from "@/lib/server/auth/permissions";
@@ -14,6 +15,7 @@ import {
 } from "@/lib/server/media/store";
 import {
   DuplicateSlugError,
+  NoChangeError,
   RecordNotFoundError,
   VersionConflictError,
   type SaveResult,
@@ -75,10 +77,34 @@ export async function runAdminChange(
     }
     if (error instanceof RecordNotFoundError)
       return { state: { status: "error", error: "notFound" } };
+    if (error instanceof NoChangeError)
+      return { state: { status: "error", error: "noChange" } };
     if (error instanceof MediaRejectedError)
       return { state: { status: "error", error: "upload", values } };
     throw error;
   }
+}
+
+/**
+ * For changes made next to an open edit form (image upload, move, remove):
+ * no navigation — Next opens a new page instance for a new URL, which would
+ * throw away unsaved edits in that form. The page is refreshed in place and
+ * the result is reported in the form that made the change.
+ */
+export function refreshInPlace(path: string, outcome: ChangeOutcome): FormState {
+  if ("state" in outcome) {
+    // An outdated page is brought up to date in place (open edits are kept),
+    // so the next attempt is made on what the admin now sees.
+    if (outcome.state.status === "error" && outcome.state.error === "conflict")
+      revalidatePath(path);
+    return outcome.state;
+  }
+  if (outcome.result.unchanged) return { status: "ok", message: T.fields.unchanged };
+  revalidatePath(path);
+  return {
+    status: "ok",
+    message: T.fields.savedVersion.replace("{version}", String(outcome.result.version)),
+  };
 }
 
 export interface PreparedUpload {

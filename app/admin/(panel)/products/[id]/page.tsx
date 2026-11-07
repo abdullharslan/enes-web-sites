@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import {
-  moveProductImageAction,
-  removeProductImageAction,
-} from "@/app/admin/actions/catalog";
 import { AccessDenied, AdminPageTitle } from "@/components/admin/admin-shell";
 import { ImageUploadForm, ProductForm } from "@/components/admin/catalog-forms";
+import { ProductImageControls } from "@/components/admin/product-image-controls";
 import { TextLink } from "@/components/admin/table";
 import { productFormOptions } from "@/lib/admin/options";
+import { fieldsKey, savedNotice } from "@/lib/admin/form-key";
 import { newRequestKey } from "@/lib/admin/request-key";
 import { T } from "@/lib/admin/text";
 import { requireUser } from "@/lib/server/auth/current";
@@ -43,11 +41,11 @@ export default async function EditProductPage({
         {product.model}
       </AdminPageTitle>
       <ProductForm
-        key={product.currentVersion}
+        key={fieldsKey(product)}
         id={product.id}
         version={product.currentVersion}
         requestKey={requestKey}
-        savedVersion={typeof query.saved === "string" ? query.saved : undefined}
+        savedVersion={savedNotice(query.saved, product.currentVersion)}
         brands={brands}
         categories={categories}
         values={product}
@@ -76,43 +74,22 @@ export default async function EditProductPage({
                   </span>
                 )}
               </div>
-              <div className="flex flex-wrap gap-x-3">
-                {(
-                  [
-                    ["first", T.products.makeCover, index > 0],
-                    ["up", T.products.moveUp, index > 0],
-                    ["down", T.products.moveDown, index < product.images.length - 1],
-                  ] as const
-                ).map(([direction, label, enabled]) =>
-                  enabled ? (
-                    <form key={direction} action={moveProductImageAction}>
-                      <input type="hidden" name="productId" value={product.id} />
-                      <input type="hidden" name="mediaId" value={image.mediaId} />
-                      <input type="hidden" name="direction" value={direction} />
-                      <button
-                        type="submit"
-                        className="min-h-11 text-sm text-gold underline-offset-4 hover:underline"
-                      >
-                        {label}
-                      </button>
-                    </form>
-                  ) : null,
-                )}
-                <form action={removeProductImageAction}>
-                  <input type="hidden" name="productId" value={product.id} />
-                  <input type="hidden" name="mediaId" value={image.mediaId} />
-                  <button
-                    type="submit"
-                    className="min-h-11 text-sm text-danger underline-offset-4 hover:underline"
-                  >
-                    {T.products.removeImage}
-                  </button>
-                </form>
-              </div>
+              <ProductImageControls
+                productId={product.id}
+                mediaId={image.mediaId}
+                version={product.currentVersion}
+                index={index}
+                count={product.images.length}
+              />
             </li>
           ))}
         </ul>
-        <ImageUploadForm target="product" id={product.id} slug={product.slug} />
+        <ImageUploadForm
+          target="product"
+          id={product.id}
+          slug={product.slug}
+          version={product.currentVersion}
+        />
       </section>
     </>
   );

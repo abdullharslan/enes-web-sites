@@ -3,7 +3,12 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { FormState } from "@/lib/admin/form-state";
-import { isFormState, prepareUpload, runAdminChange } from "@/lib/admin/run-change";
+import {
+  isFormState,
+  prepareUpload,
+  refreshInPlace,
+  runAdminChange,
+} from "@/lib/admin/run-change";
 import { journalInput, translationsFromForm } from "@/lib/admin/schemas";
 import {
   CONTENT_BLOCKS,
@@ -46,8 +51,9 @@ const idempotencyKey = (fd: FormData) => uuid(text(fd, "idempotencyKey")) ?? und
 function blockFromForm(key: ContentKey, fd: FormData): Record<string, unknown> {
   const data: Record<string, unknown> = {};
   for (const field of CONTENT_BLOCKS[key].fields as readonly FieldDef[]) {
+    // Images are changed only through the upload form; a text save keeps them.
+    if (field.kind === "image") continue;
     if (isTranslated(field.kind)) data[field.key] = translationsFromForm(fd, field.key);
-    else if (field.kind === "image") data[field.key] = uuid(text(fd, field.key));
     else if (field.kind === "toggle") data[field.key] = fd.get(field.key) === "on";
     else data[field.key] = text(fd, field.key).trim();
   }
@@ -94,11 +100,17 @@ export async function uploadBlockImageAction(
         alt: upload.alt.de ? upload.alt : { de: CONTENT_BLOCKS[key].label },
         createdBy: actorId,
       });
-      return setContentImage(tx, actorId, key, text(fd, "field"), media.id);
+      return setContentImage(
+        tx,
+        actorId,
+        key,
+        text(fd, "field"),
+        media.id,
+        int(fd, "expectedVersion"),
+      );
     },
   );
-  if ("state" in outcome) return outcome.state;
-  redirect(`/admin/home/${key}?saved=${outcome.result.version}`);
+  return refreshInPlace(`/admin/home/${key}`, outcome);
 }
 
 // ── Journal ──────────────────────────────────────────────────────────────────
@@ -150,11 +162,10 @@ export async function uploadJournalImageAction(
         alt: upload.alt.de ? upload.alt : { de: slug },
         createdBy: actorId,
       });
-      return setJournalImage(tx, actorId, id, media.id);
+      return setJournalImage(tx, actorId, id, media.id, int(fd, "expectedVersion"));
     },
   );
-  if ("state" in outcome) return outcome.state;
-  redirect(`/admin/journal/${id}?saved=${outcome.result.version}`);
+  return refreshInPlace(`/admin/journal/${id}`, outcome);
 }
 
 // ── History (all entities) ───────────────────────────────────────────────────
@@ -171,6 +182,8 @@ const restoreTarget = z.object({
   entityType: z.enum(["brand", "category", "product", "content", "journal"]),
   entityId: z.string().min(1).max(100),
   version: z.coerce.number().int().positive(),
+  /** The current version shown on the history page (a restore replaces everything). */
+  expectedVersion: z.coerce.number().int().nonnegative(),
 });
 
 export async function restoreAction(fd: FormData): Promise<void> {
@@ -178,16 +191,27 @@ export async function restoreAction(fd: FormData): Promise<void> {
     entityType: text(fd, "entityType"),
     entityId: text(fd, "entityId"),
     version: text(fd, "version"),
+    expectedVersion: text(fd, "expectedVersion"),
   });
-  if (!parsed.success) return;
-  const { entityType, entityId, version } = parsed.data;
+  if (!parsed.success) redirect("/admin");
+  const { entityType, entityId, version, expectedVersion } = parsed.data;
   const { permission, tag } = RESTORE[entityType];
   const outcome = await runAdminChange(fd, [permission], [tag], (tx, actorId) =>
-    restoreAny(tx, actorId, entityType, entityId, version),
+    restoreAny(
+      tx,
+      actorId,
+      entityType,
+      entityId,
+      version,
+      expectedVersion,
+      idempotencyKey(fd),
+    ),
   );
-  if ("result" in outcome) {
-    redirect(
-      `/admin/history/${entityType}/${encodeURIComponent(entityId)}?restored=${version}`,
-    );
-  }
+  const page = `/admin/history/${entityType}/${encodeURIComponent(entityId)}`;
+  // Plain form post: success and failure are both reported on the history page.
+  if ("result" in outcome)
+    redirect(`${page}?restored=${version}&saved=${outcome.result.version}`);
+  redirect(
+    `${page}?restoreError=${outcome.state.status === "error" ? outcome.state.error : "invalid"}`,
+  );
 }

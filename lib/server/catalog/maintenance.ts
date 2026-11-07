@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import type { Executor } from "@/db/connection";
-import { media, productMedia } from "@/db/schema";
+import { media, productMedia, products } from "@/db/schema";
 import { removeProductImage } from "./admin";
 
 /**
@@ -16,7 +16,13 @@ export async function detachPhotosBySha(tx: Executor, sha256: string): Promise<n
     .innerJoin(media, eq(media.id, productMedia.mediaId))
     .where(eq(media.sha256, sha256));
   for (const link of links) {
-    await removeProductImage(tx, null, link.productId, link.mediaId);
+    // A system task acts on the current state, never on a page someone has open.
+    const [product] = await tx
+      .select({ version: products.currentVersion })
+      .from(products)
+      .where(eq(products.id, link.productId))
+      .for("update");
+    await removeProductImage(tx, null, link.productId, link.mediaId, product!.version);
   }
   return links.length;
 }

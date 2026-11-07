@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Executor } from "@/db/connection";
 import { revisions } from "@/db/schema";
 import { recordAudit } from "@/lib/server/audit";
@@ -18,6 +18,8 @@ export class VersionConflictError extends Error {
   }
 }
 export class RecordNotFoundError extends Error {}
+/** A restore of the version that is already current. */
+export class NoChangeError extends Error {}
 export class DuplicateSlugError extends Error {
   constructor(slug: string) {
     super(`The slug "${slug}" is already in use`);
@@ -32,9 +34,74 @@ export interface SaveOptions {
 export interface SaveResult {
   id: string;
   version: number;
+  /** True when the request changed nothing (no version was written). */
+  unchanged?: boolean;
 }
 
 export const restoreComment = (version: number) => `Wiederhergestellt aus v${version}`;
+
+/**
+ * What a change touches. An edit form changes "fields", the image controls
+ * change "images"; each only conflicts with changes in its own scope.
+ */
+export type ChangeScope = "fields" | "images";
+
+/** Snapshot keys that hold an entity's images (product list, brand hero, …). */
+const IMAGE_KEYS = new Set(["mediaIds", "heroMediaId", "tileMediaId", "imageMediaId"]);
+
+const inScope = (
+  snapshot: Record<string, unknown>,
+  scope: ChangeScope,
+  isImageKey: (key: string) => boolean,
+) =>
+  JSON.stringify(
+    Object.keys(snapshot)
+      .filter((key) => isImageKey(key) === (scope === "images"))
+      .sort()
+      .map((key) => [key, snapshot[key]]),
+  );
+
+/**
+ * Optimistic concurrency per scope. A change prepared on version `expected`
+ * may be applied to version `current` when nothing in its scope changed in
+ * between (e.g. an edit form opened before an image upload). Anything else —
+ * a same-scope change by someone else, or a version that never existed — is a
+ * conflict. Callers lock the row first, so `current` cannot move meanwhile.
+ * Only the two end states are compared: a change that was later undone
+ * (A → B → A) is not a conflict, because nothing the caller saw was lost.
+ */
+export async function assertScopeUnchanged(
+  tx: Executor,
+  entity: { type: EditableEntity; id: string },
+  expected: number,
+  current: number,
+  scope: ChangeScope,
+  isImageKey: (key: string) => boolean = (key) => IMAGE_KEYS.has(key),
+): Promise<void> {
+  if (expected === current) return;
+  if (!Number.isInteger(expected) || expected < 1 || expected > current) {
+    throw new VersionConflictError();
+  }
+  const rows = await tx
+    .select({ version: revisions.version, data: revisions.data })
+    .from(revisions)
+    .where(
+      and(
+        eq(revisions.entityType, entity.type),
+        eq(revisions.entityId, entity.id),
+        inArray(revisions.version, [expected, current]),
+      ),
+    );
+  const base = rows.find((r) => r.version === expected)?.data;
+  const now = rows.find((r) => r.version === current)?.data;
+  if (
+    !base ||
+    !now ||
+    inScope(base, scope, isImageKey) !== inScope(now, scope, isImageKey)
+  ) {
+    throw new VersionConflictError();
+  }
+}
 
 /** A retried request (same idempotency key) returns the first result instead of writing again. */
 export async function replayedResult(
@@ -44,6 +111,11 @@ export async function replayedResult(
   entityId: string | null,
 ): Promise<SaveResult | null> {
   if (!key) return null;
+  // Copies of one request (double click, retry) wait for each other here, so
+  // the second sees the first one's committed result — for creates as well.
+  await tx.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtext(${`idempotency:${entityType}:${key}`}))`,
+  );
   // Scoped to the record (or, for creates, the entity type): a key never replays another record's result.
   const [previous] = await tx
     .select({ id: revisions.entityId, version: revisions.version })

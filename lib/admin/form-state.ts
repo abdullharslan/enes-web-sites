@@ -8,7 +8,13 @@ export type FormState =
   | {
       status: "error";
       error:
-        "invalid" | "conflict" | "duplicateSlug" | "forbidden" | "notFound" | "upload";
+        | "invalid"
+        | "conflict"
+        | "duplicateSlug"
+        | "forbidden"
+        | "notFound"
+        | "upload"
+        | "noChange";
       fieldErrors?: Record<string, string>;
       /** Echoed back so React's post-submit reset keeps the admin's edits (never files or passwords). */
       values?: FormValues;
@@ -49,3 +55,5 @@ export function pick(
   }
   return fallback ?? "";
 }
+
+export type FormErrorCode = Extract<FormState, { status: "error" }>["error"];

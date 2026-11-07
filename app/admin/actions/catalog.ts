@@ -3,7 +3,12 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { FormState } from "@/lib/admin/form-state";
-import { isFormState, prepareUpload, runAdminChange } from "@/lib/admin/run-change";
+import {
+  isFormState,
+  prepareUpload,
+  refreshInPlace,
+  runAdminChange,
+} from "@/lib/admin/run-change";
 import {
   brandInput,
   categoryInput,
@@ -157,6 +162,8 @@ export async function uploadImageAction(
   const target = z.enum(TARGETS).safeParse(text(fd, "target")).data;
   const id = uuid(text(fd, "id"));
   if (!target || !id) return { status: "error", error: "upload" };
+  // The version the page showed: an image change based on an outdated list is refused.
+  const expected = int(fd, "expectedVersion");
 
   const upload = await prepareUpload(fd, UPLOAD_PERMISSIONS);
   if (isFormState(upload)) return upload;
@@ -174,40 +181,42 @@ export async function uploadImageAction(
         alt: upload.alt.de ? upload.alt : { de: slug },
         createdBy: actorId,
       });
-      if (target === "brand") return setBrandHero(tx, actorId, id, media.id);
-      if (target === "category") return setCategoryTile(tx, actorId, id, media.id);
-      return addProductImage(tx, actorId, id, media.id);
+      if (target === "brand") return setBrandHero(tx, actorId, id, media.id, expected);
+      if (target === "category")
+        return setCategoryTile(tx, actorId, id, media.id, expected);
+      return addProductImage(tx, actorId, id, media.id, expected);
     },
   );
-  if ("state" in outcome) return outcome.state;
-  redirect(`${EDIT_PATH[target]}/${id}?saved=${outcome.result.version}`);
+  return refreshInPlace(`${EDIT_PATH[target]}/${id}`, outcome);
 }
 
-export async function removeProductImageAction(fd: FormData): Promise<void> {
-  const productId = uuid(text(fd, "productId"));
-  const mediaId = uuid(text(fd, "mediaId"));
-  if (!productId || !mediaId) return;
+const imageOp = z.object({
+  productId: z.uuid(),
+  mediaId: z.uuid(),
+  op: z.enum(["first", "up", "down", "remove"]),
+});
+
+/** Cover / up / down / remove for one product image, from the page's version. */
+export async function productImageAction(
+  _prev: FormState,
+  fd: FormData,
+): Promise<FormState> {
+  const parsed = imageOp.safeParse({
+    productId: text(fd, "productId"),
+    mediaId: text(fd, "mediaId"),
+    op: text(fd, "op"),
+  });
+  if (!parsed.success) return { status: "error", error: "invalid" };
+  const { productId, mediaId, op } = parsed.data;
+  const expected = int(fd, "expectedVersion");
   const outcome = await runAdminChange(
     fd,
     ["catalog:write", "media:write"],
     TAGS,
-    (tx, actorId) => removeProductImage(tx, actorId, productId, mediaId),
+    (tx, actorId) =>
+      op === "remove"
+        ? removeProductImage(tx, actorId, productId, mediaId, expected)
+        : moveProductImage(tx, actorId, productId, mediaId, op, expected),
   );
-  if ("result" in outcome)
-    redirect(`/admin/products/${productId}?saved=${outcome.result.version}`);
-}
-
-export async function moveProductImageAction(fd: FormData): Promise<void> {
-  const productId = uuid(text(fd, "productId"));
-  const mediaId = uuid(text(fd, "mediaId"));
-  const direction = z.enum(["up", "down", "first"]).safeParse(text(fd, "direction")).data;
-  if (!productId || !mediaId || !direction) return;
-  const outcome = await runAdminChange(
-    fd,
-    ["catalog:write", "media:write"],
-    TAGS,
-    (tx, actorId) => moveProductImage(tx, actorId, productId, mediaId, direction),
-  );
-  if ("result" in outcome)
-    redirect(`/admin/products/${productId}?saved=${outcome.result.version}`);
+  return refreshInPlace(`/admin/products/${productId}`, outcome);
 }

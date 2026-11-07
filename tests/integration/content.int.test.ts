@@ -67,9 +67,9 @@ describe("saveContentBlock", () => {
         entitySlug: "home-hero",
         alt: { de: "Neu" },
       });
-      await setContentImage(tx, null, "home.hero", "image", replacement.id); // v3
+      await setContentImage(tx, null, "home.hero", "image", replacement.id, 2); // v3
 
-      await restoreAny(tx, null, "content", "home.hero", 1); // v4
+      await restoreAny(tx, null, "content", "home.hero", 1, 3); // v4
       const [after] = await tx
         .select()
         .from(contentBlocks)
@@ -88,10 +88,13 @@ describe("saveContentBlock", () => {
         .select()
         .from(contentBlocks)
         .where(eq(contentBlocks.key, "home.hero"));
+      // Someone else changes a text field …
       await saveContentBlock(tx, null, "home.hero", {
         ...hero!.data,
+        title: { de: "Von jemand anderem" },
         expectedVersion: 1,
       });
+      // … so a save from a form still showing version 1 is refused.
       await expect(
         saveContentBlock(tx, null, "home.hero", { ...hero!.data, expectedVersion: 1 }),
       ).rejects.toBeInstanceOf(VersionConflictError);
@@ -124,7 +127,7 @@ describe("journal", () => {
         isVisible: true,
         expectedVersion: 1,
       });
-      await restoreAny(tx, null, "journal", created.id, 1);
+      await restoreAny(tx, null, "journal", created.id, 1, 2);
       const [row] = await tx
         .select()
         .from(journalEntries)

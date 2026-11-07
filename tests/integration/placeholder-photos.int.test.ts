@@ -36,7 +36,7 @@ describe("detachPhotosBySha (old placeholder copies)", () => {
         entitySlug: SLUG,
         alt: { de: "Platzhalter" },
       });
-      await addProductImage(tx, null, product!.id, copy.id);
+      await addProductImage(tx, null, product!.id, copy.id, product!.currentVersion);
       const sha = createHash("sha256").update(placeholderBytes).digest("hex");
 
       expect(await detachPhotosBySha(tx, sha)).toBe(1);

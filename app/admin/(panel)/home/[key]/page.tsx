@@ -8,6 +8,7 @@ import {
   type EditableField,
 } from "@/components/admin/content-forms";
 import { TextLink } from "@/components/admin/table";
+import { fieldsKey, savedNotice } from "@/lib/admin/form-key";
 import { newRequestKey } from "@/lib/admin/request-key";
 import { T } from "@/lib/admin/text";
 import {
@@ -38,6 +39,9 @@ export default async function EditBlockPage({
   );
   const values = block?.data ?? blockDefaults(key);
   const imageFields = fields.filter((f) => f.kind === "image");
+  const textValues = Object.fromEntries(
+    Object.entries(values).filter(([k]) => !imageFields.some((f) => f.key === k)),
+  );
 
   return (
     <>
@@ -49,11 +53,11 @@ export default async function EditBlockPage({
         {definition.label}
       </AdminPageTitle>
       <BlockForm
-        key={block?.currentVersion ?? 0}
+        key={fieldsKey(textValues)}
         blockKey={key}
         version={block?.currentVersion ?? 0}
         requestKey={await newRequestKey()}
-        savedVersion={typeof query.saved === "string" ? query.saved : undefined}
+        savedVersion={savedNotice(query.saved, block?.currentVersion ?? 0)}
         fields={fields}
         values={values}
       />
@@ -88,7 +92,11 @@ export default async function EditBlockPage({
                     <p className="p-4 text-sm text-mist">{T.fields.noImage}</p>
                   )}
                 </div>
-                <BlockImageForm blockKey={key} field={field.key} />
+                <BlockImageForm
+                  blockKey={key}
+                  field={field.key}
+                  version={block.currentVersion}
+                />
               </div>
             </section>
           );
