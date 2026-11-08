@@ -59,3 +59,6 @@ next-env.d.ts
 
 # local backups (contain personal data and password hashes)
 /backups/
+
+# Editor swap files
+*.swp

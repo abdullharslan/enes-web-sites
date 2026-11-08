@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import type { Executor } from "@/db/connection";
 import { auditEvents, inquiries, inquiryPhotos } from "@/db/schema";
@@ -312,7 +312,9 @@ describe("admin inbox", () => {
       const [event] = await tx
         .select()
         .from(auditEvents)
-        .where(eq(auditEvents.action, "inquiry.deleted"));
+        .where(
+          and(eq(auditEvents.action, "inquiry.deleted"), eq(auditEvents.entityId, a.id)),
+        );
       expect(event?.entityId).toBe(a.id);
       expect(JSON.stringify(event)).not.toContain("Anna");
     }));
