@@ -11,6 +11,7 @@ export type PublicFormState =
   | { status: "sent" }
   | { status: "invalid"; errors: FormErrors; values: FormRecord }
   | { status: "rateLimited"; values: FormRecord }
+  | { status: "unavailable"; values: FormRecord }
   | { status: "failed"; values: FormRecord };
 
 export type PublicFormStatus = PublicFormState["status"];

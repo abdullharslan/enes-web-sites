@@ -91,6 +91,7 @@ test.describe("browsing flow", () => {
       page.getByText("This item has already been sold.", { exact: false }),
     ).toBeVisible();
     await expect(page.getByRole("link", { name: "Enquire via WhatsApp" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Send" })).toHaveCount(0);
   });
 });
 

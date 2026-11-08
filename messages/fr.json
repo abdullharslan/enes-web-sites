@@ -226,6 +226,7 @@
     "privacyNote": "Nous conservons vos données uniquement pour traiter votre demande et les supprimons au plus tard six mois après sa clôture (voir notre politique de confidentialité).",
     "sending": "Envoi en cours …",
     "rateLimited": "Vous avez envoyé plusieurs demandes en peu de temps. Veuillez réessayer plus tard ou nous appeler.",
+    "unavailable": "Cette pièce n'est plus disponible, votre demande n'a donc pas été envoyée. Contactez-nous, nous serions ravis de trouver une pièce comparable pour vous.",
     "failed": "Votre demande n'a pas pu être envoyée. Veuillez réessayer ou nous appeler."
   },
   "sell": {

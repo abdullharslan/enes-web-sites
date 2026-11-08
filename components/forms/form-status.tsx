@@ -6,6 +6,7 @@ interface FormStatusProps {
     errorSummary: string;
     success: string;
     rateLimited: string;
+    unavailable: string;
     failed: string;
   };
 }
@@ -17,7 +18,7 @@ export function FormStatus({ status, messages }: FormStatusProps) {
       ? { text: messages.success, tone: "text-gold" }
       : status === "invalid"
         ? { text: messages.errorSummary, tone: "text-danger" }
-        : status === "rateLimited" || status === "failed"
+        : status === "rateLimited" || status === "unavailable" || status === "failed"
           ? { text: messages[status], tone: "text-danger" }
           : null;
   return (

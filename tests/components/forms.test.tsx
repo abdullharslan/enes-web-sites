@@ -84,6 +84,16 @@ describe("InquiryForm", () => {
     expect(String(fd.get("submissionKey"))).toMatch(/^[0-9a-f-]{36}$/);
   });
 
+  it("says so when the product can no longer be inquired about", async () => {
+    submit.mockResolvedValue({ status: "unavailable", values: { name: "Ada Lovelace" } });
+    renderForm();
+    await fillValid();
+    await userEvent.click(screen.getByRole("button", { name: dict.forms.submit }));
+
+    await waitFor(() => expect(screen.getByText(dict.forms.unavailable)).toBeVisible());
+    expect(screen.getByLabelText(dict.forms.name)).toHaveValue("Ada Lovelace");
+  });
+
   it("keeps what was typed when the server cannot accept the request", async () => {
     submit.mockImplementation(async (_prev, fd) => ({
       status: "rateLimited",

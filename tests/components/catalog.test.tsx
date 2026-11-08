@@ -65,6 +65,18 @@ describe("ProductCard", () => {
     expect(screen.queryByText(/€/)).not.toBeInTheDocument();
   });
 
+  it("marks reserved items and keeps their price", () => {
+    render(
+      <ProductCard
+        product={bySlug("rolex-explorer-224270")}
+        locale="de"
+        labels={dict.catalog}
+      />,
+    );
+    expect(screen.getByText(dict.catalog.statuses.reserved)).toBeInTheDocument();
+    expect(screen.getByText(/€/)).toBeInTheDocument();
+  });
+
   it("uses localized alt text", () => {
     render(
       <ProductCard

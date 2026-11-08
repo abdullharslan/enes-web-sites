@@ -65,23 +65,21 @@ const field = (fd: FormData, key: string) => {
 const photosOf = (fd: FormData) =>
   fd.getAll("photos").filter((v): v is File => v instanceof File && v.size > 0);
 
-/** Validates the payload for its kind; product inquiries must name a visible product. */
-function validatePayload(
+const validatePayload = (
   kind: InquiryKind,
   values: Record<string, unknown>,
   catalog: Catalog,
-  productSlug: string | undefined,
-) {
-  if (kind === "sell") {
-    return validateForm(createSellSchema(catalog.categories.map((c) => c.slug)), values);
-  }
-  const result = validateForm(inquirySchema, values);
-  if (kind !== "product" || !result.ok) return result;
+) =>
+  kind === "sell"
+    ? validateForm(createSellSchema(catalog.categories.map((c) => c.slug)), values)
+    : validateForm(inquirySchema, values);
+
+/** The item line stored with a product inquiry; null when the product is sold or not public. */
+function inquirableItem(catalog: Catalog, productSlug: string | undefined) {
   const product = catalog.products.find((p) => p.slug === productSlug);
-  if (!product) return null;
+  if (!product || product.status === "sold") return null;
   const brand = catalog.brands.find((b) => b.slug === product.brand)?.name;
-  const item = [brand, product.model, product.reference].filter(Boolean).join(" ");
-  return { ok: true as const, data: { ...result.data, item } };
+  return [brand, product.model, product.reference].filter(Boolean).join(" ");
 }
 
 /**
@@ -123,8 +121,8 @@ async function receive(
   const localeValue = field(fd, "locale") ?? "";
   const locale = isLocale(localeValue) ? localeValue : DEFAULT_LOCALE;
 
-  const validated = validatePayload(kind, input, await getCatalog(), productSlug);
-  if (!validated) return { status: "failed", values };
+  const catalog = await getCatalog();
+  const validated = validatePayload(kind, input, catalog);
   const photos = kind === "sell" ? photosOf(fd) : [];
   const photoError = photoProblem(photos);
   if (!validated.ok || photoError) {
@@ -151,13 +149,16 @@ async function receive(
   });
   if (admission === "duplicate") return { status: "sent" };
   if (admission === "rateLimited") return { status: "rateLimited", values };
+  // After the duplicate check: a stored inquiry stays "sent" even if the product sold meanwhile.
+  const item = kind === "product" ? inquirableItem(catalog, productSlug) : undefined;
+  if (item === null) return { status: "unavailable", values };
   const id = randomUUID();
   const inquiry = {
     id,
     kind,
     locale,
     productSlug: storedSlug,
-    data: validated.data,
+    data: item === undefined ? validated.data : { ...validated.data, item },
     submissionKey: key,
     addressHash,
   };

@@ -226,6 +226,7 @@
     "privacyNote": "Wir speichern Ihre Angaben ausschließlich zur Bearbeitung Ihrer Anfrage und löschen sie spätestens sechs Monate nach Abschluss (Details in der Datenschutzerklärung).",
     "sending": "Wird gesendet …",
     "rateLimited": "Sie haben in kurzer Zeit viele Anfragen gesendet. Bitte versuchen Sie es später erneut oder rufen Sie uns an.",
+    "unavailable": "Dieses Stück ist nicht mehr verfügbar, Ihre Anfrage wurde daher nicht gesendet. Kontaktieren Sie uns gerne, wir suchen ein vergleichbares Stück für Sie.",
     "failed": "Ihre Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut oder rufen Sie uns an."
   },
   "sell": {

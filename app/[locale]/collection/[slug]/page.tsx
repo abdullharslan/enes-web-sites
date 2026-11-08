@@ -141,6 +141,11 @@ export default async function ProductPage({
                 ? dict.catalog.statuses.sold
                 : formatPrice(product.price, locale, dict.catalog.priceOnRequest)}
             </p>
+            {product.status === "reserved" && (
+              <p className="w-fit border border-gold px-3 py-1.5 text-2xs font-semibold uppercase tracking-label text-gold">
+                {dict.catalog.statuses.reserved}
+              </p>
+            )}
           </header>
 
           <p className="leading-relaxed text-mist">{product.description[locale]}</p>
@@ -190,26 +195,28 @@ export default async function ProductPage({
         </div>
       </div>
 
-      <section
-        id="inquiry"
-        aria-labelledby="inquiry-title"
-        className="scroll-mt-24 border-t border-line bg-coal"
-      >
-        <div className="mx-auto max-w-3xl px-4 py-20 sm:px-8">
-          <h2
-            id="inquiry-title"
-            className="mb-10 font-display text-4xl font-light text-cream"
-          >
-            {p.inquireForm}
-          </h2>
-          <InquiryForm
-            kind="product"
-            locale={locale}
-            productSlug={product.slug}
-            labels={dict.forms}
-          />
-        </div>
-      </section>
+      {!isSold && (
+        <section
+          id="inquiry"
+          aria-labelledby="inquiry-title"
+          className="scroll-mt-24 border-t border-line bg-coal"
+        >
+          <div className="mx-auto max-w-3xl px-4 py-20 sm:px-8">
+            <h2
+              id="inquiry-title"
+              className="mb-10 font-display text-4xl font-light text-cream"
+            >
+              {p.inquireForm}
+            </h2>
+            <InquiryForm
+              kind="product"
+              locale={locale}
+              productSlug={product.slug}
+              labels={dict.forms}
+            />
+          </div>
+        </section>
+      )}
 
       <section
         aria-labelledby="related-title"

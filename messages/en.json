@@ -226,6 +226,7 @@
     "privacyNote": "We store your details only to handle your request and delete them no later than six months after it is completed (see our privacy policy).",
     "sending": "Sending …",
     "rateLimited": "You have sent several requests in a short time. Please try again later or give us a call.",
+    "unavailable": "This piece is no longer available, so your enquiry was not sent. Please contact us and we will gladly find a comparable piece for you.",
     "failed": "Your request could not be sent. Please try again or give us a call."
   },
   "sell": {
