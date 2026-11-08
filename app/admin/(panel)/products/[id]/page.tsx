@@ -41,7 +41,7 @@ export default async function EditProductPage({
         {product.model}
       </AdminPageTitle>
       <ProductForm
-        key={fieldsKey(product)}
+        fieldsKey={fieldsKey(product)}
         id={product.id}
         version={product.currentVersion}
         requestKey={requestKey}

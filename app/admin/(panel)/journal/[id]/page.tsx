@@ -34,7 +34,7 @@ export default async function EditJournalPage({
         {entry.title.tr ?? entry.title.de}
       </AdminPageTitle>
       <JournalForm
-        key={fieldsKey(entry)}
+        fieldsKey={fieldsKey(entry)}
         id={entry.id}
         version={entry.currentVersion}
         requestKey={await newRequestKey()}

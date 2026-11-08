@@ -288,6 +288,8 @@ export const inquiries = pgTable(
     /** SHA-256 of the client address, only for rate limiting; cleared after a day. */
     addressHash: text("address_hash"),
     handledBy: uuid("handled_by").references(() => users.id, { onDelete: "set null" }),
+    /** Starts the retention clock; reopening and completing again never moves it. */
+    firstCompletedAt: timestamp("first_completed_at", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [

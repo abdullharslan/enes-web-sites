@@ -108,6 +108,28 @@ test.describe("admin catalog", () => {
       other.getByText("başka biri tarafından değiştirildi", { exact: false }),
     ).toBeVisible();
     await expect(other.getByLabel("Model")).toHaveValue("Konflikt B");
+
+    // Saving again without the confirmation stays refused: nothing is overwritten.
+    await other.getByRole("button", { name: "Kaydet" }).click();
+    await page.reload();
+    await expect(page.getByLabel("Model")).toHaveValue("Konflikt A");
+
+    // A further change while the warning is open is refused once more.
+    await page.getByLabel("Model").fill("Konflikt C");
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await expect(page.getByText("Kaydedildi (sürüm 3).")).toBeVisible();
+    const confirm = other.getByLabel("üzerine yazılacağını", { exact: false });
+    await confirm.check();
+    await other.getByRole("button", { name: "Kaydet" }).click();
+    await expect(confirm).not.toBeChecked();
+    await expect(other.getByLabel("Model")).toHaveValue("Konflikt B");
+
+    // Confirmed against the version now current, the warning resolves without a reload.
+    await confirm.check();
+    await other.getByRole("button", { name: "Kaydet" }).click();
+    await expect(other.getByText("Kaydedildi (sürüm 4).")).toBeVisible();
+    await expect(other.getByLabel("Model")).toHaveValue("Konflikt B");
+    await expect(confirm).toHaveCount(0);
     await other.close();
   });
 

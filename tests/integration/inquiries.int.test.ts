@@ -24,6 +24,7 @@ import { closeTestDb, withRollback } from "./helpers";
 afterAll(closeTestDb);
 
 const now = new Date("2026-10-14T12:00:00Z");
+const DAY = 24 * 60 * 60 * 1000;
 const later = (ms: number) => new Date(now.getTime() + ms);
 const address = hashAddress("203.0.113.7", now);
 
@@ -205,6 +206,45 @@ describe("purgeExpiredInquiries", () => {
       expect(rest.sort()).toEqual([open.id, ancient.id].sort());
       expect(await tx.select().from(inquiries)).toEqual([]);
     }));
+
+  it("counts six months from the first completion, also after reopening", () =>
+    withRollback(async (tx) => {
+      const user = await owner(tx);
+      const a = inquiry();
+      await recordInquiry(tx, a, now);
+      await setInquiryStatus(tx, user.id, a.id, "done", now);
+      await setInquiryStatus(tx, user.id, a.id, "in_progress", later(10 * DAY));
+      await setInquiryStatus(tx, user.id, a.id, "done", later(20 * DAY));
+
+      expect((await getInquiry(tx, a.id))?.inquiry.firstCompletedAt).toEqual(now);
+      const purged = await purgeExpiredInquiries(tx, later(INQUIRY_RETENTION.doneMs + 1));
+      expect(purged).toEqual([a.id]);
+    }));
+
+  it("keeps a reopened inquiry while it is worked on, up to the one-year cap", () =>
+    withRollback(async (tx) => {
+      const user = await owner(tx);
+      const a = inquiry();
+      await recordInquiry(tx, a, now);
+      await setInquiryStatus(tx, user.id, a.id, "done", now);
+      await setInquiryStatus(tx, user.id, a.id, "in_progress", later(DAY));
+
+      expect(
+        await purgeExpiredInquiries(tx, later(INQUIRY_RETENTION.doneMs + 1)),
+      ).toEqual([]);
+      expect(await purgeExpiredInquiries(tx, later(INQUIRY_RETENTION.anyMs + 1))).toEqual(
+        [a.id],
+      );
+    }));
+
+  it("stays unset until the first completion", () =>
+    withRollback(async (tx) => {
+      const user = await owner(tx);
+      const a = inquiry();
+      await recordInquiry(tx, a, now);
+      await setInquiryStatus(tx, user.id, a.id, "in_progress", now);
+      expect((await getInquiry(tx, a.id))?.inquiry.firstCompletedAt).toBeNull();
+    }));
 });
 
 describe("admin inbox", () => {
@@ -240,6 +280,24 @@ describe("admin inbox", () => {
         ["inquiry.status_changed", { from: "new", to: "done" }],
       ]);
       expect(JSON.stringify(audit)).not.toContain("anna@example.com");
+    }));
+
+  it("writes nothing at all when the status stays the same", () =>
+    withRollback(async (tx) => {
+      const user = await owner(tx);
+      const a = inquiry();
+      await recordInquiry(tx, a, now);
+      await setInquiryStatus(tx, user.id, a.id, "done", now);
+      const before = await getInquiry(tx, a.id);
+
+      await setInquiryStatus(tx, user.id, a.id, "done", later(DAY));
+
+      expect(await getInquiry(tx, a.id)).toEqual(before);
+      const audit = await tx
+        .select()
+        .from(auditEvents)
+        .where(eq(auditEvents.entityId, a.id));
+      expect(audit).toHaveLength(1);
     }));
 
   it("deletes on request (right to erasure) and reports unknown ids", () =>

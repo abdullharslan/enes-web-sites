@@ -36,6 +36,13 @@
       "when": 1791965473257,
       "tag": "0004_analytics",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794126845013,
+      "tag": "0005_inquiry_first_completed",
+      "breakpoints": true
     }
   ]
 }

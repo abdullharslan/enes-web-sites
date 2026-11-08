@@ -12,6 +12,7 @@ import { T } from "@/lib/admin/text";
 import {
   CheckboxGroupInput,
   CheckboxInput,
+  ExpectedVersion,
   FormFeedback,
   INPUT,
   LocalizedInput,
@@ -23,19 +24,10 @@ import {
 type Translations = Readonly<Record<string, string>>;
 
 /** Hidden bookkeeping shared by all edit forms. */
-function Meta({
-  id,
-  version,
-  requestKey,
-}: {
-  id: string | null;
-  version: number;
-  requestKey: string;
-}) {
+function Meta({ id, requestKey }: { id: string | null; requestKey: string }) {
   return (
     <>
       {id && <input type="hidden" name="id" value={id} />}
-      <input type="hidden" name="expectedVersion" value={version} />
       <input type="hidden" name="idempotencyKey" value={requestKey} />
     </>
   );
@@ -48,6 +40,7 @@ export interface BrandFormProps {
   id: string | null;
   version: number;
   requestKey: string;
+  fieldsKey?: string;
   savedVersion?: string;
   values: {
     slug: string;
@@ -62,6 +55,7 @@ export function BrandForm({
   id,
   version,
   requestKey,
+  fieldsKey,
   savedVersion,
   values,
 }: BrandFormProps) {
@@ -70,8 +64,8 @@ export function BrandForm({
     IDLE,
   );
   return (
-    <form action={action} className={FORM}>
-      <Meta id={id} version={version} requestKey={requestKey} />
+    <form key={fieldsKey} action={action} className={FORM}>
+      <Meta id={id} requestKey={requestKey} />
       <div className={GRID}>
         <TextInput
           state={state}
@@ -112,6 +106,7 @@ export function BrandForm({
         label={T.fields.visible}
         defaultChecked={values.isVisible}
       />
+      <ExpectedVersion state={state} version={version} />
       <FormFeedback state={state} savedVersion={savedVersion} />
       <div>
         <SubmitButton pending={pending} />
@@ -124,6 +119,7 @@ export interface CategoryFormProps {
   id: string | null;
   version: number;
   requestKey: string;
+  fieldsKey?: string;
   savedVersion?: string;
   values: { slug: string; name: Translations; sortOrder: number; isVisible: boolean };
 }
@@ -132,6 +128,7 @@ export function CategoryForm({
   id,
   version,
   requestKey,
+  fieldsKey,
   savedVersion,
   values,
 }: CategoryFormProps) {
@@ -140,8 +137,8 @@ export function CategoryForm({
     IDLE,
   );
   return (
-    <form action={action} className={FORM}>
-      <Meta id={id} version={version} requestKey={requestKey} />
+    <form key={fieldsKey} action={action} className={FORM}>
+      <Meta id={id} requestKey={requestKey} />
       <LocalizedInput
         state={state}
         name="name"
@@ -173,6 +170,7 @@ export function CategoryForm({
         label={T.fields.visible}
         defaultChecked={values.isVisible}
       />
+      <ExpectedVersion state={state} version={version} />
       <FormFeedback state={state} savedVersion={savedVersion} />
       <div>
         <SubmitButton pending={pending} />
@@ -189,6 +187,7 @@ export interface ProductFormProps {
   id: string | null;
   version: number;
   requestKey: string;
+  fieldsKey?: string;
   savedVersion?: string;
   brands: Option[];
   categories: Option[];
@@ -216,6 +215,7 @@ export function ProductForm({
   id,
   version,
   requestKey,
+  fieldsKey,
   savedVersion,
   brands,
   categories,
@@ -227,8 +227,8 @@ export function ProductForm({
   );
   const p = T.products;
   return (
-    <form action={action} className={FORM}>
-      <Meta id={id} version={version} requestKey={requestKey} />
+    <form key={fieldsKey} action={action} className={FORM}>
+      <Meta id={id} requestKey={requestKey} />
       <div className={GRID}>
         <SelectInput
           state={state}
@@ -349,6 +349,7 @@ export function ProductForm({
         label={T.fields.visible}
         defaultChecked={values.isVisible}
       />
+      <ExpectedVersion state={state} version={version} />
       <FormFeedback state={state} savedVersion={savedVersion} />
       <div>
         <SubmitButton pending={pending} />

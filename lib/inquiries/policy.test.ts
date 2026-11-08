@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   INQUIRY_LIMITS,
   INQUIRY_RETENTION,
+  INQUIRY_STATUSES,
+  inquiryStatusChange,
   photoProblem,
   retentionCutoffs,
 } from "./policy";
@@ -71,5 +73,56 @@ describe("retentionCutoffs", () => {
   it("keeps finished inquiries for less time than open ones", () => {
     expect(INQUIRY_RETENTION.doneMs).toBeLessThan(INQUIRY_RETENTION.anyMs);
     expect(INQUIRY_RETENTION.addressHashMs).toBeLessThanOrEqual(INQUIRY_RETENTION.doneMs);
+  });
+});
+
+describe("inquiryStatusChange", () => {
+  const first = new Date("2026-01-10T09:00:00Z");
+  const now = new Date("2026-03-01T09:00:00Z");
+  const open = { status: "new", firstCompletedAt: null } as const;
+  const done = { status: "done", firstCompletedAt: first } as const;
+
+  it("changes nothing when the status stays the same", () => {
+    for (const status of INQUIRY_STATUSES) {
+      expect(
+        inquiryStatusChange({ status, firstCompletedAt: first }, status, now),
+      ).toBeNull();
+    }
+  });
+
+  it("starts the retention clock at the first completion", () => {
+    expect(inquiryStatusChange(open, "done", now)).toEqual({
+      status: "done",
+      firstCompletedAt: now,
+    });
+  });
+
+  it("leaves the clock unset while an inquiry was never completed", () => {
+    expect(inquiryStatusChange(open, "in_progress", now)).toEqual({
+      status: "in_progress",
+      firstCompletedAt: null,
+    });
+  });
+
+  it("allows reopening (mistaken clicks) and keeps the first completion time", () => {
+    const reopened = inquiryStatusChange(done, "in_progress", now)!;
+    expect(reopened).toEqual({ status: "in_progress", firstCompletedAt: first });
+    expect(inquiryStatusChange(reopened, "done", now)).toEqual({
+      status: "done",
+      firstCompletedAt: first,
+    });
+  });
+
+  it("never moves the clock, whatever the path (property)", () => {
+    const status = fc.constantFrom(...INQUIRY_STATUSES);
+    fc.assert(
+      fc.property(status, fc.array(status), (start, path) => {
+        let state = { status: start, firstCompletedAt: first as Date | null };
+        for (const next of path) {
+          state = inquiryStatusChange(state, next, now) ?? state;
+          expect(state.firstCompletedAt).toBe(first);
+        }
+      }),
+    );
   });
 });

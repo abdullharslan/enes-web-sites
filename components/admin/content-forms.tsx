@@ -12,6 +12,7 @@ import { T } from "@/lib/admin/text";
 import type { FieldKind } from "@/lib/content/blocks";
 import {
   CheckboxInput,
+  ExpectedVersion,
   FormFeedback,
   INPUT,
   LocalizedInput,
@@ -32,6 +33,7 @@ export function BlockForm({
   blockKey,
   version,
   requestKey,
+  fieldsKey,
   savedVersion,
   fields,
   values,
@@ -39,6 +41,7 @@ export function BlockForm({
   blockKey: string;
   version: number;
   requestKey: string;
+  fieldsKey?: string;
   savedVersion?: string;
   fields: readonly EditableField[];
   values: Readonly<Record<string, unknown>>;
@@ -48,9 +51,8 @@ export function BlockForm({
     IDLE,
   );
   return (
-    <form action={action} className="flex flex-col gap-6">
+    <form key={fieldsKey} action={action} className="flex flex-col gap-6">
       <input type="hidden" name="key" value={blockKey} />
-      <input type="hidden" name="expectedVersion" value={version} />
       <input type="hidden" name="idempotencyKey" value={requestKey} />
       {fields.map((field) => {
         const value = values[field.key];
@@ -95,6 +97,7 @@ export function BlockForm({
           />
         );
       })}
+      <ExpectedVersion state={state} version={version} />
       <FormFeedback state={state} savedVersion={savedVersion} />
       <div>
         <SubmitButton pending={pending} />
@@ -166,12 +169,14 @@ export function JournalForm({
   id,
   version,
   requestKey,
+  fieldsKey,
   savedVersion,
   values,
 }: {
   id: string | null;
   version: number;
   requestKey: string;
+  fieldsKey?: string;
   savedVersion?: string;
   values: {
     slug: string;
@@ -186,9 +191,8 @@ export function JournalForm({
     IDLE,
   );
   return (
-    <form action={action} className="flex flex-col gap-6">
+    <form key={fieldsKey} action={action} className="flex flex-col gap-6">
       {id && <input type="hidden" name="id" value={id} />}
-      <input type="hidden" name="expectedVersion" value={version} />
       <input type="hidden" name="idempotencyKey" value={requestKey} />
       <div className="grid gap-6 sm:grid-cols-2">
         <TextInput
@@ -227,6 +231,7 @@ export function JournalForm({
         label={T.fields.visible}
         defaultChecked={values.isVisible}
       />
+      <ExpectedVersion state={state} version={version} />
       <FormFeedback state={state} savedVersion={savedVersion} />
       <div>
         <SubmitButton pending={pending} />

@@ -53,7 +53,7 @@ export default async function EditBlockPage({
         {definition.label}
       </AdminPageTitle>
       <BlockForm
-        key={fieldsKey(textValues)}
+        fieldsKey={fieldsKey(textValues)}
         blockKey={key}
         version={block?.currentVersion ?? 0}
         requestKey={await newRequestKey()}

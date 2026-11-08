@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import {
+  deleteInquiryAction,
   setInquiryStatusAction,
   type InquiryActionState,
 } from "@/app/admin/actions/inquiries";
@@ -48,6 +49,29 @@ export function InquiryStatusForm({ id, status }: { id: string; status: InquiryS
       </div>
       <div aria-live="polite" className="text-sm">
         {state.status === "ok" && <p className="text-gold">{T.inquiries.statusSaved}</p>}
+        {state.status === "error" && <p className="text-danger">{ERRORS[state.error]}</p>}
+      </div>
+    </form>
+  );
+}
+
+export function InquiryDeleteForm({ id }: { id: string }) {
+  const [state, action, pending] = useActionState(deleteInquiryAction, IDLE);
+  return (
+    <form action={action} className="flex flex-col gap-3 border border-danger/60 p-4">
+      <input type="hidden" name="id" value={id} />
+      <label className="inline-flex min-h-11 items-center gap-3 text-sm">
+        <input type="checkbox" name="confirm" required className="size-5 accent-gold" />
+        {T.inquiries.deleteConfirm}
+      </label>
+      <button
+        type="submit"
+        disabled={pending}
+        className="min-h-11 border border-danger px-4 text-xs font-semibold uppercase tracking-label text-danger disabled:opacity-60"
+      >
+        {T.inquiries.delete}
+      </button>
+      <div aria-live="polite" className="text-sm">
         {state.status === "error" && <p className="text-danger">{ERRORS[state.error]}</p>}
       </div>
     </form>

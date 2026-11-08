@@ -54,9 +54,9 @@ export default async function InquiriesPage({
   return (
     <>
       <AdminPageTitle>{T.inquiries.title}</AdminPageTitle>
-      {params.deleted === "1" && (
+      {(params.deleted === "1" || params.deleted === "gone") && (
         <p role="status" className="mb-6 text-sm text-gold">
-          {T.inquiries.deleted}
+          {params.deleted === "1" ? T.inquiries.deleted : T.inquiries.alreadyGone}
         </p>
       )}
       <nav aria-label={T.inquiries.filter} className="mb-6">

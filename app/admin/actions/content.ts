@@ -7,6 +7,7 @@ import {
   isFormState,
   prepareUpload,
   refreshInPlace,
+  refreshOnConflict,
   runAdminChange,
 } from "@/lib/admin/run-change";
 import { journalInput, translationsFromForm } from "@/lib/admin/schemas";
@@ -75,7 +76,7 @@ export async function saveBlockAction(
       { idempotencyKey: idempotencyKey(fd) },
     ),
   );
-  if ("state" in outcome) return outcome.state;
+  if ("state" in outcome) return refreshOnConflict(`/admin/home/${key}`, outcome.state);
   redirect(`/admin/home/${key}?saved=${outcome.result.version}`);
 }
 
@@ -136,7 +137,8 @@ export async function saveJournalAction(
       { idempotencyKey: idempotencyKey(fd) },
     ),
   );
-  if ("state" in outcome) return outcome.state;
+  if ("state" in outcome)
+    return refreshOnConflict(`/admin/journal/${id ?? "new"}`, outcome.state);
   redirect(`/admin/journal/${outcome.result.id}?saved=${outcome.result.version}`);
 }
 

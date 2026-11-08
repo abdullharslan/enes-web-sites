@@ -253,6 +253,34 @@ export function LocalizedInput({
   );
 }
 
+/**
+ * The version a save is based on. After a conflict the refreshed page knows the
+ * newer version, and sending it would overwrite the other change unseen, so it
+ * only travels once the admin has confirmed exactly that.
+ */
+export function ExpectedVersion({
+  state,
+  version,
+}: {
+  state: FormState;
+  version: number;
+}) {
+  if (state.status !== "error" || state.error !== "conflict")
+    return <input type="hidden" name="expectedVersion" value={version} />;
+  return (
+    <label className="inline-flex min-h-11 items-center gap-3 text-sm">
+      <input
+        type="checkbox"
+        name="expectedVersion"
+        value={version}
+        required
+        className="size-5 accent-gold"
+      />
+      {T.fields.conflictOverwrite}
+    </label>
+  );
+}
+
 export function FormFeedback({
   state,
   savedVersion,

@@ -5,6 +5,7 @@ import {
   changeOwnPasswordAction,
   changeUserRoleAction,
   resetUserPasswordAction,
+  setUserActiveAction,
   type UserActionState,
 } from "@/app/admin/actions/users";
 import { T } from "@/lib/admin/text";
@@ -94,6 +95,30 @@ export function ResetPasswordForm({ userId, userName }: Target) {
         </button>
       </div>
       <UserFormStatus state={state} ok={T.users.resetDone} />
+    </form>
+  );
+}
+
+export function UserActiveForm({
+  userId,
+  userName,
+  isActive,
+}: Target & { isActive: boolean }) {
+  const [state, action, pending] = useActionState(setUserActiveAction, IDLE);
+  const label = isActive ? T.users.deactivate : T.users.activate;
+  return (
+    <form action={action} className="flex flex-col gap-2">
+      <input type="hidden" name="userId" value={userId} />
+      <input type="hidden" name="active" value={String(!isActive)} />
+      <button
+        type="submit"
+        disabled={pending}
+        aria-label={`${label}: ${userName}`}
+        className="min-h-11 text-gold underline-offset-4 hover:underline disabled:opacity-60"
+      >
+        {label}
+      </button>
+      <UserFormStatus state={state} ok={T.users.activeSaved} />
     </form>
   );
 }

@@ -132,6 +132,31 @@ test.describe("inquiries", () => {
     ).toBeVisible();
   });
 
+  test("deleting an inquiry that is already gone says so", async ({ page, browser }) => {
+    const name = `Gone ${unique()}`;
+    const visitor = await browser.newPage();
+    await visitor.goto("/de/contact");
+    await fillContact(visitor, name, "Doppelt gelöscht");
+    await visitor.getByRole("button", { name: "Absenden" }).click();
+    await expect(visitor.getByText(SUCCESS_DE, { exact: false })).toBeVisible();
+    await visitor.close();
+
+    await signIn(page, accounts().editor);
+    await openInquiry(page, name);
+    const secondTab = await page.context().newPage();
+    await secondTab.goto(page.url());
+
+    for (const [tab, notice] of [
+      [page, "Talep silindi."],
+      [secondTab, "Bu talep zaten silinmişti."],
+    ] as const) {
+      await tab.getByLabel("Silmeyi onaylıyorum (geri alınamaz)").check();
+      await tab.getByRole("button", { name: "Talebi kalıcı olarak sil" }).click();
+      await expect(tab.getByRole("status")).toHaveText(notice);
+    }
+    await secondTab.close();
+  });
+
   test("the contact form works without JavaScript", async ({ page, browser }) => {
     const name = `NoScript ${unique()}`;
     const context = await browser.newContext({ javaScriptEnabled: false });

@@ -101,13 +101,16 @@ async function applyRule(change: () => Promise<void>): Promise<UserActionState> 
 
 const toggleSchema = z.object({ userId: z.uuid(), active: z.enum(["true", "false"]) });
 
-export async function setUserActiveAction(formData: FormData): Promise<void> {
+export async function setUserActiveAction(
+  _prev: UserActionState,
+  formData: FormData,
+): Promise<UserActionState> {
   const actor = await guard();
-  if ("status" in actor) return;
+  if ("status" in actor) return actor;
   const parsed = toggleSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return;
+  if (!parsed.success) return { status: "error", error: "invalid" };
   const { userId, active } = parsed.data;
-  await applyRule(() =>
+  return applyRule(() =>
     db.transaction((tx) => setUserActive(tx, actor.id, userId, active === "true")),
   );
 }

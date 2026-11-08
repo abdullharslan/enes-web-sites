@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { deleteInquiryAction } from "@/app/admin/actions/inquiries";
 import { AccessDenied, AdminPageTitle } from "@/components/admin/admin-shell";
-import { InquiryStatusForm } from "@/components/admin/inquiry-forms";
+import { InquiryDeleteForm, InquiryStatusForm } from "@/components/admin/inquiry-forms";
 import { db } from "@/db/client";
 import { T } from "@/lib/admin/text";
 import { inquiryDetails } from "@/lib/inquiries/present";
@@ -114,27 +113,7 @@ export default async function InquiryPage({
               {T.inquiries.viewProduct}
             </a>
           )}
-          <form
-            action={deleteInquiryAction}
-            className="flex flex-col gap-3 border border-danger/60 p-4"
-          >
-            <input type="hidden" name="id" value={inquiry.id} />
-            <label className="inline-flex min-h-11 items-center gap-3 text-sm">
-              <input
-                type="checkbox"
-                name="confirm"
-                required
-                className="size-5 accent-gold"
-              />
-              {T.inquiries.deleteConfirm}
-            </label>
-            <button
-              type="submit"
-              className="min-h-11 border border-danger px-4 text-xs font-semibold uppercase tracking-label text-danger"
-            >
-              {T.inquiries.delete}
-            </button>
-          </form>
+          <InquiryDeleteForm id={inquiry.id} />
         </aside>
       </div>
     </>

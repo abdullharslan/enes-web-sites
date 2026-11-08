@@ -16,6 +16,7 @@ import type { Executor } from "@/db/connection";
 import { inquiries, inquiryPhotos } from "@/db/schema";
 import {
   INQUIRY_LIMITS,
+  inquiryStatusChange,
   retentionCutoffs,
   type InquiryKind,
   type InquiryStatus,
@@ -204,7 +205,7 @@ export async function purgeExpiredInquiries(tx: Executor, now = new Date()) {
     .delete(inquiries)
     .where(
       or(
-        and(eq(inquiries.status, "done"), lt(inquiries.updatedAt, cut.doneBefore)),
+        and(eq(inquiries.status, "done"), lt(inquiries.firstCompletedAt, cut.doneBefore)),
         lt(inquiries.createdAt, cut.anyBefore),
       ),
     )
@@ -278,15 +279,19 @@ export async function setInquiryStatus(
   now = new Date(),
 ): Promise<boolean> {
   const [current] = await tx
-    .select({ status: inquiries.status })
+    .select({
+      status: inquiries.status,
+      firstCompletedAt: inquiries.firstCompletedAt,
+    })
     .from(inquiries)
     .where(eq(inquiries.id, id))
     .for("update");
   if (!current) return false;
-  if (current.status === status) return true;
+  const change = inquiryStatusChange(current, status, now);
+  if (!change) return true;
   await tx
     .update(inquiries)
-    .set({ status, handledBy: actorId, updatedAt: now })
+    .set({ ...change, handledBy: actorId, updatedAt: now })
     .where(eq(inquiries.id, id));
   await recordAudit(tx, {
     actorId,

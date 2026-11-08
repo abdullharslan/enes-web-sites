@@ -7,6 +7,7 @@ import {
   isFormState,
   prepareUpload,
   refreshInPlace,
+  refreshOnConflict,
   runAdminChange,
 } from "@/lib/admin/run-change";
 import {
@@ -62,7 +63,8 @@ async function saveAndRespond(
   const outcome = await runAdminChange(fd, ["catalog:write"], TAGS, (tx, actorId) =>
     change(tx, actorId, id),
   );
-  if ("state" in outcome) return outcome.state;
+  if ("state" in outcome)
+    return refreshOnConflict(`${basePath}/${id ?? "new"}`, outcome.state);
   // New records continue on their edit page; edits re-render with a fresh version.
   redirect(`${basePath}/${outcome.result.id}?saved=${outcome.result.version}`);
 }

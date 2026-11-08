@@ -34,7 +34,7 @@ export default async function EditCategoryPage({
         {category.name.tr ?? category.name.de}
       </AdminPageTitle>
       <CategoryForm
-        key={fieldsKey(category)}
+        fieldsKey={fieldsKey(category)}
         id={category.id}
         version={category.currentVersion}
         requestKey={await newRequestKey()}

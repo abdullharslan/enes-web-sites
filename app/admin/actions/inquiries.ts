@@ -46,15 +46,18 @@ export async function setInquiryStatusAction(
 const deleteInput = z.object({ id: z.uuid(), confirm: z.literal("on") });
 
 /** Permanent deletion (e.g. an erasure request); requires an explicit confirmation box. */
-export async function deleteInquiryAction(fd: FormData): Promise<void> {
+export async function deleteInquiryAction(
+  _prev: InquiryActionState,
+  fd: FormData,
+): Promise<InquiryActionState> {
   const actor = await guard();
-  if (!actor) return;
+  if (!actor) return { status: "error", error: "forbidden" };
   const parsed = deleteInput.safeParse(Object.fromEntries(fd));
-  if (!parsed.success) return;
+  if (!parsed.success) return { status: "error", error: "invalid" };
   const { id } = parsed.data;
   const deleted = await db.transaction((tx) => deleteInquiry(tx, actor.id, id));
   // Files go after the commit; a leftover file without a row is never served.
   if (deleted) await removeInquiryFiles(PRIVATE_ROOT, [id]);
   revalidatePath("/admin", "layout");
-  redirect("/admin/inquiries?deleted=1");
+  redirect(`/admin/inquiries?deleted=${deleted ? "1" : "gone"}`);
 }

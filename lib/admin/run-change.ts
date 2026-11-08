@@ -86,19 +86,23 @@ export async function runAdminChange(
 }
 
 /**
+ * An outdated page is brought up to date in place (open edits are kept), so
+ * the next attempt is judged against what is stored now, not against the
+ * version that was just refused.
+ */
+export function refreshOnConflict(path: string, state: FormState): FormState {
+  if (state.status === "error" && state.error === "conflict") revalidatePath(path);
+  return state;
+}
+
+/**
  * For changes made next to an open edit form (image upload, move, remove):
  * no navigation — Next opens a new page instance for a new URL, which would
  * throw away unsaved edits in that form. The page is refreshed in place and
  * the result is reported in the form that made the change.
  */
 export function refreshInPlace(path: string, outcome: ChangeOutcome): FormState {
-  if ("state" in outcome) {
-    // An outdated page is brought up to date in place (open edits are kept),
-    // so the next attempt is made on what the admin now sees.
-    if (outcome.state.status === "error" && outcome.state.error === "conflict")
-      revalidatePath(path);
-    return outcome.state;
-  }
+  if ("state" in outcome) return refreshOnConflict(path, outcome.state);
   if (outcome.result.unchanged) return { status: "ok", message: T.fields.unchanged };
   revalidatePath(path);
   return {

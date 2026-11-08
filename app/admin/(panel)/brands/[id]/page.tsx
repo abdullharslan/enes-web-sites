@@ -35,7 +35,7 @@ export default async function EditBrandPage({
         {brand.name}
       </AdminPageTitle>
       <BrandForm
-        key={fieldsKey(brand)}
+        fieldsKey={fieldsKey(brand)}
         id={brand.id}
         version={brand.currentVersion}
         requestKey={await newRequestKey()}
