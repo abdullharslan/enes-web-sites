@@ -36,6 +36,7 @@ _Last updated: 2026-10-14 by Claude Opus 5.5_
 - [x] Gap step 5: cookieless analytics dashboard
 - [x] Gap step 6: CI workflow written (not yet run on GitHub — needs a push), full verify green, independent review (7 Important) → fixes → re-review (1 new Important) → fixed
 - [x] Pushed 14 commits to GitHub up to 31b889f (user approved); later commits stay local until the next approval
+- [x] Remaining state-machine issues (audit items 4–9) fixed with two review rounds; local commits, not pushed
 - Demo: `next start -p 1113` + Cloudflare quick tunnel run in the background (temporary; a rebuild/restart is needed to show new code)
 
 ## Known risks / open items
@@ -52,4 +53,7 @@ _Last updated: 2026-10-14 by Claude Opus 5.5_
 - E2E flakiness root cause found: parallel repeats of tests that toggle site-wide state raced each other → `admin-serial` project (1 worker).
 - Open intermittent E2E issue: stale cover on the public page right after a cover change (ACTIONS-TAKEN #140), diagnostic in place.
 - Production deployment requires: reverse proxy, explicit TRUSTED_PROXY_HOPS, one instance, absolute PRIVATE_STORAGE_ROOT for the daily purge cron.
+- A daily `npm run inquiries:purge` is needed on the machine holding backups (rotates backups older than 30 days; the web timer does not touch backups).
+- Accepted: unsaved typing in an idle form is lost if another admin changed the fields and an image action refreshes the page; stored data is safe and the next save is version-checked.
+- Decisions to confirm with the owner: reserved products stay open to inquiries; future-dated journal entries are refused (no scheduled publishing).
 - Legal pages are placeholders; demo data/photos must be replaced with real stock and own photos via the admin panel.
