@@ -21,11 +21,12 @@ export function assertLocalDatabase(
   return url;
 }
 
-/** DESTRUCTIVE (local development only): drops all data and media, then migrates and seeds. */
-async function reset(): Promise<void> {
-  const url = assertLocalDatabase(process.env.DATABASE_URL);
-  const mediaRoot = process.env.MEDIA_ROOT ?? "storage/media";
-  const { db, close } = connect(url, { max: 1 });
+/**
+ * DESTRUCTIVE (local only): drops every table and the migration history. Only
+ * public is recreated: migrations and pg_restore both create drizzle themselves.
+ */
+export async function emptyLocalDatabase(rawUrl: string | undefined): Promise<void> {
+  const { db, close } = connect(assertLocalDatabase(rawUrl), { max: 1 });
   try {
     await db.execute(sql`DROP SCHEMA IF EXISTS public CASCADE`);
     await db.execute(sql`DROP SCHEMA IF EXISTS drizzle CASCADE`);
@@ -33,6 +34,13 @@ async function reset(): Promise<void> {
   } finally {
     await close();
   }
+}
+
+/** DESTRUCTIVE (local development only): drops all data and media, then migrates and seeds. */
+async function reset(): Promise<void> {
+  const url = assertLocalDatabase(process.env.DATABASE_URL);
+  const mediaRoot = process.env.MEDIA_ROOT ?? "storage/media";
+  await emptyLocalDatabase(url);
   await rm(mediaRoot, { recursive: true, force: true });
   await runMigrations(url);
   const seeded = connect(url, { max: 1 });

@@ -3,8 +3,9 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 export type Database = PostgresJsDatabase<typeof schema>;
+export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 /** A database handle or an open transaction — services accept either. */
-export type Executor = Database | Parameters<Parameters<Database["transaction"]>[0]>[0];
+export type Executor = Database | Transaction;
 
 export interface Connection {
   db: Database;

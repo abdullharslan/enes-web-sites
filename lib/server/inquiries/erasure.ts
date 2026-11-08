@@ -1,8 +1,8 @@
 import { mkdir, open, readFile, type FileHandle } from "node:fs/promises";
 import { join } from "node:path";
-import { inArray } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { z } from "zod";
-import type { Database } from "@/db/connection";
+import type { Database, Transaction } from "@/db/connection";
 import { inquiries } from "@/db/schema";
 import { removeInquiryFiles } from "./photos";
 import { deleteInquiry } from "./service";
@@ -29,6 +29,17 @@ export class ErasureNotRecordedError extends Error {
   constructor() {
     super("The erasure ledger could not be written");
   }
+}
+
+const ERASURE_LEDGER_LOCK = "erasure-ledger";
+
+/**
+ * Held until the transaction ends. Every ledger writer takes it, in whichever
+ * process it runs (web server, cron purge, restore), or a failed write's
+ * rollback or torn-tail cleanup could cut off another writer's entry.
+ */
+export async function lockErasureLedger(tx: Transaction): Promise<void> {
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${ERASURE_LEDGER_LOCK}))`);
 }
 
 const NEWLINE = 0x0a;
@@ -66,18 +77,10 @@ async function writeEntries(root: string, entries: ErasureEntry[]): Promise<void
   }
 }
 
-// On globalThis: the server action and the retention timer run in separate
-// bundles, each with its own copy of this module.
-const shared = globalThis as typeof globalThis & { __erasureLedgerQueue?: Promise<void> };
-
-/** One at a time, or a failed write's rollback could cut off a concurrent entry. */
+/** The caller holds lockErasureLedger. */
 async function appendEntries(root: string, entries: ErasureEntry[]): Promise<void> {
-  const write = (shared.__erasureLedgerQueue ?? Promise.resolve()).then(() =>
-    writeEntries(root, entries),
-  );
-  shared.__erasureLedgerQueue = write.catch(() => {});
   try {
-    await write;
+    await writeEntries(root, entries);
   } catch (error) {
     console.error("Erasure ledger write failed", (error as NodeJS.ErrnoException).code);
     throw new ErasureNotRecordedError();
@@ -86,15 +89,18 @@ async function appendEntries(root: string, entries: ErasureEntry[]): Promise<voi
 
 /**
  * Lists inquiries as erased, as one durable batch. Call inside the transaction
- * that deletes them, before it commits: no entry, no deletion. Should the commit
- * itself fail, the entries stay and a later restore erases what was to go anyway.
+ * that deletes them, after the deletes (so the lock is the last one it waits
+ * for) and before it commits: no entry, no deletion. Should the commit itself
+ * fail, the entries stay and a later restore erases what was to go anyway.
  */
 export async function recordErasures(
+  tx: Transaction,
   root: string,
   ids: readonly string[],
   now: Date,
 ): Promise<void> {
   if (ids.length === 0) return;
+  await lockErasureLedger(tx);
   await appendEntries(
     root,
     ids.map((id) => ({ id, erasedAt: now.toISOString() })),
@@ -111,7 +117,7 @@ export async function eraseInquiry(
 ): Promise<boolean> {
   const deleted = await db.transaction(async (tx) => {
     const found = await deleteInquiry(tx, actorId, id);
-    if (found) await recordErasures(root, [id], now);
+    if (found) await recordErasures(tx, root, [id], now);
     return found;
   });
   // Files go after the commit; a leftover file without a row is never served.
@@ -159,20 +165,26 @@ export async function readErasureLedger(
  * the live ledger cannot lose an entry. Reports what the archived copy held.
  */
 export async function mergeErasureLedger(
+  db: Database,
   root: string,
   archivedRoot: string,
 ): Promise<{ added: number; tornLines: number }> {
-  const archived = await readErasureLedger(archivedRoot);
-  const known = new Set((await readErasureLedger(root)).entries.map((entry) => entry.id));
-  const missing = [
-    ...new Map(
-      archived.entries
-        .filter((entry) => !known.has(entry.id))
-        .map((entry) => [entry.id, entry]),
-    ).values(),
-  ];
-  if (missing.length > 0) await appendEntries(root, missing);
-  return { added: missing.length, tornLines: archived.tornLines };
+  return db.transaction(async (tx) => {
+    await lockErasureLedger(tx);
+    const archived = await readErasureLedger(archivedRoot);
+    const known = new Set(
+      (await readErasureLedger(root)).entries.map((entry) => entry.id),
+    );
+    const missing = [
+      ...new Map(
+        archived.entries
+          .filter((entry) => !known.has(entry.id))
+          .map((entry) => [entry.id, entry]),
+      ).values(),
+    ];
+    if (missing.length > 0) await appendEntries(root, missing);
+    return { added: missing.length, tornLines: archived.tornLines };
+  });
 }
 
 /** Erases every listed inquiry again, whether or not the restored data still has it. */

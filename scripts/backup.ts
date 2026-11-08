@@ -11,6 +11,10 @@ import { backupDirectory, rotateBackups } from "./backup-rotation";
  * such a name is finished (the rotation relies on it).
  */
 
+// Backups contain password hashes and personal data: owner-only from creation,
+// for this process and for the tar processes it starts.
+process.umask(0o077);
+
 const stamp = new Date()
   .toISOString()
   .replace(/[-:]/g, "")
@@ -35,40 +39,45 @@ const ARCHIVES = [
 const FILES = [dumpFile, ...ARCHIVES.map(({ file }) => file)];
 const partial = (file: string) => `${file}.partial`;
 
-function fail(detail: string): never {
-  for (const file of FILES) rmSync(partial(file), { force: true });
-  console.error(detail);
+function writeSet(): void {
+  try {
+    const dump = spawnSync(
+      "docker-compose",
+      [
+        "--env-file",
+        ".env.local",
+        "exec",
+        "-T",
+        "postgres",
+        "pg_dump",
+        "-U",
+        decodeURIComponent(url.username),
+        "-d",
+        database,
+        "-Fc",
+      ],
+      { maxBuffer: 1024 * 1024 * 1024 },
+    );
+    if (dump.status !== 0) throw new Error(dump.stderr.toString());
+    writeFileSync(partial(dumpFile), dump.stdout, { mode: 0o600 });
+
+    for (const { root, file } of ARCHIVES) {
+      mkdirSync(root, { recursive: true, mode: 0o700 });
+      const tar = spawnSync("tar", ["-czf", partial(file), "-C", root, "."]);
+      if (tar.status !== 0) throw new Error(tar.stderr.toString());
+    }
+    for (const file of FILES) renameSync(partial(file), file);
+  } finally {
+    for (const file of FILES) rmSync(partial(file), { force: true });
+  }
+}
+
+try {
+  writeSet();
+} catch (error) {
+  console.error(error instanceof Error ? error.message : "Backup failed");
   process.exit(1);
 }
-
-const dump = spawnSync(
-  "docker-compose",
-  [
-    "--env-file",
-    ".env.local",
-    "exec",
-    "-T",
-    "postgres",
-    "pg_dump",
-    "-U",
-    decodeURIComponent(url.username),
-    "-d",
-    database,
-    "-Fc",
-  ],
-  { maxBuffer: 1024 * 1024 * 1024 },
-);
-if (dump.status !== 0) fail(dump.stderr.toString());
-// Backups contain password hashes and personal data: owner-only permissions.
-writeFileSync(partial(dumpFile), dump.stdout, { mode: 0o600 });
-
-for (const { root, file } of ARCHIVES) {
-  mkdirSync(root, { recursive: true, mode: 0o700 });
-  const tar = spawnSync("tar", ["-czf", partial(file), "-C", root, "."]);
-  spawnSync("chmod", ["600", partial(file)]);
-  if (tar.status !== 0) fail(tar.stderr.toString());
-}
-for (const file of FILES) renameSync(partial(file), file);
 console.log(`backup written: ${FILES.join(" + ")}`);
 
 // Only after a finished backup, so the set just written counts as the newest.

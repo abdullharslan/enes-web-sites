@@ -117,7 +117,12 @@ describe("rotateBackups", () => {
       `media_${OLD}.tar`,
       `documents_${OLD}.tar.gz`,
       `media_20261301-120000.tar.gz`, // month 13: not a time backup.ts can write
-      `${DB}_${OLD}.dump.partial`,
+      `other_db_${OLD}.dump.partial`,
+      `${DB}_${OLD}.dump.partial.bak`,
+      `copy-of-media_${OLD}.tar.gz.partial`,
+      `media_${OLD}.tar.partial`,
+      `media_20261301-120000.tar.gz.partial`,
+      "notes.txt.partial",
       "erasure-ledger.jsonl",
       "notes.txt",
     ];
@@ -127,6 +132,45 @@ describe("rotateBackups", () => {
 
     for (const name of foreign) expect(has(name), name).toBe(true);
     for (const name of names(OLD)) expect(has(name), name).toBe(false);
+  });
+
+  const partials = (stamp: string) => names(stamp).map((name) => `${name}.partial`);
+
+  it("deletes expired partials by the stamp in their name, even with no complete set", async () => {
+    partials(JUST_OUTSIDE).forEach((name) => write(name));
+
+    await expect(rotate()).resolves.toEqual({ sets: 0, files: 3 });
+
+    expect(readdirSync(dir)).toEqual([]);
+  });
+
+  it("keeps a partial inside the period: a backup may still be writing it", async () => {
+    partials(JUST_INSIDE).forEach((name) => write(name));
+
+    await expect(rotate()).resolves.toEqual({ sets: 0, files: 0 });
+
+    expect(readdirSync(dir).sort()).toEqual(partials(JUST_INSIDE).sort());
+  });
+
+  it("never counts partials towards a complete set", async () => {
+    writeSet(OLDER);
+    partials(RECENT).forEach((name) => write(name));
+
+    await expect(rotate()).resolves.toEqual({ sets: 0, files: 0 });
+
+    for (const name of names(OLDER)) expect(has(name), name).toBe(true);
+  });
+
+  it("does not follow or remove a symlink with a partial's name", async () => {
+    const outside = join(base, "precious");
+    writeFileSync(outside, "keep me");
+    const name = `media_${OLD}.tar.gz.partial`;
+    symlinkSync(outside, join(dir, name));
+
+    await rotate();
+
+    expect(lstatSync(join(dir, name)).isSymbolicLink()).toBe(true);
+    expect(existsSync(outside)).toBe(true);
   });
 
   it("leaves folders with a matching name alone", async () => {

@@ -1,10 +1,17 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { connect } from "@/db/connection";
 import { runMigrations } from "@/db/migrate";
-import { assertLocalDatabase } from "@/db/reset";
+import { assertLocalDatabase, emptyLocalDatabase } from "@/db/reset";
 import {
   ERASURE_LEDGER_FILE,
   applyErasureLedger,
@@ -14,11 +21,12 @@ import {
 import { applyRetention } from "@/lib/server/inquiries/retention";
 
 /*
- * DESTRUCTIVE (local only): replaces the database contents with a backup and
+ * DESTRUCTIVE (local only): replaces the whole database with a backup and
  * unpacks the matching media and private-file archives, brings the schema up to
  * date, then erases again everything the ledger lists and applies retention, so
  * deleted data does not return. The live ledger only ever grows: it takes on
- * what the archive's copy knows and is never replaced by it.
+ * what the private archives in the backup folder know, newer sets included, and
+ * is never replaced by them.
  * Usage: npm run db:restore -- backups/<file>.dump
  */
 
@@ -45,31 +53,64 @@ function pgRestore(dump: Buffer, args: string[]): number | null {
   ).status;
 }
 
-/** Brings what the archive's ledger knows into the live one; returns torn lines seen there. */
-async function mergeArchivedLedger(
-  archive: string,
-  members: string[],
-  privateRoot: string,
-): Promise<number> {
-  const member = members.find(
+/** Copies only the ledger out of the archive; false when it holds none. */
+function extractLedger(archive: string, into: string): boolean {
+  const member = listArchive(archive).find(
     (name) => name.replace(/^\.\//, "") === ERASURE_LEDGER_FILE,
   );
-  if (!member) return 0;
-  const temp = mkdtempSync(join(tmpdir(), "mv-archived-ledger-"));
-  try {
-    const tar = spawnSync("tar", ["-xzf", archive, "-C", temp, member]);
-    if (tar.status !== 0) {
-      throw new Error(`Archive ${archive} is unreadable. Nothing was changed.`);
-    }
-    return (await mergeErasureLedger(privateRoot, temp)).tornLines;
-  } finally {
-    rmSync(temp, { recursive: true, force: true });
+  if (!member) return false;
+  const tar = spawnSync("tar", ["-xzf", archive, "-C", into, member]);
+  if (tar.status !== 0) {
+    throw new Error(`Archive ${archive} is unreadable. Nothing was changed.`);
   }
+  return true;
+}
+
+/**
+ * Brings what every private archive in the folder knows into the live ledger:
+ * after ledger loss, an older set must still honour erasures listed in newer
+ * ones. Only `required` (the set being restored) may stop the restore; any other
+ * unreadable archive is skipped. A live-side failure always stops it.
+ */
+async function mergeArchivedLedgers(
+  dir: string,
+  required: string | undefined,
+  url: string,
+  privateRoot: string,
+): Promise<{ tornLines: number; skipped: number }> {
+  const totals = { tornLines: 0, skipped: 0 };
+  const { db, close } = connect(url, { max: 1 });
+  try {
+    for (const name of readdirSync(dir).sort()) {
+      if (!/^private_.*\.tar\.gz$/.test(name)) continue;
+      const archive = `${dir}/${name}`;
+      const temp = mkdtempSync(join(tmpdir(), "mv-archived-ledger-"));
+      try {
+        let found: boolean;
+        try {
+          found = extractLedger(archive, temp);
+          await readErasureLedger(temp);
+        } catch (error) {
+          if (archive === required) throw error;
+          totals.skipped += 1;
+          continue;
+        }
+        if (found) {
+          totals.tornLines += (await mergeErasureLedger(db, privateRoot, temp)).tornLines;
+        }
+      } finally {
+        rmSync(temp, { recursive: true, force: true });
+      }
+    }
+  } finally {
+    await close();
+  }
+  return totals;
 }
 
 function unpack(file: string, root: string): void {
   mkdirSync(root, { recursive: true, mode: 0o700 });
-  // The archive's ledger was merged above and must not replace the live one.
+  // The archive's ledger was merged before and must not replace the live one.
   const tar = spawnSync("tar", [
     `--exclude=${ERASURE_LEDGER_FILE}`,
     "-xzf",
@@ -105,29 +146,31 @@ async function main(): Promise<void> {
           { root: privateRoot, file: `${dir}/private_${stamp}.tar.gz` },
         ]
       : []
-  )
-    .filter(({ file }) => existsSync(file))
-    .map((archive) => ({ ...archive, members: listArchive(archive.file) }));
+  ).filter(({ file }) => existsSync(file));
+  for (const { file } of archives) listArchive(file);
 
   const dump = readFileSync(dumpFile);
   if (pgRestore(dump, ["--list"]) !== 0) {
     throw new Error(`Backup ${dumpFile} is unreadable. Nothing was changed.`);
   }
 
-  for (const { root, file, members } of archives) {
-    if (root === privateRoot) {
-      tornLines += await mergeArchivedLedger(file, members, privateRoot);
-    }
-  }
+  const merged = await mergeArchivedLedgers(
+    dir,
+    archives.find(({ root }) => root === privateRoot)?.file,
+    url.href,
+    privateRoot,
+  );
+  tornLines += merged.tornLines;
 
   // From here on the database may be replaced: whatever goes wrong, the ledger
   // is applied before this script ends, and the first error is the one reported.
   let replaceError: unknown;
   const restored = [dumpFile];
   try {
+    // Not pg_restore --clean: it leaves tables the backup does not know, and the
+    // migrations below must start from exactly the dumped state.
+    await emptyLocalDatabase(url.href);
     const status = pgRestore(dump, [
-      "--clean",
-      "--if-exists",
       "--no-owner",
       "-U",
       decodeURIComponent(url.username),
@@ -162,6 +205,9 @@ async function main(): Promise<void> {
     );
     if (tornLines > 0) {
       console.log(`ledger: incomplete final lines ignored: ${tornLines}`);
+    }
+    if (merged.skipped > 0) {
+      console.log(`ledger: unreadable private archives skipped: ${merged.skipped}`);
     }
     if (replaceError) throw replaceError;
 

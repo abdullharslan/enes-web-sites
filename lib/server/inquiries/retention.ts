@@ -4,21 +4,24 @@ import { inquiries } from "@/db/schema";
 import { purgeExpiredAuthData } from "@/lib/server/auth/service";
 import { LOOKUP_CHUNK, recordErasures } from "./erasure";
 import { removeInquiryFiles, staleFolderIds } from "./photos";
-import { purgeExpiredInquiries } from "./service";
+import { clearExpiredAddressHashes, purgeExpiredInquiries } from "./service";
 
 /**
  * Applies the retention rules (rows first, then their files) and removes old
  * photo folders that never got a row. Deletions go in the erasure ledger before
  * they commit, or do not happen: a restore must not bring these rows back.
+ * Address hashes go first and on their own: that needs only the database, so a
+ * ledger failure cannot undo it.
  */
 export async function applyInquiryRetention(
   db: Database,
   root: string,
   now = new Date(),
 ): Promise<{ purged: number; orphans: number }> {
+  await clearExpiredAddressHashes(db, now);
   const purged = await db.transaction(async (tx) => {
     const ids = await purgeExpiredInquiries(tx, now);
-    await recordErasures(root, ids, now);
+    await recordErasures(tx, root, ids, now);
     return ids;
   });
   await removeInquiryFiles(root, purged);

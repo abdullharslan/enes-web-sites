@@ -26,6 +26,7 @@ import {
   ErasureNotRecordedError,
   applyErasureLedger,
   eraseInquiry,
+  lockErasureLedger,
   mergeErasureLedger,
   readErasureLedger,
   recordErasures,
@@ -117,6 +118,8 @@ const ID_A = "11111111-1111-4111-8111-111111111111";
 const ID_B = "22222222-2222-4222-8222-222222222222";
 const ID_C = "33333333-3333-4333-8333-333333333333";
 const AT = new Date("2026-11-08T10:00:00.000Z");
+const record = (ids: string[]) =>
+  testDb.transaction((tx) => recordErasures(tx, storage.root, ids, AT));
 const entryIds = async (root = storage.root) =>
   (await readErasureLedger(root)).entries.map((entry) => entry.id);
 const line = (id = ID_A, erasedAt = "2026-11-08T10:00:00.000Z") =>
@@ -162,7 +165,7 @@ describe("eraseInquiry", () => {
 
 describe("recordErasures", () => {
   it("writes a whole batch at once and syncs it once", async () => {
-    await recordErasures(storage.root, [ID_A, ID_B, ID_C], AT);
+    await record([ID_A, ID_B, ID_C]);
 
     expect(readFileSync(ledger, "utf8")).toBe(
       `${line(ID_A)}\n${line(ID_B)}\n${line(ID_C)}\n`,
@@ -172,7 +175,7 @@ describe("recordErasures", () => {
   });
 
   it("does not touch the disk for an empty batch", async () => {
-    await recordErasures(storage.root, [], AT);
+    await record([]);
     expect(existsSync(ledger)).toBe(false);
   });
 
@@ -180,9 +183,7 @@ describe("recordErasures", () => {
     writeFileSync(ledger, `${line(ID_A)}\n`);
     faults.tear = { keep: 12, pauseMs: 0 };
 
-    await expect(recordErasures(storage.root, [ID_B], AT)).rejects.toBeInstanceOf(
-      ErasureNotRecordedError,
-    );
+    await expect(record([ID_B])).rejects.toBeInstanceOf(ErasureNotRecordedError);
 
     expect(readFileSync(ledger, "utf8")).toBe(`${line(ID_A)}\n`);
   });
@@ -192,8 +193,8 @@ describe("recordErasures", () => {
     faults.tear = { keep: 12, pauseMs: 40 };
 
     const [failed, succeeded] = await Promise.allSettled([
-      recordErasures(storage.root, [ID_B], AT),
-      recordErasures(storage.root, [ID_C], AT),
+      record([ID_B]),
+      record([ID_C]),
     ]);
 
     expect(failed.status).toBe("rejected");
@@ -204,7 +205,7 @@ describe("recordErasures", () => {
   it("removes a torn tail before appending instead of gluing onto it", async () => {
     writeFileSync(ledger, `${line(ID_A)}\n${line(ID_B).slice(0, 12)}`);
 
-    await recordErasures(storage.root, [ID_C], AT);
+    await record([ID_C]);
 
     expect(readFileSync(ledger, "utf8")).toBe(`${line(ID_A)}\n${line(ID_C)}\n`);
   });
@@ -212,9 +213,49 @@ describe("recordErasures", () => {
   it("handles a ledger that is nothing but a torn tail", async () => {
     writeFileSync(ledger, line(ID_B).slice(0, 12));
 
-    await recordErasures(storage.root, [ID_C], AT);
+    await record([ID_C]);
 
     expect(readFileSync(ledger, "utf8")).toBe(`${line(ID_C)}\n`);
+  });
+});
+
+describe("the lock shared by every ledger writer", () => {
+  /** Runs `write` while another database connection (as another process would) holds the lock. */
+  async function whileLockedElsewhere(write: () => Promise<unknown>) {
+    let writing: Promise<unknown> = Promise.resolve();
+    await testDb.transaction(async (tx) => {
+      await lockErasureLedger(tx);
+      writing = write();
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(faults.writes).toBe(0);
+    });
+    await writing;
+    expect(faults.writes).toBe(1);
+  }
+
+  it("makes an erasure wait", async () => {
+    const id = await stored();
+    await whileLockedElsewhere(() => eraseInquiry(testDb, storage.root, actorId, id));
+    expect(await entryIds()).toEqual([id]);
+  });
+
+  it("makes a retention purge wait", async () => {
+    const id = await stored(new Date(AT.getTime() - 2 * 365 * 24 * 60 * 60 * 1000));
+    await whileLockedElsewhere(() => applyInquiryRetention(testDb, storage.root, AT));
+    expect(await entryIds()).toEqual([id]);
+  });
+
+  it("makes a restore's merge wait", async () => {
+    const archived = tempMediaRoot();
+    try {
+      writeFileSync(join(archived.root, ERASURE_LEDGER_FILE), `${line(ID_A)}\n`);
+      await whileLockedElsewhere(() =>
+        mergeErasureLedger(testDb, storage.root, archived.root),
+      );
+      expect(await entryIds()).toEqual([ID_A]);
+    } finally {
+      archived.cleanup();
+    }
   });
 });
 
@@ -231,7 +272,9 @@ describe("mergeErasureLedger", () => {
     writeFileSync(ledger, `${line(ID_A)}\n${line(ID_B)}\n`);
     writeArchived(`${line(ID_B)}\n${line(ID_C)}\n`);
 
-    await expect(mergeErasureLedger(storage.root, archived.root)).resolves.toEqual({
+    await expect(
+      mergeErasureLedger(testDb, storage.root, archived.root),
+    ).resolves.toEqual({
       added: 1,
       tornLines: 0,
     });
@@ -244,7 +287,7 @@ describe("mergeErasureLedger", () => {
   it("creates the live ledger on a host that has none", async () => {
     writeArchived(`${line(ID_A)}\n`);
 
-    await mergeErasureLedger(storage.root, archived.root);
+    await mergeErasureLedger(testDb, storage.root, archived.root);
 
     expect(readFileSync(ledger, "utf8")).toBe(`${line(ID_A)}\n`);
     expect(statSync(ledger).mode & 0o777).toBe(0o600);
@@ -254,7 +297,7 @@ describe("mergeErasureLedger", () => {
     writeFileSync(ledger, `${line(ID_A)}\n`);
     writeArchived(`${line(ID_A)}\n`);
 
-    await mergeErasureLedger(storage.root, archived.root);
+    await mergeErasureLedger(testDb, storage.root, archived.root);
 
     expect(faults.writes).toBe(0);
   });
@@ -262,7 +305,9 @@ describe("mergeErasureLedger", () => {
   it("counts a torn tail in the archive and ignores it", async () => {
     writeArchived(`${line(ID_A)}\n${line(ID_B).slice(0, 12)}`);
 
-    await expect(mergeErasureLedger(storage.root, archived.root)).resolves.toEqual({
+    await expect(
+      mergeErasureLedger(testDb, storage.root, archived.root),
+    ).resolves.toEqual({
       added: 1,
       tornLines: 1,
     });
@@ -273,7 +318,7 @@ describe("mergeErasureLedger", () => {
     writeFileSync(ledger, `${line(ID_A)}\n`);
     writeArchived(`${line(ID_B)}\ngarbage\n`);
 
-    await expect(mergeErasureLedger(storage.root, archived.root)).rejects.toThrow(
+    await expect(mergeErasureLedger(testDb, storage.root, archived.root)).rejects.toThrow(
       "line 2",
     );
 
@@ -328,6 +373,28 @@ describe("retention deletions", () => {
 
     expect(await isStored(id)).toBe(true);
     expect(existsSync(photoFolder(id))).toBe(true);
+  });
+
+  it("do not hold back the 24-hour address cleanup when the ledger fails", async () => {
+    const stale = randomUUID();
+    await testDb.insert(inquiries).values({
+      id: stale,
+      kind: "sell",
+      locale: "de",
+      addressHash: "a".repeat(64),
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      data: {},
+    });
+    const expired = await stored(longAgo());
+    mkdirSync(ledger);
+
+    await expect(applyInquiryRetention(testDb, storage.root)).rejects.toBeInstanceOf(
+      ErasureNotRecordedError,
+    );
+
+    const [row] = await testDb.select().from(inquiries).where(eq(inquiries.id, stale));
+    expect(row?.addressHash).toBeNull();
+    expect(await isStored(expired)).toBe(true);
   });
 });
 

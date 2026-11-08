@@ -3,8 +3,9 @@ import { join } from "node:path";
 
 /*
  * Deletes backup sets past the retention period, so personal data that was
- * erased or has expired does not live on in old archives. Scripts only: the web
- * server has no business deleting backups.
+ * erased or has expired does not live on in old archives, and the partial files
+ * an interrupted backup left behind. Scripts only: the web server has no
+ * business deleting backups.
  */
 
 const RETENTION_DAYS = 30;
@@ -34,36 +35,47 @@ function stampTime(stamp: string): number | null {
 function parseBackupName(
   name: string,
   database: string,
-): { part: string; stamp: string } | null {
-  const match = /^(.+)_(\d{8}-\d{6})(\.dump|\.tar\.gz)$/.exec(name);
+): { part: string; stamp: string; partial: boolean } | null {
+  const match = /^(.+)_(\d{8}-\d{6})(\.dump|\.tar\.gz)(\.partial)?$/.exec(name);
   if (!match) return null;
-  const [, prefix, stamp, extension] = match;
+  const [, prefix, stamp, extension, partial] = match;
   const known =
     extension === ".dump"
       ? prefix === database
       : prefix === "media" || prefix === "private";
-  return known ? { part: `${prefix}${extension}`, stamp: stamp! } : null;
+  return known
+    ? { part: `${prefix}${extension}`, stamp: stamp!, partial: partial !== undefined }
+    : null;
 }
 
-async function readSets(dir: string, database: string): Promise<BackupSet[]> {
+async function readBackups(
+  dir: string,
+  database: string,
+): Promise<{ sets: BackupSet[]; partials: { time: number; name: string }[] }> {
   const sets = new Map<string, BackupSet>();
+  const partials: { time: number; name: string }[] = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     // isFile() is false for a symlink: it is neither followed nor removed.
     const parsed = entry.isFile() ? parseBackupName(entry.name, database) : null;
     const time = parsed && stampTime(parsed.stamp);
     if (!parsed || time === null) continue;
+    if (parsed.partial) {
+      partials.push({ time, name: entry.name });
+      continue;
+    }
     const set = sets.get(parsed.stamp) ?? { time, files: [], parts: new Set() };
     set.files.push(entry.name);
     if ((await lstat(join(dir, entry.name))).size > 0) set.parts.add(parsed.part);
     sets.set(parsed.stamp, set);
   }
-  return [...sets.values()];
+  return { sets: [...sets.values()], partials };
 }
 
 /**
  * Removes every set older than the retention period, except the newest complete
  * one: recovery must stay possible even when backups have stopped for a while.
- * With no complete set at all, nothing is removed.
+ * With no complete set at all, no set is removed. Partial files are never
+ * recoverable, so they go by age alone: a younger one may still be being written.
  */
 export async function rotateBackups(
   dir: string,
@@ -79,19 +91,21 @@ export async function rotateBackups(
     throw error;
   }
 
-  const sets = await readSets(dir, database);
+  const { sets, partials } = await readBackups(dir, database);
+  const isExpired = ({ time }: { time: number }) => now.getTime() - time > RETENTION_MS;
+  const expiredPartials = partials.filter(isExpired).map(({ name }) => name);
+  for (const file of expiredPartials) await unlink(join(dir, file));
+
   const newestComplete = sets
     .filter((set) => set.parts.size === PARTS_OF_A_SET)
     .reduce<BackupSet | null>(
       (newest, set) => (!newest || set.time > newest.time ? set : newest),
       null,
     );
-  if (!newestComplete) return unchanged;
+  if (!newestComplete) return { sets: 0, files: expiredPartials.length };
 
-  const expired = sets.filter(
-    (set) => set !== newestComplete && now.getTime() - set.time > RETENTION_MS,
-  );
+  const expired = sets.filter((set) => set !== newestComplete && isExpired(set));
   const files = expired.flatMap((set) => set.files);
   for (const file of files) await unlink(join(dir, file));
-  return { sets: expired.length, files: files.length };
+  return { sets: expired.length, files: files.length + expiredPartials.length };
 }

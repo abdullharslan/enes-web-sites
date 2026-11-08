@@ -18,6 +18,7 @@ import {
   hashAddress,
   isRateLimited,
   listInquiries,
+  clearExpiredAddressHashes,
   purgeExpiredInquiries,
   recordInquiry,
   setInquiryStatus,
@@ -194,6 +195,7 @@ describe("purgeExpiredInquiries", () => {
       await setInquiryStatus(tx, user.id, done.id, "done", now);
 
       // A day later only the address hashes go.
+      await clearExpiredAddressHashes(tx, later(INQUIRY_RETENTION.addressHashMs + 1));
       expect(
         await purgeExpiredInquiries(tx, later(INQUIRY_RETENTION.addressHashMs + 1)),
       ).toEqual([]);

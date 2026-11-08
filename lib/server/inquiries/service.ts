@@ -191,17 +191,20 @@ export async function recordInquiry(
  * Applies the retention rules; returns the deleted inquiry ids so the caller
  * can remove their photo files after the transaction commits.
  */
-export async function purgeExpiredInquiries(tx: Executor, now = new Date()) {
-  const cut = retentionCutoffs(now);
-  await tx
+export async function clearExpiredAddressHashes(db: Executor, now = new Date()) {
+  await db
     .update(inquiries)
     .set({ addressHash: null })
     .where(
       and(
         isNotNull(inquiries.addressHash),
-        lt(inquiries.createdAt, cut.addressHashBefore),
+        lt(inquiries.createdAt, retentionCutoffs(now).addressHashBefore),
       ),
     );
+}
+
+export async function purgeExpiredInquiries(tx: Executor, now = new Date()) {
+  const cut = retentionCutoffs(now);
   const deleted = await tx
     .delete(inquiries)
     .where(

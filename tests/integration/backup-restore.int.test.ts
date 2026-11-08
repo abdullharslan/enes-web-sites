@@ -38,12 +38,14 @@ describe.skipIf(!existsSync(".env.local"))("backup, erase, restore round trip", 
   let privateRoot: string;
   let backupDir: string;
   let ledger: string;
+  let extraPath: string;
 
   const run = (script: string, ...args: string[]) =>
     spawnSync("node_modules/.bin/tsx", [`scripts/${script}.ts`, ...args], {
       encoding: "utf8",
       env: {
         ...process.env,
+        PATH: `${extraPath}${process.env.PATH}`,
         DATABASE_URL: process.env.DATABASE_URL_TEST,
         MEDIA_ROOT: join(base, "media"),
         PRIVATE_STORAGE_ROOT: privateRoot,
@@ -95,6 +97,7 @@ describe.skipIf(!existsSync(".env.local"))("backup, erase, restore round trip", 
     privateRoot = join(base, "private");
     backupDir = join(base, "backups");
     ledger = join(privateRoot, ERASURE_LEDGER_FILE);
+    extraPath = "";
     mkdirSync(privateRoot, { recursive: true, mode: 0o700 });
   });
   afterEach(async () => {
@@ -337,6 +340,121 @@ describe.skipIf(!existsSync(".env.local"))("backup, erase, restore round trip", 
     } finally {
       await runMigrations(process.env.DATABASE_URL_TEST);
     }
+  }, 120_000);
+
+  /** Puts a `tar` first on the PATH that runs `body`, then the real tar. */
+  const wrapTar = (body: string) => {
+    const bin = join(base, "bin");
+    mkdirSync(bin);
+    const real = spawnSync("which", ["tar"], { encoding: "utf8" }).stdout.trim();
+    writeFileSync(join(bin, "tar"), `#!/bin/sh\n${body}\nexec ${real} "$@"\n`);
+    chmodSync(join(bin, "tar"), 0o755);
+    extraPath = `${bin}:`;
+  };
+
+  it("runs tar under an owner-only umask, so partials are private from creation", () => {
+    const log = join(base, "umask.log");
+    wrapTar(`umask >> ${log}`);
+
+    const result = run("backup");
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(readFileSync(log, "utf8").trim().split("\n")).toEqual(["0077", "0077"]);
+  }, 120_000);
+
+  it("removes partials when a final rename fails", () => {
+    // A folder under the archive's final name makes its rename throw.
+    wrapTar(`case "$2" in *private_*) mkdir "\${2%.partial}";; esac`);
+
+    const result = run("backup");
+
+    expect(result.status).not.toBe(0);
+    expect(readdirSync(backupDir).filter((name) => name.endsWith(".partial"))).toEqual(
+      [],
+    );
+  }, 120_000);
+
+  it("restores a backup that predates a CREATE TABLE migration, to exactly its state", async () => {
+    const kept = await stored();
+    const journal = JSON.parse(
+      readFileSync("db/migrations/meta/_journal.json", "utf8"),
+    ) as { entries: { tag: string; when: number }[] };
+    const when = journal.entries.find((e) => e.tag.startsWith("0004_"))!.when;
+    await testDb.execute(sql`DROP TABLE page_views_daily`);
+    await testDb.execute(sql`ALTER TABLE inquiries DROP COLUMN first_completed_at`);
+    await testDb.execute(
+      sql`DELETE FROM drizzle.__drizzle_migrations WHERE created_at >= ${when}`,
+    );
+    try {
+      const dump = backup();
+      await runMigrations(process.env.DATABASE_URL_TEST);
+      await testDb.execute(
+        sql`INSERT INTO page_views_daily (day, locale, page, views) VALUES ('2026-11-01', 'de', '/', 1)`,
+      );
+      await testDb.execute(sql`CREATE TABLE stray_after_backup (id integer)`);
+
+      const result = run("restore", dump);
+
+      expect(result.status, result.stderr).toBe(0);
+      expect(await isStored(kept)).toBe(true);
+      const [leftovers] = await testDb.execute<{ views: number; stray: string | null }>(
+        sql`SELECT (SELECT count(*)::int FROM page_views_daily) AS views, to_regclass('stray_after_backup')::text AS stray`,
+      );
+      expect(leftovers).toEqual({ views: 0, stray: null });
+    } finally {
+      await runMigrations(process.env.DATABASE_URL_TEST);
+      await testDb.execute(sql`DROP TABLE IF EXISTS stray_after_backup`);
+      await testDb.execute(sql`DELETE FROM page_views_daily`);
+    }
+  }, 120_000);
+
+  /** Writes a private archive with these files into the backup folder. */
+  const archiveOf = (name: string, files: Record<string, string>) => {
+    const source = mkdtempSync(join(base, "archive-"));
+    for (const [file, text] of Object.entries(files)) {
+      writeFileSync(join(source, file), text);
+    }
+    const tar = spawnSync("tar", ["-czf", join(backupDir, name), "-C", source, "."]);
+    expect(tar.status).toBe(0);
+  };
+
+  it("after ledger loss, takes erasures from newer archives and nothing else", async () => {
+    const erasedLater = await stored();
+    const dump = backup();
+    archiveOf("private_20991231-235959.tar.gz", {
+      [ERASURE_LEDGER_FILE]: entry(erasedLater),
+      "not-to-be-unpacked.txt": "x",
+    });
+    writeFileSync(join(backupDir, "private_20991231-235958.tar.gz"), "not an archive");
+    archiveOf("private_20991231-235957.tar.gz", {
+      [ERASURE_LEDGER_FILE]: "garbage\n",
+    });
+    writeFileSync(
+      join(backupDir, "private_20991231-235956.tar.gz.partial"),
+      "not an archive either",
+    );
+
+    const result = run("restore", dump);
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(await isStored(erasedLater)).toBe(false);
+    expect(readFileSync(ledger, "utf8")).toBe(entry(erasedLater));
+    expect(existsSync(join(privateRoot, "not-to-be-unpacked.txt"))).toBe(false);
+    expect(result.stdout).toMatch(/unreadable private archives skipped: 2/);
+  }, 120_000);
+
+  it("stops before touching the database when the set's own archive has a malformed ledger", async () => {
+    const dump = backup();
+    const addedAfterBackup = await stored();
+    archiveOf(`private_${stampOf(dump)}.tar.gz`, {
+      [ERASURE_LEDGER_FILE]: "garbage\n",
+    });
+
+    const result = run("restore", dump);
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("malformed at line 1");
+    expect(await isStored(addedAfterBackup)).toBe(true);
   }, 120_000);
 
   it("reports a torn final ledger line by count and restores anyway", async () => {

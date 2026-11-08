@@ -6,8 +6,9 @@ const RETENTION_TIMER_MS = 60 * 60 * 1000;
 
 /**
  * Keeps the retention deadlines without traffic or a cron job, at start and
- * then hourly. The app runs as a single long-lived Node.js server; a second
- * instance would only repeat deletes that are safe to repeat.
+ * then hourly. The app runs as a single long-lived Node.js server; a cron purge
+ * or a second instance only repeats deletes that are safe to repeat, and the
+ * erasure ledger's writers take a database lock against each other.
  */
 export function startRetentionTimer(): void {
   const run = () => void maintainRetention(db, PRIVATE_ROOT);
