@@ -6,13 +6,14 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { INQUIRY_STATUSES } from "@/lib/inquiries/policy";
 import { ForbiddenError, requirePermission } from "@/lib/server/auth/current";
-import { PRIVATE_ROOT, removeInquiryFiles } from "@/lib/server/inquiries/photos";
-import { deleteInquiry, setInquiryStatus } from "@/lib/server/inquiries/service";
+import { ErasureNotRecordedError, eraseInquiry } from "@/lib/server/inquiries/erasure";
+import { PRIVATE_ROOT } from "@/lib/server/inquiries/photos";
+import { setInquiryStatus } from "@/lib/server/inquiries/service";
 
 export type InquiryActionState =
   | { status: "idle" }
   | { status: "ok" }
-  | { status: "error"; error: "forbidden" | "invalid" | "notFound" };
+  | { status: "error"; error: "forbidden" | "invalid" | "notFound" | "notRecorded" };
 
 async function guard(): Promise<{ id: string } | null> {
   try {
@@ -55,9 +56,14 @@ export async function deleteInquiryAction(
   const parsed = deleteInput.safeParse(Object.fromEntries(fd));
   if (!parsed.success) return { status: "error", error: "invalid" };
   const { id } = parsed.data;
-  const deleted = await db.transaction((tx) => deleteInquiry(tx, actor.id, id));
-  // Files go after the commit; a leftover file without a row is never served.
-  if (deleted) await removeInquiryFiles(PRIVATE_ROOT, [id]);
+  let deleted: boolean;
+  try {
+    deleted = await eraseInquiry(db, PRIVATE_ROOT, actor.id, id);
+  } catch (error) {
+    if (error instanceof ErasureNotRecordedError)
+      return { status: "error", error: "notRecorded" };
+    throw error;
+  }
   revalidatePath("/admin", "layout");
   redirect(`/admin/inquiries?deleted=${deleted ? "1" : "gone"}`);
 }

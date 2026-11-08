@@ -71,4 +71,15 @@ describe("deleting an inquiry", () => {
     fireEvent.click(screen.getByRole("button", { name: T.inquiries.delete }));
     expect(await screen.findByText(T.common.forbidden)).toBeInTheDocument();
   });
+
+  it("says the inquiry was not deleted when the erasure could not be recorded", async () => {
+    vi.mocked(deleteInquiryAction).mockResolvedValue({
+      status: "error",
+      error: "notRecorded",
+    });
+    render(<InquiryDeleteForm id={USER} />);
+    fireEvent.click(screen.getByLabelText(T.inquiries.deleteConfirm));
+    fireEvent.click(screen.getByRole("button", { name: T.inquiries.delete }));
+    expect(await screen.findByText(T.inquiries.erasureNotRecorded)).toBeInTheDocument();
+  });
 });

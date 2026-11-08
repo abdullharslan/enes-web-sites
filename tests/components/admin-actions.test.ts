@@ -3,8 +3,7 @@ import { deleteInquiryAction } from "@/app/admin/actions/inquiries";
 import { setUserActiveAction } from "@/app/admin/actions/users";
 import { ForbiddenError, requirePermission } from "@/lib/server/auth/current";
 import { UserRuleError, setUserActive } from "@/lib/server/auth/users";
-import { removeInquiryFiles } from "@/lib/server/inquiries/photos";
-import { deleteInquiry } from "@/lib/server/inquiries/service";
+import { ErasureNotRecordedError, eraseInquiry } from "@/lib/server/inquiries/erasure";
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -35,10 +34,12 @@ vi.mock("@/lib/server/auth/users", () => ({
 }));
 vi.mock("@/lib/server/inquiries/photos", () => ({
   PRIVATE_ROOT: "root",
-  removeInquiryFiles: vi.fn(),
+}));
+vi.mock("@/lib/server/inquiries/erasure", () => ({
+  ErasureNotRecordedError: class ErasureNotRecordedError extends Error {},
+  eraseInquiry: vi.fn(),
 }));
 vi.mock("@/lib/server/inquiries/service", () => ({
-  deleteInquiry: vi.fn(),
   setInquiryStatus: vi.fn(),
 }));
 
@@ -91,19 +92,26 @@ describe("deleteInquiryAction", () => {
   const confirmed = form({ id: ID, confirm: "on" });
 
   it("says deleted only when a row was deleted", async () => {
-    vi.mocked(deleteInquiry).mockResolvedValue(true);
+    vi.mocked(eraseInquiry).mockResolvedValue(true);
     await expect(deleteInquiryAction(IDLE, confirmed)).rejects.toThrow(
       "REDIRECT /admin/inquiries?deleted=1",
     );
-    expect(removeInquiryFiles).toHaveBeenCalledWith("root", [ID]);
+    expect(eraseInquiry).toHaveBeenCalledWith(expect.anything(), "root", "actor", ID);
   });
 
   it("says already gone when nothing was left to delete", async () => {
-    vi.mocked(deleteInquiry).mockResolvedValue(false);
+    vi.mocked(eraseInquiry).mockResolvedValue(false);
     await expect(deleteInquiryAction(IDLE, confirmed)).rejects.toThrow(
       "REDIRECT /admin/inquiries?deleted=gone",
     );
-    expect(removeInquiryFiles).not.toHaveBeenCalled();
+  });
+
+  it("says so when the erasure could not be recorded", async () => {
+    vi.mocked(eraseInquiry).mockRejectedValue(new ErasureNotRecordedError());
+    expect(await deleteInquiryAction(IDLE, confirmed)).toEqual({
+      status: "error",
+      error: "notRecorded",
+    });
   });
 
   it("reports a missing permission and an unconfirmed request", async () => {
@@ -116,6 +124,6 @@ describe("deleteInquiryAction", () => {
       status: "error",
       error: "forbidden",
     });
-    expect(deleteInquiry).not.toHaveBeenCalled();
+    expect(eraseInquiry).not.toHaveBeenCalled();
   });
 });

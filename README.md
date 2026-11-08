@@ -187,6 +187,8 @@ npm run db:backup
 npm run db:restore -- backups/<dosya>.dump
 ```
 
+Talep üzerine silinen kayıtlar yedekten geri gelmez: panelden yapılan her kalıcı silme, `PRIVATE_STORAGE_ROOT` altındaki `erasure-ledger.jsonl` dosyasına (yalnızca talep kimliği ve zamanı) silme tamamlanmadan önce yazılır; bu dosya yazılamazsa silme yapılmaz. Geri yükleme bu dosyayı **ezmez**, listedeki talepleri ve fotoğraflarını yeniden siler, ardından saklama kurallarını uygular ve yalnızca sayıları raporlar. Dosyada bozuk bir satır varsa geri yükleme veritabanına dokunmadan, satır numarasını belirterek durur. Dosyayı silmeyin veya elle düzenlemeyin; sunucu diski tamamen kaybedilirse en yeni `private_*.tar.gz` arşivindeki kopyasını geri koyun, sonra yükleme yapın.
+
 ### Yayına alırken (güvenlik)
 
 - Uygulamayı doğrudan internete açmayın; önüne `X-Forwarded-For` başlığını **kendisi ekleyen/üzerine yazan** bir ters proxy (ör. nginx, Caddy, platform yük dengeleyicisi) koyun. **Zorunludur:** Next.js bu başlığa gerçek adresi eklemez (yalnızca başlık hiç yoksa doldurur); proxy olmadan ziyaretçi kendi adresini seçebilir ve giriş/talep/analiz sınırlarını aşabilir. Proxy'nin arkasında başka güvenilir proxy varsa sayısını `TRUSTED_PROXY_HOPS` ile belirtin. Üretimde bu değer **açıkça** ayarlanmalıdır (genelde `0`); ayarlanmazsa uygulama adres gerektiren ilk istekte bilinçli olarak hata verir.

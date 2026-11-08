@@ -6,7 +6,7 @@ import { removeInquiryFiles, staleFolderIds } from "./photos";
 import { purgeExpiredInquiries } from "./service";
 
 /** Ids per lookup query: far below PostgreSQL's 65,535 bind-parameter limit. */
-const LOOKUP_CHUNK = 1000;
+export const LOOKUP_CHUNK = 1000;
 
 /**
  * Applies the retention rules (rows first, then their files) and removes old

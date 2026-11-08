@@ -310,6 +310,7 @@
     "deleted": "Talep silindi.",
     "alreadyGone": "Bu talep zaten silinmişti.",
     "notFound": "Talep bulunamadı.",
+    "erasureNotRecorded": "Talep silinmedi: silme kaydı yazılamadı. Lütfen sunucu depolamasını kontrol edip tekrar deneyin.",
     "retention": "Tamamlanan talepler 6 ay sonra, diğerleri en geç 1 yıl sonra otomatik silinir.",
     "filter": "Durum filtresi",
     "truncated": "En yeni {shown} talep gösteriliyor (toplam {total}). Durum sekmeleriyle daraltın."

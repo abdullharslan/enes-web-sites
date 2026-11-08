@@ -13,6 +13,7 @@ const ERRORS = {
   forbidden: T.common.forbidden,
   invalid: T.common.error,
   notFound: T.inquiries.notFound,
+  notRecorded: T.inquiries.erasureNotRecorded,
 } as const;
 
 const IDLE: InquiryActionState = { status: "idle" };

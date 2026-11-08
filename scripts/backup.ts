@@ -13,7 +13,8 @@ const stamp = new Date()
   .replace(/[-:]/g, "")
   .replace(/\..+/, "")
   .replace("T", "-");
-const dir = "backups";
+// BACKUP_DIR: only the round-trip test points this elsewhere.
+const dir = process.env.BACKUP_DIR ?? "backups";
 mkdirSync(dir, { recursive: true });
 
 const url = new URL(assertLocalDatabase(process.env.DATABASE_URL));
