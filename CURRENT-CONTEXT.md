@@ -35,7 +35,7 @@ _Last updated: 2026-10-14 by Claude Opus 5.5_
 - [x] Gap step 4: inquiries inbox (forms stored server-side, rate limit, honeypot, private sell photos, status, retention)
 - [x] Gap step 5: cookieless analytics dashboard
 - [x] Gap step 6: CI workflow written (not yet run on GitHub — needs a push), full verify green, independent review (7 Important) → fixes → re-review (1 new Important) → fixed
-- [ ] Push the local commits — **only after explicit user approval**
+- [x] Pushed 14 commits to GitHub up to 31b889f (user approved); later commits stay local until the next approval
 - Demo: `next start -p 1113` + Cloudflare quick tunnel run in the background (temporary; a rebuild/restart is needed to show new code)
 
 ## Known risks / open items
