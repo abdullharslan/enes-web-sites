@@ -3,7 +3,11 @@ import { and, eq } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import type { Executor } from "@/db/connection";
 import { auditEvents, inquiries, inquiryPhotos } from "@/db/schema";
-import { INQUIRY_LIMITS, INQUIRY_RETENTION } from "@/lib/inquiries/policy";
+import {
+  INQUIRY_DONE_QUIET_MS,
+  INQUIRY_LIMITS,
+  INQUIRY_RETENTION,
+} from "@/lib/inquiries/policy";
 import { createUser } from "@/lib/server/auth/service";
 import {
   admitSubmission,
@@ -219,6 +223,40 @@ describe("purgeExpiredInquiries", () => {
       expect((await getInquiry(tx, a.id))?.inquiry.firstCompletedAt).toEqual(now);
       const purged = await purgeExpiredInquiries(tx, later(INQUIRY_RETENTION.doneMs + 1));
       expect(purged).toEqual([a.id]);
+    }));
+
+  it("gives an inquiry finished after the six months time before it is deleted", () =>
+    withRollback(async (tx) => {
+      const user = await owner(tx);
+      const a = inquiry();
+      await recordInquiry(tx, a, now);
+      await setInquiryStatus(tx, user.id, a.id, "done", now);
+      await setInquiryStatus(tx, user.id, a.id, "in_progress", later(5 * DAY));
+      const finished = 190 * DAY;
+      await setInquiryStatus(tx, user.id, a.id, "done", later(finished));
+
+      expect(await purgeExpiredInquiries(tx, later(finished + 1))).toEqual([]);
+      expect(
+        await purgeExpiredInquiries(tx, later(finished + INQUIRY_DONE_QUIET_MS - 1)),
+      ).toEqual([]);
+      expect(
+        await purgeExpiredInquiries(tx, later(finished + INQUIRY_DONE_QUIET_MS)),
+      ).toEqual([a.id]);
+    }));
+
+  it("lets the one-year cap win over a recent completion", () =>
+    withRollback(async (tx) => {
+      const user = await owner(tx);
+      const a = inquiry();
+      await recordInquiry(tx, a, now);
+      await setInquiryStatus(tx, user.id, a.id, "done", now);
+      await setInquiryStatus(tx, user.id, a.id, "in_progress", later(5 * DAY));
+      await setInquiryStatus(tx, user.id, a.id, "done", later(360 * DAY));
+
+      expect(await purgeExpiredInquiries(tx, later(361 * DAY))).toEqual([]);
+      expect(await purgeExpiredInquiries(tx, later(INQUIRY_RETENTION.anyMs + 1))).toEqual(
+        [a.id],
+      );
     }));
 
   it("keeps a reopened inquiry while it is worked on, up to the one-year cap", () =>

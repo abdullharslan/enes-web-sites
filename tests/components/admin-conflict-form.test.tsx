@@ -2,7 +2,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { saveBrandAction } from "@/app/admin/actions/catalog";
 import { BrandForm, type BrandFormProps } from "@/components/admin/catalog-forms";
-import { formValues } from "@/lib/admin/form-state";
+import { ADMIN_ERROR_MESSAGES } from "@/lib/admin/error-messages";
+import { formValues, type FormState } from "@/lib/admin/form-state";
 import { T } from "@/lib/admin/text";
 
 vi.mock("@/app/admin/actions/catalog", () => ({
@@ -76,5 +77,84 @@ describe("edit form after a version conflict", () => {
     expect(screen.queryByLabelText(T.fields.conflictOverwrite)).toBeNull();
     view.rerender(<BrandForm {...current} />);
     expect(nameInput().value).toBe("Their name");
+  });
+});
+
+describe("the version a save is based on", () => {
+  type ErrorCode = Extract<FormState, { status: "error" }>["error"];
+  const save = () => fireEvent.click(screen.getByRole("button", { name: T.common.save }));
+
+  /** The next save fails with `error`, echoing what was submitted. */
+  const failsWith = (error: ErrorCode) =>
+    vi.mocked(saveBrandAction).mockImplementationOnce(async (_prev, fd) => ({
+      status: "error",
+      error,
+      values: formValues(fd),
+    }));
+
+  async function conflictAgainstV3() {
+    failsWith("conflict");
+    const view = render(<BrandForm {...stale} />);
+    save();
+    await screen.findByText(T.fields.conflict);
+    view.rerender(<BrandForm {...current} />);
+    return view;
+  }
+
+  it.each(["invalid", "duplicateSlug", "upload"] as const)(
+    "stays the one the echoed values were based on after %s and a refresh",
+    async (error) => {
+      failsWith(error);
+      const view = render(<BrandForm {...stale} />);
+      fireEvent.change(nameInput(), { target: { value: "My name" } });
+      save();
+      await screen.findByText(ADMIN_ERROR_MESSAGES[error]);
+
+      view.rerender(<BrandForm {...current} />);
+
+      expect(nameInput().value).toBe("My name");
+      expect(posted(view.container).get("expectedVersion")).toBe("2");
+      expect(screen.queryByLabelText(T.fields.conflictOverwrite)).toBeNull();
+    },
+  );
+
+  it("does not carry a confirmed overwrite over to a version never seen", async () => {
+    const view = await conflictAgainstV3();
+    fireEvent.click(screen.getByLabelText(T.fields.conflictOverwrite));
+    failsWith("invalid");
+    save();
+    await screen.findByText(ADMIN_ERROR_MESSAGES.invalid);
+
+    view.rerender(<BrandForm {...current} version={4} fieldsKey="later" />);
+
+    expect(posted(view.container).get("expectedVersion")).toBe("3");
+  });
+
+  it("unticks the overwrite when a refresh brings a newer version", async () => {
+    const view = await conflictAgainstV3();
+    fireEvent.click(screen.getByLabelText(T.fields.conflictOverwrite));
+    expect(posted(view.container).get("expectedVersion")).toBe("3");
+
+    // Same fields, newer version: an image change does not remount the form.
+    view.rerender(<BrandForm {...current} version={4} />);
+
+    expect(posted(view.container).has("expectedVersion")).toBe(false);
+    expect(screen.getByLabelText(T.fields.conflictOverwrite)).not.toBeChecked();
+  });
+
+  it("asks for confirmation when the echoed values carry no version", async () => {
+    vi.mocked(saveBrandAction).mockImplementationOnce(async () => ({
+      status: "error",
+      error: "invalid",
+      values: { name: "My name" },
+    }));
+    const view = render(<BrandForm {...stale} />);
+    save();
+    await screen.findByText(ADMIN_ERROR_MESSAGES.invalid);
+
+    view.rerender(<BrandForm {...current} />);
+
+    expect(posted(view.container).has("expectedVersion")).toBe(false);
+    expect(screen.getByLabelText(T.fields.conflictOverwrite)).toBeRequired();
   });
 });

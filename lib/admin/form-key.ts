@@ -6,6 +6,11 @@ import { createHash } from "node:crypto";
  * change. An image upload, move or removal then re-renders the page without
  * remounting the form, so unsaved edits stay (the version check on save is
  * per scope, see assertScopeUnchanged).
+ *
+ * Limit: when another admin did change the fields, the next refresh remounts
+ * the form on their values. Unsaved typing in a form without a save error is
+ * then lost in the browser (after a save error it is echoed back). No stored
+ * data is lost: the next save is still judged against the current version.
  */
 export function fieldsKey(record: Record<string, unknown>): string {
   const fields = Object.entries(record)

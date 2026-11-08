@@ -26,11 +26,18 @@ export const INQUIRY_LIMITS = {
 export const INQUIRY_RETENTION = {
   /** The hashed client address is only needed for the rate limit window. */
   addressHashMs: DAY,
-  /** Completed inquiries are deleted six months after their first completion. */
+  /** Completed inquiries are deleted six months after their first completion (see INQUIRY_DONE_QUIET_MS). */
   doneMs: 182 * DAY,
   /** Nothing is kept longer than a year, whatever its status. */
   anyMs: 365 * DAY,
 } as const;
+
+/**
+ * A completed inquiry is also only deleted once its last status change is this
+ * old, so one reopened and finished after the six months is not deleted at the
+ * very next retention pass. The one-year cap still wins.
+ */
+export const INQUIRY_DONE_QUIET_MS = 30 * DAY;
 
 export interface InquiryProgress {
   status: InquiryStatus;
@@ -42,7 +49,8 @@ export interface InquiryProgress {
  * nothing to write. Every direction is allowed, because reopening corrects
  * mistaken clicks, but the retention clock is set once: going back and forth
  * must not postpone the deletion. While reopened an inquiry is being worked on
- * and only the one-year cap applies; completed again, its first date counts.
+ * and only the one-year cap applies; completed again, its first date counts,
+ * plus INQUIRY_DONE_QUIET_MS after that last completion.
  */
 export function inquiryStatusChange(
   current: InquiryProgress,
@@ -61,6 +69,7 @@ export function retentionCutoffs(now: Date) {
   return {
     addressHashBefore: before(INQUIRY_RETENTION.addressHashMs),
     doneBefore: before(INQUIRY_RETENTION.doneMs),
+    doneQuietBefore: before(INQUIRY_DONE_QUIET_MS),
     anyBefore: before(INQUIRY_RETENTION.anyMs),
   };
 }

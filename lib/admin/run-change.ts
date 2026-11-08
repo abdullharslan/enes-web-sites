@@ -100,6 +100,11 @@ export function refreshOnConflict(path: string, state: FormState): FormState {
  * no navigation — Next opens a new page instance for a new URL, which would
  * throw away unsaved edits in that form. The page is refreshed in place and
  * the result is reported in the form that made the change.
+ *
+ * Limit: if another admin changed the fields meanwhile, this refresh delivers
+ * their values and an edit form without a save error remounts on them, so its
+ * unsaved typing is lost in the browser. No stored data is lost: the next save
+ * is still judged against the current version.
  */
 export function refreshInPlace(path: string, outcome: ChangeOutcome): FormState {
   if ("state" in outcome) return refreshOnConflict(path, outcome.state);

@@ -9,6 +9,7 @@ import {
   gt,
   isNotNull,
   lt,
+  lte,
   or,
   sql,
 } from "drizzle-orm";
@@ -205,7 +206,12 @@ export async function purgeExpiredInquiries(tx: Executor, now = new Date()) {
     .delete(inquiries)
     .where(
       or(
-        and(eq(inquiries.status, "done"), lt(inquiries.firstCompletedAt, cut.doneBefore)),
+        and(
+          eq(inquiries.status, "done"),
+          lt(inquiries.firstCompletedAt, cut.doneBefore),
+          // Only status changes write updated_at, so this is the last one.
+          lte(inquiries.updatedAt, cut.doneQuietBefore),
+        ),
         lt(inquiries.createdAt, cut.anyBefore),
       ),
     )

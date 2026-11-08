@@ -260,9 +260,10 @@ export function LocalizedInput({
 }
 
 /**
- * The version a save is based on. After a conflict the refreshed page knows the
- * newer version, and sending it would overwrite the other change unseen, so it
- * only travels once the admin has confirmed exactly that.
+ * The version a save is based on: echoed values keep the version they were
+ * based on, however often the page refreshes. Sending a newer one would
+ * overwrite a change the admin never saw, so it only travels through the
+ * checkbox, and a tick covers exactly the version it was given for.
  */
 export function ExpectedVersion({
   state,
@@ -271,11 +272,22 @@ export function ExpectedVersion({
   state: FormState;
   version: number;
 }) {
-  if (state.status !== "error" || state.error !== "conflict")
-    return <input type="hidden" name="expectedVersion" value={version} />;
+  const unconfirmed =
+    state.status === "error" &&
+    (state.error === "conflict" ||
+      (state.values !== undefined && !("expectedVersion" in state.values)));
+  if (!unconfirmed)
+    return (
+      <input
+        type="hidden"
+        name="expectedVersion"
+        value={pick(state, "expectedVersion", String(version))}
+      />
+    );
   return (
     <label className="inline-flex min-h-11 items-center gap-3 text-sm">
       <input
+        key={version}
         type="checkbox"
         name="expectedVersion"
         value={version}

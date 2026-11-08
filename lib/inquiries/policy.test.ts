@@ -1,6 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import {
+  INQUIRY_DONE_QUIET_MS,
   INQUIRY_LIMITS,
   INQUIRY_RETENTION,
   INQUIRY_STATUSES,
@@ -68,6 +69,12 @@ describe("retentionCutoffs", () => {
     );
     expect(now.getTime() - cut.doneBefore.getTime()).toBe(INQUIRY_RETENTION.doneMs);
     expect(now.getTime() - cut.anyBefore.getTime()).toBe(INQUIRY_RETENTION.anyMs);
+    expect(now.getTime() - cut.doneQuietBefore.getTime()).toBe(INQUIRY_DONE_QUIET_MS);
+  });
+
+  it("gives a late completion less time than the six months themselves", () => {
+    expect(INQUIRY_DONE_QUIET_MS).toBe(30 * 24 * 60 * 60 * 1000);
+    expect(INQUIRY_DONE_QUIET_MS).toBeLessThan(INQUIRY_RETENTION.doneMs);
   });
 
   it("keeps finished inquiries for less time than open ones", () => {
