@@ -36,7 +36,7 @@ _Last updated: 2026-10-14 by Claude Opus 5.5_
 - [x] Gap step 5: cookieless analytics dashboard
 - [x] Gap step 6: CI workflow written (not yet run on GitHub — needs a push), full verify green, independent review (7 Important) → fixes → re-review (1 new Important) → fixed
 - [x] Pushed 14 commits to GitHub up to 31b889f (user approved); later commits stay local until the next approval
-- [x] Remaining state-machine issues (audit items 4–9) fixed with two review rounds; local commits, not pushed
+- [x] Remaining state-machine issues (audit items 4–9) fixed with two review rounds; pushed up to db5680c (user approved)
 - Demo: `next start -p 1113` + Cloudflare quick tunnel run in the background (temporary; a rebuild/restart is needed to show new code)
 
 ## Known risks / open items
