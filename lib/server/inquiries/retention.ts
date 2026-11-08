@@ -2,22 +2,25 @@ import { inArray } from "drizzle-orm";
 import type { Database } from "@/db/connection";
 import { inquiries } from "@/db/schema";
 import { purgeExpiredAuthData } from "@/lib/server/auth/service";
+import { LOOKUP_CHUNK, recordErasures } from "./erasure";
 import { removeInquiryFiles, staleFolderIds } from "./photos";
 import { purgeExpiredInquiries } from "./service";
 
-/** Ids per lookup query: far below PostgreSQL's 65,535 bind-parameter limit. */
-export const LOOKUP_CHUNK = 1000;
-
 /**
  * Applies the retention rules (rows first, then their files) and removes old
- * photo folders that never got a row.
+ * photo folders that never got a row. Deletions go in the erasure ledger before
+ * they commit, or do not happen: a restore must not bring these rows back.
  */
 export async function applyInquiryRetention(
   db: Database,
   root: string,
   now = new Date(),
 ): Promise<{ purged: number; orphans: number }> {
-  const purged = await db.transaction((tx) => purgeExpiredInquiries(tx, now));
+  const purged = await db.transaction(async (tx) => {
+    const ids = await purgeExpiredInquiries(tx, now);
+    await recordErasures(root, ids, now);
+    return ids;
+  });
   await removeInquiryFiles(root, purged);
 
   const stale = await staleFolderIds(root, { now: now.getTime() });

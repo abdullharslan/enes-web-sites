@@ -1,11 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { createWriteStream, existsSync, mkdirSync } from "node:fs";
+import { mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { assertLocalDatabase } from "@/db/reset";
+import { backupDirectory, rotateBackups } from "./backup-rotation";
 
 /*
  * Consistent backup of the database (pg_dump custom format), the public media
  * files and the private files (inquiry photos). All are needed to restore:
- * rows reference files by key.
+ * rows reference files by key. A set always has all three files, and they get
+ * their final names only once the whole set is written, so whatever carries
+ * such a name is finished (the rotation relies on it).
  */
 
 const stamp = new Date()
@@ -13,8 +16,7 @@ const stamp = new Date()
   .replace(/[-:]/g, "")
   .replace(/\..+/, "")
   .replace("T", "-");
-// BACKUP_DIR: only the round-trip test points this elsewhere.
-const dir = process.env.BACKUP_DIR ?? "backups";
+const dir = backupDirectory();
 mkdirSync(dir, { recursive: true });
 
 const url = new URL(assertLocalDatabase(process.env.DATABASE_URL));
@@ -30,6 +32,14 @@ const ARCHIVES = [
     file: `${dir}/private_${stamp}.tar.gz`,
   },
 ];
+const FILES = [dumpFile, ...ARCHIVES.map(({ file }) => file)];
+const partial = (file: string) => `${file}.partial`;
+
+function fail(detail: string): never {
+  for (const file of FILES) rmSync(partial(file), { force: true });
+  console.error(detail);
+  process.exit(1);
+}
 
 const dump = spawnSync(
   "docker-compose",
@@ -48,22 +58,28 @@ const dump = spawnSync(
   ],
   { maxBuffer: 1024 * 1024 * 1024 },
 );
-if (dump.status !== 0) {
-  console.error(dump.stderr.toString());
-  process.exit(1);
-}
+if (dump.status !== 0) fail(dump.stderr.toString());
 // Backups contain password hashes and personal data: owner-only permissions.
-createWriteStream(dumpFile, { mode: 0o600 }).end(dump.stdout);
+writeFileSync(partial(dumpFile), dump.stdout, { mode: 0o600 });
 
-const written = [dumpFile];
 for (const { root, file } of ARCHIVES) {
-  if (!existsSync(root)) continue;
-  const tar = spawnSync("tar", ["-czf", file, "-C", root, "."]);
-  spawnSync("chmod", ["600", file]);
-  if (tar.status !== 0) {
-    console.error(tar.stderr.toString());
-    process.exit(1);
-  }
-  written.push(file);
+  mkdirSync(root, { recursive: true, mode: 0o700 });
+  const tar = spawnSync("tar", ["-czf", partial(file), "-C", root, "."]);
+  spawnSync("chmod", ["600", partial(file)]);
+  if (tar.status !== 0) fail(tar.stderr.toString());
 }
-console.log(`backup written: ${written.join(" + ")}`);
+for (const file of FILES) renameSync(partial(file), file);
+console.log(`backup written: ${FILES.join(" + ")}`);
+
+// Only after a finished backup, so the set just written counts as the newest.
+rotateBackups(dir, database)
+  .then(({ sets, files }) =>
+    console.log(`backups rotated: ${sets} old sets deleted (${files} files)`),
+  )
+  .catch((error: unknown) => {
+    console.error(
+      "Backup rotation failed",
+      error instanceof Error ? error.name : "unknown",
+    );
+    process.exitCode = 1;
+  });

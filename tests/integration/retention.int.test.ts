@@ -1,6 +1,6 @@
-import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, utimesSync } from "node:fs";
+import { spawnSync, execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, readdirSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { inspect } from "node:util";
 import { eq, inArray } from "drizzle-orm";
@@ -177,6 +177,7 @@ describe("cleaning up expired login data", () => {
         ...process.env,
         DATABASE_URL: process.env.DATABASE_URL_TEST,
         PRIVATE_STORAGE_ROOT: storage.root,
+        BACKUP_DIR: join(storage.root, "no-backups-here"),
       },
       stdio: "pipe",
     });
@@ -186,6 +187,75 @@ describe("cleaning up expired login data", () => {
       devices: ["device-live"],
       attempts: 1,
     });
+  }, 60_000);
+
+  it("the script also rotates old backups, after retention", async () => {
+    const dir = join(storage.root, "backups");
+    mkdirSync(dir);
+    const database = new URL(process.env.DATABASE_URL_TEST!).pathname.slice(1);
+    const set = (stamp: string) => [
+      `${database}_${stamp}.dump`,
+      `media_${stamp}.tar.gz`,
+      `private_${stamp}.tar.gz`,
+    ];
+    const oldStamp = "20200101-000000";
+    const newStamp = new Date(Date.now() - HOUR)
+      .toISOString()
+      .replace(/[-:]/g, "")
+      .replace(/\..+/, "")
+      .replace("T", "-");
+    for (const name of [...set(oldStamp), ...set(newStamp), "notes.txt"]) {
+      writeFileSync(join(dir, name), "x");
+    }
+
+    const result = spawnSync("npx", ["tsx", "scripts/purge-inquiries.ts"], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        DATABASE_URL: process.env.DATABASE_URL_TEST,
+        PRIVATE_STORAGE_ROOT: storage.root,
+        BACKUP_DIR: dir,
+      },
+    });
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(readdirSync(dir).sort()).toEqual([...set(newStamp), "notes.txt"].sort());
+  }, 60_000);
+
+  it("the script deletes nothing and logs only the name when the ledger cannot be written", async () => {
+    const id = randomUUID();
+    await testDb.insert(inquiries).values({
+      id,
+      kind: "sell",
+      locale: "de",
+      createdAt: new Date(Date.now() - 2 * 365 * 24 * HOUR),
+      data: { email: "anna@example.com" },
+    });
+    mkdirSync(join(storage.root, "erasure-ledger.jsonl"));
+    try {
+      const result = spawnSync("npx", ["tsx", "scripts/purge-inquiries.ts"], {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          DATABASE_URL: process.env.DATABASE_URL_TEST,
+          PRIVATE_STORAGE_ROOT: storage.root,
+          BACKUP_DIR: join(storage.root, "no-backups-here"),
+        },
+      });
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("ErasureNotRecordedError");
+      expect(result.stderr).not.toContain(id);
+      expect(result.stderr).not.toContain("anna");
+      expect(
+        await testDb
+          .select({ id: inquiries.id })
+          .from(inquiries)
+          .where(eq(inquiries.id, id)),
+      ).toHaveLength(1);
+    } finally {
+      await testDb.delete(inquiries).where(eq(inquiries.id, id));
+    }
   }, 60_000);
 
   it("logs a failed run without the error's text, which could hold personal data", async () => {
