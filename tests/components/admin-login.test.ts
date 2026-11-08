@@ -13,7 +13,7 @@ const cookieStore = vi.hoisted(() => ({
 }));
 
 vi.mock("next/headers", () => ({ cookies: async () => cookieStore }));
-vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
+vi.mock("next/navigation", () => ({ redirect: vi.fn(), unstable_rethrow: vi.fn() }));
 vi.mock("@/db/client", () => ({ db: {} }));
 vi.mock("@/lib/server/audit", () => ({ recordAudit: vi.fn() }));
 vi.mock("@/lib/server/auth/current", () => ({ SESSION_COOKIE: "s", DEVICE_COOKIE: "d" }));
@@ -62,8 +62,12 @@ describe("login", () => {
     expect(createSession).toHaveBeenCalledWith({}, "u1", "verified-password-version");
   });
 
-  it("does not hide unexpected failures", async () => {
+  it("still fails on unexpected failures, without their details", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
     vi.mocked(createSession).mockRejectedValue(new Error("database down"));
-    await expect(login({}, credentials())).rejects.toThrow("database down");
+    await expect(login({}, credentials())).rejects.toThrow(
+      "The action could not be completed.",
+    );
+    expect(log.mock.calls).toEqual([["Login failed", "Error"]]);
   });
 });

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { INQUIRY_STATUSES } from "@/lib/inquiries/policy";
 import { ForbiddenError, requirePermission } from "@/lib/server/auth/current";
+import { concealFailure } from "@/lib/server/conceal-failure";
 import { ErasureNotRecordedError, eraseInquiry } from "@/lib/server/inquiries/erasure";
 import { PRIVATE_ROOT } from "@/lib/server/inquiries/photos";
 import { setInquiryStatus } from "@/lib/server/inquiries/service";
@@ -15,12 +16,14 @@ export type InquiryActionState =
   | { status: "ok" }
   | { status: "error"; error: "forbidden" | "invalid" | "notFound" | "notRecorded" };
 
+const FAILED = "Inquiry action failed";
+
 async function guard(): Promise<{ id: string } | null> {
   try {
     return await requirePermission("inquiries:manage");
   } catch (error) {
     if (error instanceof ForbiddenError) return null;
-    throw error;
+    concealFailure(FAILED, error);
   }
 }
 
@@ -38,7 +41,12 @@ export async function setInquiryStatusAction(
   const parsed = statusInput.safeParse(Object.fromEntries(fd));
   if (!parsed.success) return { status: "error", error: "invalid" };
   const { id, status } = parsed.data;
-  const found = await db.transaction((tx) => setInquiryStatus(tx, actor.id, id, status));
+  let found: boolean;
+  try {
+    found = await db.transaction((tx) => setInquiryStatus(tx, actor.id, id, status));
+  } catch (error) {
+    concealFailure(FAILED, error);
+  }
   if (!found) return { status: "error", error: "notFound" };
   revalidatePath("/admin", "layout");
   return { status: "ok" };
@@ -62,7 +70,7 @@ export async function deleteInquiryAction(
   } catch (error) {
     if (error instanceof ErasureNotRecordedError)
       return { status: "error", error: "notRecorded" };
-    throw error;
+    concealFailure(FAILED, error);
   }
   revalidatePath("/admin", "layout");
   redirect(`/admin/inquiries?deleted=${deleted ? "1" : "gone"}`);

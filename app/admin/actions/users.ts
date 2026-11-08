@@ -21,6 +21,7 @@ import {
   setUserActive,
   type UserRuleCode,
 } from "@/lib/server/auth/users";
+import { concealFailure } from "@/lib/server/conceal-failure";
 
 /** Echoed back on errors so React's post-submit form reset keeps what was typed (never the password). */
 export interface UserFormValues {
@@ -50,7 +51,7 @@ async function guard(): Promise<{ id: string } | UserActionState> {
     return await requirePermission("users:manage");
   } catch (error) {
     if (error instanceof ForbiddenError) return { status: "error", error: "forbidden" };
-    throw error;
+    concealFailure("User action failed", error);
   }
 }
 
@@ -83,10 +84,10 @@ export async function createUserAction(
   return { status: "ok" };
 }
 
-/** Rule violations become form errors; anything else fails loudly. */
+/** Rule violations become form errors; anything else fails without its details. */
 function asFormError(error: unknown): UserActionState {
   if (error instanceof UserRuleError) return { status: "error", error: error.code };
-  throw error;
+  concealFailure("User action failed", error);
 }
 
 async function applyRule(change: () => Promise<void>): Promise<UserActionState> {
@@ -158,14 +159,14 @@ export async function changeOwnPasswordAction(
   _prev: UserActionState,
   formData: FormData,
 ): Promise<UserActionState> {
-  const me = await requireUser();
-  const parsed = ownPasswordSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { status: "error", error: "invalid" };
-  const { currentPassword, newPassword, confirmPassword } = parsed.data;
-  if (newPassword !== confirmPassword) return { status: "error", error: "mismatch" };
-  const keepSessionToken = (await cookies()).get(SESSION_COOKIE)?.value ?? "";
-
   try {
+    const me = await requireUser();
+    const parsed = ownPasswordSchema.safeParse(Object.fromEntries(formData));
+    if (!parsed.success) return { status: "error", error: "invalid" };
+    const { currentPassword, newPassword, confirmPassword } = parsed.data;
+    if (newPassword !== confirmPassword) return { status: "error", error: "mismatch" };
+    const keepSessionToken = (await cookies()).get(SESSION_COOKIE)?.value ?? "";
+
     const outcome = await db.transaction((tx) =>
       changeOwnPassword(tx, me.id, { currentPassword, newPassword, keepSessionToken }),
     );

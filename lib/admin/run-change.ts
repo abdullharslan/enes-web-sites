@@ -8,6 +8,7 @@ import { T } from "@/lib/admin/text";
 import { fieldErrors, formValues, type FormState } from "@/lib/admin/form-state";
 import { ForbiddenError, requirePermission } from "@/lib/server/auth/current";
 import type { Permission } from "@/lib/server/auth/permissions";
+import { concealFailure } from "@/lib/server/conceal-failure";
 import {
   MediaRejectedError,
   prepareImage,
@@ -33,7 +34,7 @@ const isUniqueViolation = (error: unknown) =>
 /**
  * The single path for every admin mutation: authorise (all listed permissions),
  * run the change in one transaction, refresh the public cache tags, and map
- * known failures to form errors. Anything unexpected propagates.
+ * known failures to form errors. Anything unexpected is concealed.
  */
 export async function runAdminChange(
   fd: FormData,
@@ -81,7 +82,7 @@ export async function runAdminChange(
       return { state: { status: "error", error: "noChange" } };
     if (error instanceof MediaRejectedError)
       return { state: { status: "error", error: "upload", values } };
-    throw error;
+    concealFailure("Admin change failed", error);
   }
 }
 
@@ -134,7 +135,7 @@ export async function prepareUpload(
     for (const permission of permissions) await requirePermission(permission);
   } catch (error) {
     if (error instanceof ForbiddenError) return { status: "error", error: "forbidden" };
-    throw error;
+    concealFailure("Admin upload failed", error);
   }
   const file = fd.get("image");
   const alt = altInput.safeParse(translationsFromForm(fd, "alt"));
@@ -156,7 +157,7 @@ export async function prepareUpload(
   } catch (error) {
     if (error instanceof MediaRejectedError)
       return { status: "error", error: "upload", values: formValues(fd) };
-    throw error;
+    concealFailure("Admin upload failed", error);
   }
 }
 

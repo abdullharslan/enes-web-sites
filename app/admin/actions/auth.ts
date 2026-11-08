@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { DEVICE_COOKIE, SESSION_COOKIE } from "@/lib/server/auth/current";
 import { recordAudit } from "@/lib/server/audit";
+import { concealFailure } from "@/lib/server/conceal-failure";
 import { requestAddressBucket } from "@/lib/server/request-address";
 import {
   InactiveAccountError,
@@ -35,55 +36,63 @@ export async function login(
   });
   if (!parsed.success) return { error: "invalid" };
 
-  const store = await cookies();
-  const ip = await requestAddressBucket();
-  const result = await authenticate(db, {
-    ...parsed.data,
-    ip,
-    deviceToken: store.get(DEVICE_COOKIE)?.value,
-  });
-  if (!result.ok) return { error: result.reason };
+  try {
+    const store = await cookies();
+    const ip = await requestAddressBucket();
+    const result = await authenticate(db, {
+      ...parsed.data,
+      ip,
+      deviceToken: store.get(DEVICE_COOKIE)?.value,
+    });
+    if (!result.ok) return { error: result.reason };
 
-  const session = await createSession(db, result.user.id, result.credential).catch(
-    (error: unknown) => {
-      if (error instanceof InactiveAccountError) return null;
-      throw error;
-    },
-  );
-  if (!session) return { error: "invalid" };
-  const { token, expiresAt } = session;
-  const secure = process.env.NODE_ENV === "production";
-  store.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "strict",
-    secure,
-    path: "/",
-    expires: expiresAt,
-  });
-  store.set(DEVICE_COOKIE, result.deviceToken, {
-    httpOnly: true,
-    sameSite: "strict",
-    secure,
-    path: "/",
-    maxAge: TRUSTED_DEVICE_TTL_MS / 1000,
-  });
-  redirect("/admin");
+    const session = await createSession(db, result.user.id, result.credential).catch(
+      (error: unknown) => {
+        if (error instanceof InactiveAccountError) return null;
+        throw error;
+      },
+    );
+    if (!session) return { error: "invalid" };
+    const { token, expiresAt } = session;
+    const secure = process.env.NODE_ENV === "production";
+    store.set(SESSION_COOKIE, token, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure,
+      path: "/",
+      expires: expiresAt,
+    });
+    store.set(DEVICE_COOKIE, result.deviceToken, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure,
+      path: "/",
+      maxAge: TRUSTED_DEVICE_TTL_MS / 1000,
+    });
+    redirect("/admin");
+  } catch (error) {
+    concealFailure("Login failed", error);
+  }
 }
 
 export async function logout(): Promise<void> {
-  const store = await cookies();
-  const token = store.get(SESSION_COOKIE)?.value;
-  if (token) {
-    const user = await validateSession(db, token);
-    await deleteSession(db, token);
-    if (user)
-      await recordAudit(db, {
-        actorId: user.id,
-        action: "auth.logout",
-        entityType: "user",
-        entityId: user.id,
-      });
+  try {
+    const store = await cookies();
+    const token = store.get(SESSION_COOKIE)?.value;
+    if (token) {
+      const user = await validateSession(db, token);
+      await deleteSession(db, token);
+      if (user)
+        await recordAudit(db, {
+          actorId: user.id,
+          action: "auth.logout",
+          entityType: "user",
+          entityId: user.id,
+        });
+    }
+    store.delete(SESSION_COOKIE);
+    redirect("/admin/login");
+  } catch (error) {
+    concealFailure("Logout failed", error);
   }
-  store.delete(SESSION_COOKIE);
-  redirect("/admin/login");
 }
