@@ -1,7 +1,7 @@
 import { and, eq, ne, sql } from "drizzle-orm";
 import type { Executor } from "@/db/connection";
 import { contentBlocks, journalEntries, revisions } from "@/db/schema";
-import { journalInput, type JournalInput } from "@/lib/admin/schemas";
+import { journalInput, journalSaveInput, type JournalInput } from "@/lib/admin/schemas";
 import {
   CONTENT_BLOCKS,
   blockInputSchema,
@@ -238,7 +238,7 @@ export async function saveJournalEntry(
   if (id) await lockJournal(tx, id);
   const replay = await replayedResult(tx, options.idempotencyKey, "journal", id);
   if (replay) return replay;
-  const { expectedVersion, ...values } = journalInput.parse(input);
+  const { expectedVersion, ...values } = journalSaveInput.parse(input);
   const row = await writeJournal(tx, id, values, expectedVersion);
   return finishChange(tx, {
     entityType: "journal",

@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { brandInput, categoryInput, productInput, translationsFromForm } from "./schemas";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  brandInput,
+  categoryInput,
+  journalSaveInput,
+  productInput,
+  translationsFromForm,
+} from "./schemas";
 
 const form = (entries: Record<string, string | string[]>) => {
   const fd = new FormData();
@@ -107,5 +113,34 @@ describe("productInput", () => {
     ["missing German description", { description: { en: "x" } }],
   ])("rejects %s", (_, patch) => {
     expect(productInput.safeParse({ ...valid, ...patch }).success).toBe(false);
+  });
+});
+
+describe("journalSaveInput", () => {
+  afterEach(() => vi.useRealTimers());
+
+  const entry = (publishedAt: string) => ({
+    slug: "beitrag",
+    publishedAt,
+    title: { de: "Titel" },
+    excerpt: { de: "Text" },
+    isVisible: true,
+    expectedVersion: 0,
+  });
+
+  it("judges 'today' by the calendar in Berlin, not in UTC", () => {
+    // 23:30 UTC on 8 Nov is already 00:30 on 9 Nov in Berlin.
+    vi.useFakeTimers({ now: new Date("2026-11-08T23:30:00Z") });
+    expect(journalSaveInput.safeParse(entry("2026-11-09")).success).toBe(true);
+    const tomorrow = journalSaveInput.safeParse(entry("2026-11-10"));
+    expect(tomorrow.error?.issues).toEqual([
+      expect.objectContaining({ path: ["publishedAt"], message: "futureDate" }),
+    ]);
+  });
+
+  it("accepts today and earlier dates", () => {
+    vi.useFakeTimers({ now: new Date("2026-11-08T12:00:00Z") });
+    expect(journalSaveInput.safeParse(entry("2026-11-08")).success).toBe(true);
+    expect(journalSaveInput.safeParse(entry("2020-01-01")).success).toBe(true);
   });
 });

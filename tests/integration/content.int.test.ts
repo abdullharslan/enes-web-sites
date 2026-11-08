@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
-import { contentBlocks, journalEntries } from "@/db/schema";
+import { contentBlocks, journalEntries, revisions } from "@/db/schema";
 import { seedContent } from "@/db/seed-content";
 import { CONTENT_KEYS, blockDefaults } from "@/lib/content/blocks";
 import { loadContent } from "@/lib/server/content/load";
@@ -133,5 +133,57 @@ describe("journal", () => {
         .from(journalEntries)
         .where(eq(journalEntries.id, created.id));
       expect([row?.excerpt, row?.currentVersion]).toEqual([{ de: "Erste Fassung" }, 3]);
+    }));
+
+  const entry = {
+    slug: "zukunft",
+    publishedAt: "2026-10-14",
+    title: { de: "Zukunft" },
+    excerpt: { de: "Fassung" },
+    isVisible: true,
+  };
+
+  it("refuses to save an entry dated after today", () =>
+    withRollback(async (tx) => {
+      await expect(
+        saveJournalEntry(tx, null, null, {
+          ...entry,
+          publishedAt: "2999-01-01",
+          expectedVersion: 0,
+        }),
+      ).rejects.toMatchObject({
+        name: "ZodError",
+        issues: [
+          expect.objectContaining({ path: ["publishedAt"], message: "futureDate" }),
+        ],
+      });
+      expect(await tx.select().from(journalEntries)).toHaveLength(0);
+    }));
+
+  it("still restores a revision whose date lies in the future", () =>
+    withRollback(async (tx) => {
+      const { id } = await saveJournalEntry(tx, null, null, {
+        ...entry,
+        expectedVersion: 0,
+      });
+      await saveJournalEntry(tx, null, id, {
+        ...entry,
+        excerpt: { de: "Zweite" },
+        expectedVersion: 1,
+      });
+      const first = and(eq(revisions.entityId, id), eq(revisions.version, 1));
+      const [revision] = await tx.select().from(revisions).where(first);
+      await tx
+        .update(revisions)
+        .set({ data: { ...revision!.data, publishedAt: "2999-01-01" } })
+        .where(first);
+
+      await restoreAny(tx, null, "journal", id, 1, 2);
+
+      const [row] = await tx
+        .select()
+        .from(journalEntries)
+        .where(eq(journalEntries.id, id));
+      expect(row?.publishedAt).toBe("2999-01-01");
     }));
 });

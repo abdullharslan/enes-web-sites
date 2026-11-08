@@ -103,6 +103,7 @@
   },
   "fields": {
     "invalid": "Geçersiz değer.",
+    "futureDate": "Tarih bugünden sonra olamaz; planlı yayın yoktur.",
     "duplicateSlug": "Bu adres (slug) zaten kullanılıyor.",
     "choose": "Seçiniz",
     "conflict": "Bu kayıt siz düzenlerken başka biri tarafından değiştirildi; yazdıklarınız kaydedilmedi ve formda duruyor. Güncel hali Geçmiş sayfasında görebilirsiniz.",
@@ -155,6 +156,9 @@
     "description": "Açıklama",
     "price": "Fiyat (EUR, boş = fiyat sorunuz)",
     "status": "Durum",
+    "hiddenByBrand": "Gizli (marka gizli)",
+    "hiddenByCategory": "Gizli (kategori gizli)",
+    "hiddenByBrandAndCategory": "Gizli (marka ve kategori gizli)",
     "addedAt": "Eklenme tarihi",
     "images": "Görseller",
     "removeImage": "Kaldır",

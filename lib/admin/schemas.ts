@@ -105,5 +105,23 @@ export const journalInput = z.object({
 
 export type JournalInput = z.infer<typeof journalInput>;
 
+/** Today in the shop's time zone, as YYYY-MM-DD ("en-CA" formats dates that way). */
+const todayInBerlin = () =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
+/**
+ * What an editor may save: a future date would be public at once, as scheduled
+ * publishing does not exist. Only for saves, so old revisions stay restorable.
+ */
+export const journalSaveInput = journalInput.refine(
+  ({ publishedAt }) => publishedAt <= todayInBerlin(),
+  { path: ["publishedAt"], message: "futureDate" },
+);
+
 /** Alt text for an uploaded image (optional; German required if any language is given). */
 export const altInput = optionalTranslations(300);

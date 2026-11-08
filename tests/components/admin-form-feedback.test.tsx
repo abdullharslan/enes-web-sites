@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { FormFeedback } from "@/components/admin/fields";
+import { FormFeedback, TextInput } from "@/components/admin/fields";
 import { T } from "@/lib/admin/text";
 
 describe("FormFeedback", () => {
@@ -21,5 +21,22 @@ describe("FormFeedback", () => {
     expect(screen.getByText(T.fields.conflict)).toBeInTheDocument();
     rerender(<FormFeedback state={{ status: "ok", message: T.fields.unchanged }} />);
     expect(screen.getByText(T.fields.unchanged)).toBeInTheDocument();
+  });
+});
+
+describe("field errors", () => {
+  it("says why a date is refused", () => {
+    render(
+      <TextInput
+        state={{
+          status: "error",
+          error: "invalid",
+          fieldErrors: { publishedAt: "futureDate" },
+        }}
+        name="publishedAt"
+        label="Tarih"
+      />,
+    );
+    expect(screen.getByText(T.fields.futureDate)).toBeInTheDocument();
   });
 });

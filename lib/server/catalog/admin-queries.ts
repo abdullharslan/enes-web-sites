@@ -40,7 +40,13 @@ export async function getCategory(id: string) {
 
 export async function listProducts() {
   const rows = await db
-    .select({ product: products, brandName: brands.name, categoryName: categories.name })
+    .select({
+      product: products,
+      brandName: brands.name,
+      categoryName: categories.name,
+      brandVisible: brands.isVisible,
+      categoryVisible: categories.isVisible,
+    })
     .from(products)
     .innerJoin(brands, eq(products.brandId, brands.id))
     .innerJoin(categories, eq(products.categoryId, categories.id))

@@ -85,6 +85,29 @@ export async function createUserAsOwner(
   return createUser(tx, input, actorId);
 }
 
+/**
+ * For `npm run admin:create`, which has no signed-in actor. The first account
+ * must be an owner, or nobody could ever manage users.
+ */
+export async function createUserFromCommandLine(
+  tx: Executor,
+  input: NewUser,
+): Promise<SessionUser> {
+  await lockUserManagement(tx);
+  if (input.role !== "owner") {
+    const [owner] = await tx
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.role, "owner"), eq(users.isActive, true)))
+      .limit(1);
+    if (!owner)
+      throw new Error(
+        "Aktif sahip yok: önce --role owner ile bir sahip hesabı oluşturun.",
+      );
+  }
+  return createUser(tx, input);
+}
+
 export async function changeUserRole(
   tx: Executor,
   actorId: string,
@@ -111,6 +134,8 @@ export async function setUserActive(
 ): Promise<void> {
   const target = await beginChange(tx, actorId, userId);
   if (target.isActive === active) return;
+  // This update takes the user row: createSession waits for it, or it waits for
+  // createSession and the delete below then also removes the session just made.
   await tx
     .update(users)
     .set({ isActive: active, updatedAt: new Date() })

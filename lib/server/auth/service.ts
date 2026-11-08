@@ -217,6 +217,11 @@ export async function authenticate(
   });
 }
 
+/** The account was deactivated between checking the password and starting the session. */
+export class InactiveAccountError extends Error {
+  override readonly name = "InactiveAccountError";
+}
+
 export async function createSession(
   db: Executor,
   userId: string,
@@ -224,9 +229,20 @@ export async function createSession(
 ): Promise<{ token: string; expiresAt: Date }> {
   const token = generateSessionToken();
   const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
-  await db
-    .insert(sessions)
-    .values({ tokenHash: hashSessionToken(token), userId, expiresAt, createdAt: now });
+  await db.transaction(async (tx) => {
+    // The row lock orders this against a deactivation (see setUserActive): either
+    // it has committed and is seen here, or it waits and then deletes this session.
+    // It is the only lock taken here, so it cannot be part of a deadlock.
+    const [user] = await tx
+      .select({ isActive: users.isActive })
+      .from(users)
+      .where(eq(users.id, userId))
+      .for("update");
+    if (!user?.isActive) throw new InactiveAccountError();
+    await tx
+      .insert(sessions)
+      .values({ tokenHash: hashSessionToken(token), userId, expiresAt, createdAt: now });
+  });
   return { token, expiresAt };
 }
 

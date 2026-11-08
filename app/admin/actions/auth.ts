@@ -8,6 +8,7 @@ import { DEVICE_COOKIE, SESSION_COOKIE } from "@/lib/server/auth/current";
 import { recordAudit } from "@/lib/server/audit";
 import { requestAddressBucket } from "@/lib/server/request-address";
 import {
+  InactiveAccountError,
   TRUSTED_DEVICE_TTL_MS,
   authenticate,
   createSession,
@@ -43,7 +44,12 @@ export async function login(
   });
   if (!result.ok) return { error: result.reason };
 
-  const { token, expiresAt } = await createSession(db, result.user.id);
+  const session = await createSession(db, result.user.id).catch((error: unknown) => {
+    if (error instanceof InactiveAccountError) return null;
+    throw error;
+  });
+  if (!session) return { error: "invalid" };
+  const { token, expiresAt } = session;
   const secure = process.env.NODE_ENV === "production";
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,

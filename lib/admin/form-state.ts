@@ -33,12 +33,12 @@ export function formValues(form: FormData): FormValues {
   return values;
 }
 
-/** Maps zod issues to `field.path → message code` (first issue per field). */
+/** Maps zod issues to `field.path → message code` (first issue per field); `refine` rules name their own code. */
 export function fieldErrors(error: z.ZodError): Record<string, string> {
   const result: Record<string, string> = {};
   for (const issue of error.issues) {
     const key = issue.path.join(".") || "form";
-    result[key] ??= "invalid";
+    result[key] ??= issue.code === "custom" ? issue.message : "invalid";
   }
   return result;
 }

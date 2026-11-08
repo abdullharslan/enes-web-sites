@@ -6,6 +6,7 @@ import { localePath, type Locale } from "@/lib/i18n/locales";
 import { LEGAL_PAGES } from "@/lib/legal";
 import type { PagesContent } from "@/lib/content/home";
 import type { SiteContact } from "@/lib/content/resolve";
+import { LanguageSwitcher } from "./language-switcher";
 import type { NavLink } from "./site-header";
 
 interface SiteFooterProps {
@@ -43,6 +44,10 @@ export function SiteFooter({ contact, content, locale, links, dict }: SiteFooter
           >
             <InstagramIcon />
           </a>
+          {/* Phones: the header has no room for it and the menu needs JavaScript. */}
+          <div className="mt-6 sm:hidden">
+            <LanguageSwitcher current={locale} label={dict.nav.language} />
+          </div>
         </div>
 
         <nav aria-label={dict.footer.explore}>

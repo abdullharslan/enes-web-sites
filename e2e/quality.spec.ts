@@ -97,6 +97,29 @@ test("skip link becomes a visible 44px target on focus", async ({ page }) => {
   await expect(page).toHaveURL(/#content$/);
 });
 
+test.describe("phone without JavaScript", () => {
+  test.use({ javaScriptEnabled: false, viewport: { width: 375, height: 812 } });
+
+  test("plain links change the language, keeping the page", async ({ page }) => {
+    await page.goto("/de/sell");
+    const links = page.getByRole("navigation", { name: "Sprache" }).getByRole("link");
+    await expect(links).toHaveCount(4);
+    for (const link of await links.all()) {
+      await link.scrollIntoViewIfNeeded();
+      const box = await link.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(MIN_TARGET);
+      expect(box?.height).toBeGreaterThanOrEqual(MIN_TARGET);
+    }
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+
+    await links.getByText("en", { exact: true }).click();
+    await expect(page).toHaveURL(/\/en\/sell$/);
+  });
+});
+
 test.describe("visual regression", () => {
   // Baselines are macOS renders; Linux fonts and anti-aliasing differ by far more
   // than the threshold, so pixel comparison only runs where the baselines were made.

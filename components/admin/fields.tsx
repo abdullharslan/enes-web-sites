@@ -14,6 +14,12 @@ const LOCALE_NAMES: Record<string, string> = {
   tr: "Türkçe",
 };
 
+/** Codes with their own wording; every other field error is a plain "invalid". */
+const FIELD_ERROR_MESSAGES: Record<string, string> = {
+  duplicate: T.fields.duplicateSlug,
+  futureDate: T.fields.futureDate,
+};
+
 const errorFor = (state: FormState, name: string) =>
   state.status === "error" ? state.fieldErrors?.[name] : undefined;
 
@@ -51,7 +57,7 @@ function Field({
       {hint && <p className="text-xs text-mist">{hint}</p>}
       {error && (
         <p id={`${id}-error`} className="text-sm text-danger">
-          {error === "duplicate" ? T.fields.duplicateSlug : T.fields.invalid}
+          {FIELD_ERROR_MESSAGES[error] ?? T.fields.invalid}
         </p>
       )}
     </div>

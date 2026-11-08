@@ -1,9 +1,9 @@
 import { createInterface } from "node:readline/promises";
 import { Writable } from "node:stream";
 import { parseArgs } from "node:util";
-import { createUser } from "@/lib/server/auth/service";
 import { passwordProblems } from "@/lib/server/auth/password";
 import { ROLES, type Role } from "@/lib/server/auth/permissions";
+import { createUserFromCommandLine } from "@/lib/server/auth/users";
 import { connect } from "./connection";
 import { isMain } from "./is-main";
 
@@ -51,7 +51,7 @@ async function main(): Promise<void> {
   const { db, close } = connect(process.env.DATABASE_URL, { max: 1 });
   try {
     const user = await db.transaction((tx) =>
-      createUser(tx, {
+      createUserFromCommandLine(tx, {
         email: values.email!,
         name: values.name!,
         role: values.role as Role,

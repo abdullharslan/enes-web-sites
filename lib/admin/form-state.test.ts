@@ -31,6 +31,16 @@ describe("fieldErrors", () => {
   });
 });
 
+describe("fieldErrors with a named rule", () => {
+  it("passes a custom rule's code through", () => {
+    const result = z
+      .object({ day: z.string() })
+      .refine(() => false, { path: ["day"], message: "futureDate" })
+      .safeParse({ day: "x" });
+    expect(fieldErrors(result.error!)).toEqual({ day: "futureDate" });
+  });
+});
+
 describe("pick", () => {
   it("prefers the submitted value after an error, else the stored default", () => {
     const error: FormState = {

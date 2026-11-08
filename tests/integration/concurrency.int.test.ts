@@ -1,13 +1,18 @@
 import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
-import { brands, inquiries, users } from "@/db/schema";
+import { brands, inquiries, sessions, users } from "@/db/schema";
 import { INQUIRY_LIMITS } from "@/lib/inquiries/policy";
-import { createUser } from "@/lib/server/auth/service";
+import {
+  InactiveAccountError,
+  createSession,
+  createUser,
+} from "@/lib/server/auth/service";
 import {
   UserRuleError,
   changeUserRole,
   createUserAsOwner,
+  setUserActive,
 } from "@/lib/server/auth/users";
 import { saveBrand } from "@/lib/server/catalog/admin";
 import { restoreAny } from "@/lib/server/history";
@@ -56,6 +61,64 @@ describe("user management under concurrency", () => {
       await testDb.delete(users).where(inArray(users.id, [a!.id, b!.id]));
     }
   });
+});
+
+describe("login racing with deactivation", () => {
+  // Long enough for the second transaction to reach its lock (or, without one, to finish).
+  const letOtherSideRun = () => new Promise((resolve) => setTimeout(resolve, 150));
+
+  async function withOwnerAndEditor(
+    run: (ownerId: string, editorId: string) => Promise<void>,
+  ) {
+    const id = unique();
+    const [owner, editor] = await Promise.all(
+      (["owner", "editor"] as const).map((role) =>
+        createUser(testDb, {
+          email: `${role}-${id}@example.com`,
+          name: role,
+          role,
+          password: PASSWORD,
+        }),
+      ),
+    );
+    try {
+      await run(owner!.id, editor!.id);
+      const left = await testDb
+        .select({ id: sessions.tokenHash })
+        .from(sessions)
+        .where(eq(sessions.userId, editor!.id));
+      expect(left).toHaveLength(0);
+    } finally {
+      await testDb.delete(users).where(inArray(users.id, [owner!.id, editor!.id]));
+    }
+  }
+
+  it("a login arriving during a deactivation gets no session", () =>
+    withOwnerAndEditor(async (ownerId, editorId) => {
+      let login: Promise<unknown> = Promise.resolve();
+      await testDb.transaction(async (tx) => {
+        await setUserActive(tx, ownerId, editorId, false);
+        login = createSession(testDb, editorId).then(
+          () => "created",
+          (error: unknown) => error,
+        );
+        await letOtherSideRun();
+      });
+      expect(await login).toBeInstanceOf(InactiveAccountError);
+    }));
+
+  it("a deactivation arriving during a login removes the new session", () =>
+    withOwnerAndEditor(async (ownerId, editorId) => {
+      let deactivation: Promise<unknown> = Promise.resolve();
+      await testDb.transaction(async (tx) => {
+        await createSession(tx, editorId);
+        deactivation = testDb.transaction((other) =>
+          setUserActive(other, ownerId, editorId, false),
+        );
+        await letOtherSideRun();
+      });
+      await deactivation;
+    }));
 });
 
 describe("inquiry limits under concurrency", () => {

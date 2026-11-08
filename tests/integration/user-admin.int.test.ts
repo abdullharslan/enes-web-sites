@@ -9,6 +9,7 @@ import {
   UserRuleError,
   changeOwnPassword,
   changeUserRole,
+  createUserFromCommandLine,
   resetUserPassword,
   setUserActive,
 } from "@/lib/server/auth/users";
@@ -282,4 +283,37 @@ describe("error type", () => {
     expect(error.code).toBe("self");
     expect(error.name).toBe("UserRuleError");
   });
+});
+
+describe("createUserFromCommandLine", () => {
+  const input = (name: string, role: "owner" | "editor") => ({
+    email: `${name}@example.com`,
+    name,
+    role,
+    password: PASSWORD,
+  });
+  const retireOwners = (tx: Executor) =>
+    tx.update(users).set({ isActive: false }).where(eq(users.role, "owner"));
+
+  it("refuses a non-owner while no active owner exists", () =>
+    withRollback(async (tx) => {
+      await make(tx, "retired", "owner");
+      await retireOwners(tx);
+      await expect(
+        createUserFromCommandLine(tx, input("editor", "editor")),
+      ).rejects.toThrow(/aktif sahip/i);
+      const [row] = await tx
+        .select()
+        .from(users)
+        .where(eq(users.email, "editor@example.com"));
+      expect(row).toBeUndefined();
+    }));
+
+  it("allows the first owner, and editors once an active owner exists", () =>
+    withRollback(async (tx) => {
+      await retireOwners(tx);
+      const owner = await createUserFromCommandLine(tx, input("first", "owner"));
+      const editor = await createUserFromCommandLine(tx, input("editor", "editor"));
+      expect([owner.role, editor.role]).toEqual(["owner", "editor"]);
+    }));
 });

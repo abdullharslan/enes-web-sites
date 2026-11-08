@@ -44,11 +44,19 @@ export async function POST(request: Request): Promise<Response> {
   const parsed = body.safeParse(json);
   if (!parsed.success) return done();
 
-  const catalog = await getCatalog();
-  const target = parseViewPath(parsed.data.path, {
-    products: new Set(catalog.products.map((p) => p.slug)),
-    brands: new Set(catalog.brands.map((b) => b.slug)),
-  });
-  if (target) await recordView(db, target);
+  try {
+    const catalog = await getCatalog();
+    const target = parseViewPath(parsed.data.path, {
+      products: new Set(catalog.products.map((p) => p.slug)),
+      brands: new Set(catalog.brands.map((b) => b.slug)),
+    });
+    if (target) await recordView(db, target);
+  } catch (error) {
+    // A lost count must never reach the visitor's page; the name alone is safe to log.
+    console.error(
+      "Page view not recorded",
+      error instanceof Error ? error.name : "unknown",
+    );
+  }
   return done();
 }

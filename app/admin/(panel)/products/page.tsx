@@ -10,6 +10,19 @@ import { listProducts } from "@/lib/server/catalog/admin-queries";
 
 export const metadata: Metadata = { title: T.products.title };
 
+/** What the public site actually does: a hidden brand or category hides its products too. */
+function effectiveVisibility(
+  ownVisible: boolean,
+  brandVisible: boolean,
+  categoryVisible: boolean,
+): string {
+  if (!ownVisible) return T.common.hidden;
+  if (!brandVisible && !categoryVisible) return T.products.hiddenByBrandAndCategory;
+  if (!brandVisible) return T.products.hiddenByBrand;
+  if (!categoryVisible) return T.products.hiddenByCategory;
+  return T.common.visible;
+}
+
 export default async function ProductsAdminPage() {
   const user = await requireUser();
   if (!can(user.role, "catalog:write")) return <AccessDenied />;
@@ -35,7 +48,7 @@ export default async function ProductsAdminPage() {
           T.common.actions,
         ]}
       >
-        {rows.map(({ product, brandName, categoryName, thumbSrc }) => (
+        {rows.map(({ product, brandName, categoryName, thumbSrc, ...parents }) => (
           <tr key={product.id}>
             <td className="py-2 pr-4">
               <div className="relative size-12 overflow-hidden bg-graphite">
@@ -60,7 +73,11 @@ export default async function ProductsAdminPage() {
                 : formatEur(product.priceEur, "de")}
             </td>
             <td className="py-3 pr-4">
-              {product.isVisible ? T.common.visible : T.common.hidden}
+              {effectiveVisibility(
+                product.isVisible,
+                parents.brandVisible,
+                parents.categoryVisible,
+              )}
             </td>
             <td className="py-3 pr-4">v{product.currentVersion}</td>
             <td className="py-3">

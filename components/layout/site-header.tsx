@@ -95,7 +95,7 @@ export function SiteHeader({
           </span>
         </Link>
 
-        {/* Four locales do not fit next to the logo on phones; there the switcher lives in the menu. */}
+        {/* Four locales do not fit next to the logo on phones; there the switcher lives in the menu and the footer. */}
         <div className="flex items-center justify-self-end">
           <Link
             href={searchHref}
