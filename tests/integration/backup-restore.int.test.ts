@@ -31,9 +31,15 @@ const YEAR = 365 * 24 * 60 * 60 * 1000;
 /**
  * The real scripts against the local test database, with every file in a
  * temporary folder. They drive the local docker-compose database, so this
- * needs .env.local (CI has a bare Postgres service and skips it).
+ * needs that database running (CI has a bare Postgres service and skips it,
+ * even though it creates .env.local from the template).
  */
-describe.skipIf(!existsSync(".env.local"))("backup, erase, restore round trip", () => {
+const composeDatabaseRuns =
+  spawnSync("docker-compose", ["--env-file", ".env.local", "ps", "-q", "postgres"], {
+    encoding: "utf8",
+  }).stdout?.trim().length > 0;
+
+describe.skipIf(!composeDatabaseRuns)("backup, erase, restore round trip", () => {
   let base: string;
   let privateRoot: string;
   let backupDir: string;
