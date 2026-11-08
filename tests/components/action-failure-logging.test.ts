@@ -73,11 +73,11 @@ vi.mock("@/lib/server/media/store", () => ({
 }));
 
 const SECRETS = ["ada@example.com", "Ada Lovelace", "$argon2id$v=19$hash"];
-const failedQuery = () =>
+const failedQuery = (code = "08006") =>
   new DrizzleQueryError(
     "insert into users values ($1, $2, $3)",
     SECRETS,
-    Object.assign(new Error(`Key (email)=(${SECRETS[0]}) exists`), { code: "23505" }),
+    Object.assign(new Error(`Key (email)=(${SECRETS[0]}) exists`), { code }),
   );
 const redirectToLogin = () => {
   try {
@@ -211,9 +211,21 @@ describe("an unexpected failure of a server action", () => {
 
     expect(thrown).not.toBeInstanceOf(DrizzleQueryError);
     expect(log).toHaveBeenCalledOnce();
-    expect(log.mock.calls[0]).toContain("Error 23505");
+    expect(log.mock.calls[0]).toContain("Error 08006");
     const visible = inspect([thrown, log.mock.calls], { depth: 10, showHidden: true });
     for (const secret of SECRETS) expect(visible).not.toContain(secret);
+  });
+});
+
+describe("a save that loses a race for a unique value", () => {
+  it("is a conflict for the form, not a crash", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    database.transaction.mockRejectedValue(failedQuery("23505"));
+
+    const result = await adminChange();
+
+    expect(result).toMatchObject({ state: { status: "error", error: "conflict" } });
+    expect(log).not.toHaveBeenCalled();
   });
 });
 

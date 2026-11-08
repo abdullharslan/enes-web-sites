@@ -25,11 +25,10 @@ import {
 export type ChangeOutcome = { result: SaveResult } | { state: FormState };
 
 /** Postgres unique violation (e.g. two uploads racing for the same version, a reused idempotency key). */
+/** Drizzle wraps a failed query; the driver's code is on its cause. */
 const isUniqueViolation = (error: unknown) =>
-  typeof error === "object" &&
-  error !== null &&
-  "code" in error &&
-  (error as { code?: string }).code === "23505";
+  error instanceof Error &&
+  (error.cause as { code?: string } | undefined)?.code === "23505";
 
 /**
  * The single path for every admin mutation: authorise (all listed permissions),
