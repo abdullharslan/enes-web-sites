@@ -14,7 +14,7 @@ import {
   setUserActive,
 } from "@/lib/server/auth/users";
 import { verifyPassword } from "@/lib/server/auth/password";
-import { closeTestDb, withRollback } from "./helpers";
+import { closeTestDb, credentialOf, withRollback } from "./helpers";
 
 afterAll(closeTestDb);
 
@@ -123,7 +123,11 @@ describe("setUserActive", () => {
     withRollback(async (tx) => {
       const owner = await make(tx, "owner", "owner");
       const editor = await make(tx, "editor", "editor");
-      const { token } = await createSession(tx, editor.id);
+      const { token } = await createSession(
+        tx,
+        editor.id,
+        await credentialOf(tx, editor.id),
+      );
       await addDevice(tx, editor.id);
       await setUserActive(tx, owner.id, editor.id, false);
       expect(await validateSession(tx, token)).toBeNull();
@@ -156,7 +160,11 @@ describe("resetUserPassword", () => {
     withRollback(async (tx) => {
       const owner = await make(tx, "owner", "owner");
       const editor = await make(tx, "editor", "editor");
-      const { token } = await createSession(tx, editor.id);
+      const { token } = await createSession(
+        tx,
+        editor.id,
+        await credentialOf(tx, editor.id),
+      );
       await addDevice(tx, editor.id);
       await resetUserPassword(tx, owner.id, editor.id, NEW_PASSWORD);
 
@@ -195,8 +203,12 @@ describe("changeOwnPassword", () => {
   it("requires the current password, keeps this session and ends the others", () =>
     withRollback(async (tx) => {
       const editor = await make(tx, "editor", "editor");
-      const current = await createSession(tx, editor.id);
-      const other = await createSession(tx, editor.id);
+      const current = await createSession(
+        tx,
+        editor.id,
+        await credentialOf(tx, editor.id),
+      );
+      const other = await createSession(tx, editor.id, await credentialOf(tx, editor.id));
       await addDevice(tx, editor.id);
 
       expect(

@@ -15,6 +15,7 @@ import { HONEYPOT_FIELD, type PublicFormState } from "@/lib/forms/state";
 import { DEFAULT_LOCALE, isLocale } from "@/lib/i18n/locales";
 import { INQUIRY_KINDS, photoProblem, type InquiryKind } from "@/lib/inquiries/policy";
 import { getCatalog } from "@/lib/server/catalog";
+import { errorSummary } from "@/lib/server/error-summary";
 import {
   PRIVATE_ROOT,
   hasRoomFor,
@@ -97,8 +98,8 @@ export async function submitInquiryAction(
   try {
     return await receive(fd, input, values);
   } catch (error) {
-    // Visitors get a calm message and the phone number; the cause goes to the server log.
-    console.error("Inquiry submission failed", error);
+    // Visitors get a calm message and the phone number; the log gets only the kind of failure.
+    console.error("Inquiry submission failed", errorSummary(error));
     return { status: "failed", values };
   }
 }
@@ -199,7 +200,7 @@ const photoUploads = createInflightLimiter({ perKey: 1, total: 4 });
 /** File cleanup must never turn a stored inquiry into a "failed" answer (the retry would duplicate it). */
 const removeQuietly = (ids: string[]) =>
   removeInquiryFiles(PRIVATE_ROOT, ids).catch((error) =>
-    console.error("Removing inquiry files failed", error),
+    console.error("Removing inquiry files failed", errorSummary(error)),
   );
 
 async function store(input: NewInquiry, values: FormRecord): Promise<PublicFormState> {

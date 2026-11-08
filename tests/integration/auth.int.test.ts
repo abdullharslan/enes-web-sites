@@ -11,7 +11,7 @@ import {
   validateSession,
 } from "@/lib/server/auth/service";
 import { hashSessionToken } from "@/lib/server/auth/token";
-import { closeTestDb, withRollback } from "./helpers";
+import { closeTestDb, credentialOf, withRollback } from "./helpers";
 
 afterAll(closeTestDb);
 
@@ -114,7 +114,12 @@ describe("sessions", () => {
   it("stores only the token hash and validates until expiry", () =>
     withRollback(async (tx) => {
       const user = await createUser(tx, owner);
-      const { token, expiresAt } = await createSession(tx, user.id, now);
+      const { token, expiresAt } = await createSession(
+        tx,
+        user.id,
+        await credentialOf(tx, user.id),
+        now,
+      );
       expect(expiresAt.getTime() - now.getTime()).toBe(SESSION_TTL_MS);
 
       const stored = await tx.select().from(sessions).where(eq(sessions.userId, user.id));
@@ -135,10 +140,20 @@ describe("sessions", () => {
   it("rejects unknown tokens, logged-out sessions and deactivated users", () =>
     withRollback(async (tx) => {
       const user = await createUser(tx, owner);
-      const { token } = await createSession(tx, user.id, now);
+      const { token } = await createSession(
+        tx,
+        user.id,
+        await credentialOf(tx, user.id),
+        now,
+      );
       expect(await validateSession(tx, "forged-token", now)).toBeNull();
 
-      const second = await createSession(tx, user.id, now);
+      const second = await createSession(
+        tx,
+        user.id,
+        await credentialOf(tx, user.id),
+        now,
+      );
       await tx.update(users).set({ isActive: false }).where(eq(users.id, user.id));
       expect(await validateSession(tx, second.token, now)).toBeNull();
 

@@ -18,7 +18,7 @@ import { saveBrand } from "@/lib/server/catalog/admin";
 import { restoreAny } from "@/lib/server/history";
 import { listRevisions } from "@/lib/server/revisions";
 import { hashAddress, recordInquiry } from "@/lib/server/inquiries/service";
-import { closeTestDb, testDb, withRollback } from "./helpers";
+import { closeTestDb, credentialOf, testDb, withRollback } from "./helpers";
 
 /*
  * These tests COMMIT real, parallel transactions (each on its own pooled
@@ -96,9 +96,10 @@ describe("login racing with deactivation", () => {
   it("a login arriving during a deactivation gets no session", () =>
     withOwnerAndEditor(async (ownerId, editorId) => {
       let login: Promise<unknown> = Promise.resolve();
+      const credential = await credentialOf(testDb, editorId);
       await testDb.transaction(async (tx) => {
         await setUserActive(tx, ownerId, editorId, false);
-        login = createSession(testDb, editorId).then(
+        login = createSession(testDb, editorId, credential).then(
           () => "created",
           (error: unknown) => error,
         );
@@ -111,7 +112,7 @@ describe("login racing with deactivation", () => {
     withOwnerAndEditor(async (ownerId, editorId) => {
       let deactivation: Promise<unknown> = Promise.resolve();
       await testDb.transaction(async (tx) => {
-        await createSession(tx, editorId);
+        await createSession(tx, editorId, await credentialOf(tx, editorId));
         deactivation = testDb.transaction((other) =>
           setUserActive(other, ownerId, editorId, false),
         );

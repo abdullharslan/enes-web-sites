@@ -41,6 +41,12 @@ export interface NewUser {
 
 const normaliseEmail = (email: string) => email.trim().toLowerCase();
 
+/**
+ * Names the password a login was verified against, without being the hash itself.
+ * A different value means the password changed since (a new hash has a new salt).
+ */
+export const credentialVersion = (passwordHash: string) => hashSessionToken(passwordHash);
+
 // Verifying against a fixed hash when the user does not exist keeps response
 // times similar, so timing does not reveal which e-mails have accounts.
 let dummyHash: Promise<string> | undefined;
@@ -76,8 +82,29 @@ export async function createUser(
   return row;
 }
 
+/**
+ * Locks the user row, then tells whether the account is still active and still
+ * has the password that was verified. The lock orders a login against "sign out
+ * everywhere" (reset, own change, deactivation): either that change has committed
+ * and is seen here, or it waits and then also deletes what this transaction adds.
+ * A login takes no other lock while waiting or holding it, so it cannot deadlock
+ * with those changes, which take their advisory lock before this row.
+ */
+async function holdVerifiedCredential(
+  tx: Executor,
+  userId: string,
+  credential: string,
+): Promise<boolean> {
+  const [user] = await tx
+    .select({ isActive: users.isActive, passwordHash: users.passwordHash })
+    .from(users)
+    .where(eq(users.id, userId))
+    .for("update");
+  return !!user?.isActive && credentialVersion(user.passwordHash) === credential;
+}
+
 export type AuthResult =
-  | { ok: true; user: SessionUser; deviceToken: string }
+  | { ok: true; user: SessionUser; deviceToken: string; credential: string }
   | { ok: false; reason: "invalid" | "locked" };
 
 export const TRUSTED_DEVICE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
@@ -188,7 +215,10 @@ export async function authenticate(
   );
   if (!user || !user.isActive || !valid) return { ok: false, reason: "invalid" };
 
+  const credential = credentialVersion(user.passwordHash);
   return db.transaction(async (tx) => {
+    if (!(await holdVerifiedCredential(tx, user.id, credential)))
+      return { ok: false as const, reason: "invalid" as const };
     await tx
       .update(loginAttempts)
       .set({ succeeded: true })
@@ -213,11 +243,12 @@ export async function authenticate(
       ok: true as const,
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
       deviceToken: token,
+      credential,
     };
   });
 }
 
-/** The account was deactivated between checking the password and starting the session. */
+/** The account was deactivated, or its password changed, after the password was checked. */
 export class InactiveAccountError extends Error {
   override readonly name = "InactiveAccountError";
 }
@@ -225,20 +256,15 @@ export class InactiveAccountError extends Error {
 export async function createSession(
   db: Executor,
   userId: string,
+  credential: string,
   now = new Date(),
 ): Promise<{ token: string; expiresAt: Date }> {
   const token = generateSessionToken();
   const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
   await db.transaction(async (tx) => {
-    // The row lock orders this against a deactivation (see setUserActive): either
-    // it has committed and is seen here, or it waits and then deletes this session.
-    // It is the only lock taken here, so it cannot be part of a deadlock.
-    const [user] = await tx
-      .select({ isActive: users.isActive })
-      .from(users)
-      .where(eq(users.id, userId))
-      .for("update");
-    if (!user?.isActive) throw new InactiveAccountError();
+    if (!(await holdVerifiedCredential(tx, userId, credential))) {
+      throw new InactiveAccountError();
+    }
     await tx
       .insert(sessions)
       .values({ tokenHash: hashSessionToken(token), userId, expiresAt, createdAt: now });

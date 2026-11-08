@@ -44,10 +44,12 @@ export async function login(
   });
   if (!result.ok) return { error: result.reason };
 
-  const session = await createSession(db, result.user.id).catch((error: unknown) => {
-    if (error instanceof InactiveAccountError) return null;
-    throw error;
-  });
+  const session = await createSession(db, result.user.id, result.credential).catch(
+    (error: unknown) => {
+      if (error instanceof InactiveAccountError) return null;
+      throw error;
+    },
+  );
   if (!session) return { error: "invalid" };
   const { token, expiresAt } = session;
   const secure = process.env.NODE_ENV === "production";

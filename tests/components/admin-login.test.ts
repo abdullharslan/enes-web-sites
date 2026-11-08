@@ -43,6 +43,7 @@ describe("login", () => {
       ok: true,
       user: { id: "u1", email: "e@example.com", name: "E", role: "editor" },
       deviceToken: "device",
+      credential: "verified-password-version",
     });
   });
 
@@ -50,6 +51,15 @@ describe("login", () => {
     vi.mocked(createSession).mockRejectedValue(new InactiveAccountError());
     expect(await login({}, credentials())).toEqual({ error: "invalid" });
     expect(cookieStore.set).not.toHaveBeenCalled();
+  });
+
+  it("starts the session for the credential that was verified", async () => {
+    vi.mocked(createSession).mockResolvedValue({
+      token: "t",
+      expiresAt: new Date("2026-11-09T00:00:00Z"),
+    });
+    await login({}, credentials());
+    expect(createSession).toHaveBeenCalledWith({}, "u1", "verified-password-version");
   });
 
   it("does not hide unexpected failures", async () => {

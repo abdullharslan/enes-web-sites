@@ -4,6 +4,7 @@ import { parseArgs } from "node:util";
 import { passwordProblems } from "@/lib/server/auth/password";
 import { ROLES, type Role } from "@/lib/server/auth/permissions";
 import { createUserFromCommandLine } from "@/lib/server/auth/users";
+import { operatorMessage } from "@/lib/server/error-summary";
 import { connect } from "./connection";
 import { isMain } from "./is-main";
 
@@ -66,7 +67,7 @@ async function main(): Promise<void> {
 
 if (isMain(import.meta.url)) {
   main().catch((error: unknown) => {
-    console.error(error instanceof Error ? error.message : error);
+    console.error(operatorMessage(error));
     process.exitCode = 1;
   });
 }
