@@ -22,7 +22,7 @@ import {
   removeInquiryFiles,
   writeInquiryPhotos,
 } from "@/lib/server/inquiries/photos";
-import { maintainInquiryRetention } from "@/lib/server/inquiries/retention";
+import { maintainRetention } from "@/lib/server/inquiries/retention";
 import {
   hashAddress,
   admitSubmission,
@@ -210,7 +210,7 @@ async function store(input: NewInquiry, values: FormRecord): Promise<PublicFormS
     throw error;
   }
   if (outcome !== "stored") await removeQuietly([input.id]);
-  await maintainInquiryRetention(db, PRIVATE_ROOT);
+  await maintainRetention(db, PRIVATE_ROOT);
   return outcome === "rateLimited"
     ? { status: "rateLimited", values }
     : { status: "sent" };

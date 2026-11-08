@@ -65,6 +65,8 @@ export default defineConfig({
       MEDIA_ROOT: "storage/e2e-media",
       NEXT_DIST_DIR: ".next-e2e",
       PRIVATE_STORAGE_ROOT: "storage/e2e-private",
+      // Background deletes must not change data while tests run.
+      RETENTION_TIMER: "off",
       // Every test submits from 127.0.0.1; the real limit is covered by integration tests.
       // Playwright is the only client of this server, there is no proxy in between.
       TRUSTED_PROXY_HOPS: "0",

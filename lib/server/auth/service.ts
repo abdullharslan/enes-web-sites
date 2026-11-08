@@ -1,4 +1,4 @@
-import { and, count, eq, gt, sql } from "drizzle-orm";
+import { and, count, eq, gt, lt, lte, sql } from "drizzle-orm";
 import type { Executor } from "@/db/connection";
 import { loginAttempts, sessions, trustedDevices, users } from "@/db/schema";
 import { recordAudit } from "@/lib/server/audit";
@@ -19,6 +19,11 @@ export const LOGIN_LOCKOUT = {
   maxFailuresPerEmail: 50,
   windowMs: 15 * 60 * 1000,
 } as const;
+/**
+ * Attempts hold an e-mail and an address, so they are not kept forever: seven
+ * days leaves time to look into an incident and is far above the lockout window.
+ */
+export const LOGIN_ATTEMPT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 
 export interface SessionUser {
   id: string;
@@ -258,4 +263,26 @@ export async function deleteSession(db: Executor, token: string): Promise<void> 
 
 export async function deleteUserSessions(db: Executor, userId: string): Promise<void> {
   await db.delete(sessions).where(eq(sessions.userId, userId));
+}
+
+/** Deletes expired sessions and trusted devices and old login attempts; returns the row count. */
+export async function purgeExpiredAuthData(
+  db: Executor,
+  now = new Date(),
+): Promise<number> {
+  const removedSessions = await db
+    .delete(sessions)
+    .where(lte(sessions.expiresAt, now))
+    .returning({ id: sessions.tokenHash });
+  const removedDevices = await db
+    .delete(trustedDevices)
+    .where(lte(trustedDevices.expiresAt, now))
+    .returning({ id: trustedDevices.tokenHash });
+  const removedAttempts = await db
+    .delete(loginAttempts)
+    .where(
+      lt(loginAttempts.createdAt, new Date(now.getTime() - LOGIN_ATTEMPT_RETENTION_MS)),
+    )
+    .returning({ id: loginAttempts.id });
+  return removedSessions.length + removedDevices.length + removedAttempts.length;
 }

@@ -1,6 +1,7 @@
 import { inArray } from "drizzle-orm";
 import type { Database } from "@/db/connection";
 import { inquiries } from "@/db/schema";
+import { purgeExpiredAuthData } from "@/lib/server/auth/service";
 import { removeInquiryFiles, staleFolderIds } from "./photos";
 import { purgeExpiredInquiries } from "./service";
 
@@ -9,10 +10,7 @@ const LOOKUP_CHUNK = 1000;
 
 /**
  * Applies the retention rules (rows first, then their files) and removes old
- * photo folders that never got a row. Runs after submissions, when staff open
- * the inbox (both throttled, see maintainInquiryRetention) and from
- * `npm run inquiries:purge` (for a daily cron job), so the promised deadlines
- * hold even when nobody submits anything.
+ * photo folders that never got a row.
  */
 export async function applyInquiryRetention(
   db: Database,
@@ -36,6 +34,22 @@ export async function applyInquiryRetention(
   return { purged: purged.length, orphans: orphans.length };
 }
 
+/**
+ * Everything with a deadline. Runs after submissions and when staff open the
+ * inbox (both throttled, see maintainRetention), from the server's own timer
+ * (lib/server/retention-timer.ts) and from `npm run inquiries:purge`, so the
+ * promised deadlines hold even when nobody uses the site. Login data goes
+ * first: it needs only the database, so a storage problem cannot hold it back.
+ */
+export async function applyRetention(
+  db: Database,
+  root: string,
+  now = new Date(),
+): Promise<{ purged: number; orphans: number; authRows: number }> {
+  const authRows = await purgeExpiredAuthData(db, now);
+  return { ...(await applyInquiryRetention(db, root, now)), authRows };
+}
+
 const MAINTENANCE_INTERVAL_MS = 10 * 60 * 1000;
 let lastMaintenance = 0;
 
@@ -44,16 +58,14 @@ let lastMaintenance = 0;
  * ten minutes per process and never throws — housekeeping must not break a
  * page or turn a stored inquiry into an error. Failures are logged.
  */
-export async function maintainInquiryRetention(
-  db: Database,
-  root: string,
-): Promise<void> {
+export async function maintainRetention(db: Database, root: string): Promise<void> {
   const now = Date.now();
   if (now - lastMaintenance < MAINTENANCE_INTERVAL_MS) return;
   lastMaintenance = now;
   try {
-    await applyInquiryRetention(db, root, new Date(now));
+    await applyRetention(db, root, new Date(now));
   } catch (error) {
-    console.error("Inquiry retention failed", error);
+    // The name only: an error message can quote stored personal data.
+    console.error("Retention failed", error instanceof Error ? error.name : "unknown");
   }
 }
